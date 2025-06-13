@@ -8,6 +8,7 @@ pub mod character_ingestion;
 pub mod error;
 pub mod integration;
 pub mod segment_discovery;
+pub mod neural_architecture;
 pub mod utils;
 
 pub use character_ingestion::{

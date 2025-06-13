@@ -93,6 +93,8 @@ fn test_prediction_feedback() -> Result<()> {
         confidence: 0.85,
         prediction_time_ms: 5,
         timestamp: 1000,
+        context_length: 3,
+        segment_quality: Some(0.8),
     };
     
     let feedback2 = PredictionFeedback {
@@ -104,6 +106,8 @@ fn test_prediction_feedback() -> Result<()> {
         confidence: 0.60,
         prediction_time_ms: 8,
         timestamp: 1001,
+        context_length: 5,
+        segment_quality: Some(0.4),
     };
     
     // Report feedback
@@ -142,6 +146,8 @@ fn test_performance_tracking() -> Result<()> {
         confidence: 0.90,
         prediction_time_ms: 3,
         timestamp: 1000,
+        context_length: 1,
+        segment_quality: None,
     };
     
     let seg_feedback = PredictionFeedback {
@@ -153,6 +159,8 @@ fn test_performance_tracking() -> Result<()> {
         confidence: 0.75,
         prediction_time_ms: 7,
         timestamp: 1001,
+        context_length: 3,
+        segment_quality: Some(0.6),
     };
     
     predictor.track_prediction(char_feedback)?;
@@ -186,6 +194,8 @@ fn test_integration_manager() -> Result<()> {
         confidence: 0.95,
         prediction_time_ms: 2,
         timestamp: 1000,
+        context_length: 1,
+        segment_quality: None,
     };
     
     let bad_seg_feedback = PredictionFeedback {
@@ -197,6 +207,8 @@ fn test_integration_manager() -> Result<()> {
         confidence: 0.40,
         prediction_time_ms: 15,
         timestamp: 1001,
+        context_length: 4,
+        segment_quality: Some(0.3),
     };
     
     // Add multiple feedbacks to trigger adaptation
@@ -263,7 +275,9 @@ fn test_end_to_end_workflow() -> Result<()> {
             &char_pred.to_string(), 
             "e", // Simulated actual
             char_conf, 
-            prediction_time
+            prediction_time,
+            1, // context_length
+            None, // segment_quality
         );
         
         let seg_feedback = predictor.create_feedback(
@@ -272,7 +286,9 @@ fn test_end_to_end_workflow() -> Result<()> {
             &seg_pred, 
             "fox", // Simulated actual
             seg_conf, 
-            prediction_time
+            prediction_time,
+            seg_input[0].len(), // context_length
+            Some(0.7), // segment_quality
         );
         
         // Track feedback
@@ -321,6 +337,8 @@ fn test_adaptive_segment_selection() -> Result<()> {
                 confidence: *accuracy,
                 prediction_time_ms: 5,
                 timestamp: 1000 + i as u64,
+                context_length: segment.len(),
+                segment_quality: Some(if i as f64 / 5.0 < *accuracy { 0.75 } else { 0.25 }),
             };
             selector.update_segment_performance(segment, &feedback);
         }

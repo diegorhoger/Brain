@@ -398,108 +398,190 @@ impl CharacterPredictor {
         })
     }
 
-    /// Predict next character with confidence score (for SegmentAwarePredictor trait)
+    /// Predict character with confidence and context awareness
     pub fn predict_char_with_confidence(&mut self, input: &str) -> Result<(char, f64)> {
         if input.is_empty() {
-            return Err(crate::BrainError::InvalidInput("Empty input".to_string()));
+            return Err(crate::error::BrainError::InvalidInput("Input cannot be empty".to_string()));
         }
         
+        let start_time = std::time::Instant::now();
+        
+        // Use last character for prediction
         let last_char = input.chars().last().unwrap();
         let input_idx = self.vocab.char_to_index(last_char);
         
+        // Forward pass
         let logits = self.forward(input_idx)?;
         let probs = self.softmax(&logits);
         
-        // Find the most likely character
-        let (max_idx, &max_prob) = probs.iter().enumerate()
-            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+        // Find the most likely next character
+        let (best_idx, best_prob) = probs
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap();
         
-        let predicted_char = self.vocab.index_to_char(max_idx);
+        let predicted_char = self.vocab.index_to_char(best_idx);
+        let confidence = *best_prob;
         
-        Ok((predicted_char, max_prob))
+        let _prediction_time = start_time.elapsed().as_millis() as u64;
+        
+        // Create feedback for potential learning (would be used by integration system)
+        // Note: Feedback tracking is handled by caller to avoid circular dependencies
+        
+        Ok((predicted_char, confidence))
     }
     
-    /// Predict next segment using the segment provider
+    /// Enhanced segment-aware prediction with quality assessment
     pub fn predict_segment_with_confidence(&mut self, segments: &[String]) -> Result<(String, f64)> {
         if segments.is_empty() {
-            return Err(crate::BrainError::InvalidInput("Empty segments".to_string()));
+            return Err(crate::error::BrainError::InvalidInput("Segments cannot be empty".to_string()));
         }
         
-        // Use the last segment to predict the next one
-        let last_segment = &segments[segments.len() - 1];
+        let start_time = std::time::Instant::now();
         
-        // Convert segment to character-level prediction and then find best matching segment
-        let (predicted_char, char_confidence) = self.predict_char_with_confidence(last_segment)?;
-        
-        // Get available segments and find the best match - collect first to avoid borrow conflict
-        let (_available_segments, segment_stats) = {
-            let segment_provider = self.segment_provider.as_ref()
-                .ok_or_else(|| crate::BrainError::InvalidInput("No segment provider set".to_string()))?;
-            let segments = segment_provider.get_segments();
-            // Collect segment stats for confidence calculation
-            let stats: Vec<_> = segments.iter()
-                .map(|seg| (seg.clone(), segment_provider.get_segment_stats(seg)))
-                .collect();
-            (segments, stats)
-        };
-        
-        // Simple heuristic: find segments that start with the predicted character
-        let matching_segments: Vec<_> = segment_stats.iter()
-            .filter(|(seg, _)| seg.chars().next() == Some(predicted_char))
-            .collect();
-        
-        if matching_segments.is_empty() {
-            // Fall back to the predicted character as a segment
-            return Ok((predicted_char.to_string(), char_confidence));
+        // For now, use the last segment's last character for prediction
+        // In a real implementation, this would use segment embeddings
+        let last_segment = segments.last().unwrap();
+        if let Some(last_char) = last_segment.chars().last() {
+            let input_idx = self.vocab.char_to_index(last_char);
+            
+            // Forward pass
+            let logits = self.forward(input_idx)?;
+            let probs = self.softmax(&logits);
+            
+            // For segment prediction, we need to map back to segments
+            // This is a simplified approach - would need segment vocabulary in practice
+            let (best_idx, best_prob) = probs
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                .unwrap();
+            
+            let predicted_char = self.vocab.index_to_char(best_idx);
+            
+            // Try to find a segment that starts with this character
+            let predicted_segment = if let Some(provider) = &self.segment_provider {
+                let available_segments = provider.get_segments();
+                available_segments
+                    .into_iter()
+                    .find(|seg| seg.starts_with(predicted_char))
+                    .unwrap_or_else(|| predicted_char.to_string())
+            } else {
+                predicted_char.to_string()
+            };
+            
+            let confidence = *best_prob;
+            let _prediction_time = start_time.elapsed().as_millis() as u64;
+            
+            // Calculate segment quality score
+            let _segment_quality = self.calculate_segment_quality(&predicted_segment, confidence);
+            
+            // Note: Feedback tracking is handled by caller to avoid circular dependencies
+            
+            Ok((predicted_segment, confidence))
+        } else {
+            Err(crate::error::BrainError::InvalidInput("Empty segment provided".to_string()))
         }
-        
-        // For now, return the first matching segment
-        // In a more sophisticated implementation, we could rank by confidence scores
-        let (selected_segment, segment_stat_option) = &matching_segments[0];
-        
-        // Adjust confidence based on segment quality
-        let segment_confidence = segment_stat_option
-            .as_ref()
-            .map(|stats| stats.confidence)
-            .unwrap_or(0.5);
-        
-        // Combine character and segment confidence
-        let combined_confidence = (char_confidence + segment_confidence) / 2.0;
-        
-        Ok((selected_segment.clone(), combined_confidence))
     }
     
-    /// Predict using hybrid approach (character + segment context)
+    /// Advanced hybrid prediction combining character and segment context
     pub fn predict_hybrid_with_confidence(&mut self, char_context: &str, segment_context: &[String]) -> Result<(String, f64)> {
+        let start_time = std::time::Instant::now();
+        
         // Get character-level prediction
         let (char_pred, char_conf) = self.predict_char_with_confidence(char_context)?;
         
         // Get segment-level prediction
         let (seg_pred, seg_conf) = self.predict_segment_with_confidence(segment_context)?;
         
-        // Choose the prediction with higher confidence
-        if char_conf >= seg_conf {
-            Ok((char_pred.to_string(), char_conf))
+        // Combine predictions with weighted confidence
+        // Favor higher confidence prediction
+        let (final_prediction, final_confidence) = if seg_conf > char_conf + 0.1 {
+            (seg_pred, seg_conf * 0.9) // Slight penalty for complexity
+        } else if char_conf > seg_conf + 0.1 {
+            (char_pred.to_string(), char_conf)
         } else {
-            Ok((seg_pred, seg_conf))
-        }
+            // If close, prefer segment prediction for its richer context
+            (seg_pred, (seg_conf + char_conf) / 2.0)
+        };
+        
+        let _prediction_time = start_time.elapsed().as_millis() as u64;
+        
+        // Calculate hybrid quality score
+        let _hybrid_quality = self.calculate_hybrid_quality(char_conf, seg_conf, final_confidence);
+        
+        // Note: Feedback tracking is handled by caller to avoid circular dependencies
+        
+        Ok((final_prediction, final_confidence))
     }
     
-    /// Create a prediction feedback from a prediction attempt
-    pub fn create_feedback(&self, input: &str, input_type: InputType, predicted: &str, actual: &str, confidence: f64, prediction_time_ms: u64) -> PredictionFeedback {
+    /// Calculate segment quality score based on multiple factors
+    fn calculate_segment_quality(&self, segment: &str, confidence: f64) -> f64 {
+        let mut quality_score = confidence * 0.4; // Base score from confidence
+        
+        // Length bonus for meaningful segments
+        if segment.len() > 1 {
+            quality_score += 0.2;
+        }
+        
+        // Frequency bonus if we have segment provider
+        if let Some(provider) = &self.segment_provider {
+            if let Some(stats) = provider.get_segment_stats(segment) {
+                // Higher frequency segments get bonus
+                let freq_bonus = (stats.frequency as f64).ln().max(0.0) / 10.0;
+                quality_score += freq_bonus.min(0.2);
+                
+                // Confidence bonus from segment stats
+                quality_score += stats.confidence * 0.2;
+            }
+        }
+        
+        quality_score.min(1.0)
+    }
+    
+    /// Calculate hybrid prediction quality
+    fn calculate_hybrid_quality(&self, char_conf: f64, seg_conf: f64, final_conf: f64) -> f64 {
+        // Base score from final confidence
+        let mut quality = final_conf * 0.5;
+        
+        // Bonus for consistency between character and segment predictions
+        let consistency = 1.0 - (char_conf - seg_conf).abs();
+        quality += consistency * 0.3;
+        
+        // Bonus for high confidence in both approaches
+        let avg_confidence = (char_conf + seg_conf) / 2.0;
+        quality += avg_confidence * 0.2;
+        
+        quality.min(1.0)
+    }
+    
+    /// Create enhanced feedback with context information
+    pub fn create_feedback(
+        &self, 
+        input: &str, 
+        input_type: InputType, 
+        predicted: &str, 
+        actual: &str, 
+        confidence: f64, 
+        prediction_time_ms: u64,
+        context_length: usize,
+        segment_quality: Option<f64>,
+    ) -> PredictionFeedback {
         PredictionFeedback {
             input: input.to_string(),
             input_type,
             predicted: predicted.to_string(),
             actual: actual.to_string(),
-            is_correct: predicted == actual,
+            is_correct: if actual.is_empty() { false } else { predicted == actual },
             confidence,
             prediction_time_ms,
             timestamp: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
+                .unwrap_or_default()
                 .as_secs(),
+            context_length,
+            segment_quality,
         }
     }
 }
