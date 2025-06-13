@@ -1,0 +1,188 @@
+# Overview
+
+Brain is a post-transformer, developmental AI architecture designed to learn from scratch — starting at the character level and growing into a reasoning agent that can form concepts, extract causal insights, simulate future scenarios, and learn continually like a human child. It addresses the limitations of static, pre-trained transformers by prioritizing self-generated knowledge, compositional abstraction, and dynamic memory. Brain is built for researchers and developers looking to push beyond prediction-based LLMs toward systems capable of true understanding and adaptation.
+
+# Core Features
+
+### 1. Character Ingestion Engine
+
+* **What it does**: Reads raw character streams and predicts the next character.
+* **Why it matters**: Grounding perception in raw data simulates early cognitive development.
+* **How it works**: A lightweight GRU (or SSM) predicts characters, forming the base for pattern recognition.
+
+### 2. Segment Discovery Module
+
+* **What it does**: Dynamically segments frequent character patterns into proto-words.
+* **Why it matters**: Enables the AI to self-learn vocabulary from scratch.
+* **How it works**: Uses entropy, frequency, and contextual co-occurrence for segment boundary detection.
+
+### 3. Concept Graph Engine
+
+* **What it does**: Forms a directed graph of abstracted concepts and relationships.
+* **Why it matters**: Forms the basis for compositional understanding.
+* **How it works**: Links high-frequency patterns into concept nodes and edges based on relationships.
+
+### 4. Insight Extraction Engine
+
+* **What it does**: Generalizes rules and causal patterns from experiences.
+* **Why it matters**: Transforms raw observations into reusable knowledge.
+* **How it works**: Monitors episodic and semantic memory for recurring relational patterns.
+
+### 5. Simulation Engine
+
+* **What it does**: Internally simulates stories, instructions, or situations.
+* **Why it matters**: Enables foresight, counterfactual reasoning, and causal understanding.
+* **How it works**: Converts text to state-action graphs and simulates temporal transitions.
+
+### 6. Memory Architecture
+
+* **What it does**: Stores and manages multiple forms of memory.
+* **Why it matters**: Supports abstraction, learning, recall, and dynamic reasoning.
+* **How it works**:
+
+  * Working memory for short-term reasoning
+  * Episodic memory for event recall
+  * Semantic memory for abstractions
+  * Meta-memory for learning efficiency and confidence tracking
+
+# User Experience
+
+### User Personas
+
+* **AI Researcher**: Seeks systems capable of generalization, simulation, and continual learning.
+* **Cognitive Architect**: Uses Brain as a brain-inspired learning foundation.
+* **Education Technologist**: Adapts Brain for interactive, developmental AI tutors.
+
+### Key User Flows
+
+* Feed raw text into system (books, stories, logs)
+* Inspect generated concepts, insights, and predictions
+* Modify memory structures and concept graphs
+* Simulate novel situations using learned knowledge
+
+### UI/UX Considerations
+
+* Visual memory graph browser
+* Timeline of learning episodes
+* Insight dashboard with confidence scores
+* Simulation interface (input a story, preview predicted outcomes)
+
+# Technical Architecture
+
+### System Components
+
+* CharacterPredictor (GRU or Mamba)
+* SegmentDiscoveryEngine
+* ConceptGraphManager (Neo4j)
+* InsightEngine (Rule extractor)
+* SimulationEngine (State transition model)
+* MemoryModule (DuckDB + FAISS)
+* MetaLearner (Confidence and novelty tracker)
+
+### Data Models
+
+* Character → Segment → Concept → Insight
+* ConceptGraph: `[Node, Type, Links, Usage, Confidence]`
+* Rule: `[Pattern] → [Outcome], Support, Generality, Reusability`
+
+### APIs and Integrations
+
+* Internal API: `segment()`, `learn()`, `simulate()`, `query_memory()`
+* Export: JSON graph dump, CSV rule tables
+* Optional integrations: LangChain (for I/O), Streamlit/Gradio for visualization
+
+### Infrastructure Requirements
+
+* Minimal: Local CPU (Mac Mini, M1/M2)
+* Scalable: GPU inference (CUDA for larger memory processing)
+* Optional: Dockerized module containerization for orchestration
+
+# Development Roadmap
+
+### MVP Requirements (Phase 0-2)
+
+* Character ingestion with GRU-based next-char predictor
+* Segment discovery and evolving vocabulary
+* Proto-concept graph (edges based on co-occurrence)
+* Working memory + episodic memory + semantic abstraction layer
+
+### Core Enhancements (Phase 3-4)
+
+* Insight engine to extract causal/conditional rules
+* Simulation engine for narrative prediction
+* Query interface for concept and memory browsing
+
+### Advanced Features (Phase 5+)
+
+* Meta-memory and novelty detection loop
+* Multimodal grounding (optional vision/audio input)
+* Self-restructuring concepts with pruning and reinforcement
+* Social learning simulation (learn from others' text)
+
+# Logical Dependency Chain
+
+### Foundational (must build first)
+
+1. CharacterPredictor
+2. SegmentDiscoveryEngine
+3. MemoryModule
+
+### Enable core reasoning next
+
+4. ConceptGraphManager
+5. InsightEngine
+
+### Build visibility and utility
+
+6. SimulationEngine
+7. API Interface and Memory Query
+
+### Frontend Integration
+
+8. Graph visualizer (basic Neo4j or D3)
+9. Interactive insight/simulation dashboard (Gradio or Web)
+
+# Risks and Mitigations
+
+### Technical Challenges
+
+* **Memory bloat**: Avoid by dynamic pruning, salience ranking
+* **Concept drift**: Address via self-correction and rule reinforcement
+* **Simulation complexity**: Scope initial simulation to stories with low entity/action variance
+
+### MVP Scope Clarity
+
+* Avoid feature creep by focusing on:
+
+  * Character-to-segment
+  * Segment-to-concept
+  * Concept-to-insight
+  * Insight-to-simulation
+
+### Resource Constraints
+
+* Keep early phases GPU-optional
+* Use open-source graph + DB tools
+* Modular Rust/Python hybrid design for long-term portability
+
+# Appendix
+
+### Research Findings
+
+* Human infants learn concepts from 10–100 examples, not millions
+* Causal learning enables transfer faster than interpolation
+* Concept abstraction outperforms token memorization for generalization
+
+### Technical Specifications (Condensed)
+
+* GRU/Mamba encoder for character prediction
+* BPE-style dynamic segmentation
+* Hebbian update graph for concepts
+* Rule memory for causal insight
+* DuckDB for episodic trace indexing
+* Neo4j or property graph for concept abstraction
+* Counterfactual simulator for hypothetical reasoning
+
+---
+
+Brain is not just a better model — it is a new kind of learner. The future of cognition-first AI starts here.
