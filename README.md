@@ -187,7 +187,17 @@ This project follows the Brain development workflow:
 
 ## License
 
-[License information to be added]
+This software is proprietary and confidential technology owned by **Memento Mori Labs LLC**. 
+
+All rights reserved. No part of this software may be used, copied, modified, distributed, or transmitted in any form or by any means without express written permission from Memento Mori Labs LLC.
+
+For licensing inquiries, please contact:
+**Memento Mori Labs LLC**  
+447 Broadway, 2nd Floor Suite #2695  
+New York, New York 10013  
+United States
+
+See the [LICENSE](LICENSE) file for complete terms and conditions.
 
 ## References
 

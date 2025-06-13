@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A post-transformer developmental AI architecture"
 authors = ["Brain Team"]
+license-file = "LICENSE"
 
 [dependencies]
 # Linear algebra
