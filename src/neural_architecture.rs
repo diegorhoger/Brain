@@ -206,8 +206,8 @@ pub struct TransformerEncoder {
     layer_norm1: LayerNorm,
     /// Layer normalization for feed-forward
     layer_norm2: LayerNorm,
-    /// Dropout rate
-    dropout_rate: f64,
+    /// Dropout rate (reserved for future implementation)
+    _dropout_rate: f64,
 }
 
 /// Feed-forward network with residual connections
@@ -346,7 +346,7 @@ impl TransformerEncoder {
             feed_forward,
             layer_norm1,
             layer_norm2,
-            dropout_rate: config.dropout_rate,
+            _dropout_rate: config.dropout_rate,
         })
     }
     

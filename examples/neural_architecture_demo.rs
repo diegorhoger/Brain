@@ -227,7 +227,7 @@ fn main() -> Result<()> {
         sequence_length: 8,
     };
     
-    let char_predictor = CharacterPredictor::new(vocab, Some(model_config))?;
+    let _char_predictor = CharacterPredictor::new(vocab, Some(model_config))?;
     println!("✅ Character predictor created for comparison");
     println!("   - Traditional architecture: Feedforward");
     println!("   - Vocab size: {}", vocab_size_display);
