@@ -10,6 +10,7 @@ pub mod integration;
 pub mod segment_discovery;
 pub mod neural_architecture;
 pub mod utils;
+pub mod memory;
 
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
@@ -24,6 +25,7 @@ pub use segment_discovery::{
     PruningConfig, StorageConfig, FeedbackBpeSegmenter
 };
 pub use error::{BrainError, Result};
+pub use memory::*;
 
 /// Current version of the Brain architecture
 pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 
