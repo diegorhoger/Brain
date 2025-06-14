@@ -12,6 +12,7 @@ pub mod neural_architecture;
 pub mod utils;
 pub mod memory;
 pub mod concept_graph;
+pub mod insight_extraction;
 
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
@@ -30,6 +31,10 @@ pub use memory::*;
 pub use concept_graph::{
     ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType,
     ConceptGraphStats, ConceptQuery
+};
+pub use insight_extraction::{
+    PatternDetector, PatternDetectionConfig, DetectedPattern, PatternType,
+    PatternDetectionResult, TemporalInfo, DetectionStats
 };
 
 /// Current version of the Brain architecture

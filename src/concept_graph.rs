@@ -1286,13 +1286,13 @@ impl ConceptGraphManager {
 
         // Filter segments based on formation criteria
         for segment in segments {
-            if let Some(stats) = segmenter.get_segment_stats_by_string(&segment) {
+            if let Some(stats) = segmenter.get_segment_stats_by_string(&segment.segment) {
                 if stats.frequency >= self.formation_config.min_pattern_frequency
                     && stats.confidence >= self.formation_config.min_pattern_confidence
                 {
-                    patterns_to_process.push((segment.clone(), stats.clone()));
+                    patterns_to_process.push((segment.segment.clone(), stats.clone()));
                 } else {
-                    result.rejected_patterns.push(segment);
+                    result.rejected_patterns.push(segment.segment.clone());
                 }
             }
         }
@@ -1342,7 +1342,7 @@ impl ConceptGraphManager {
     }
 
     /// Infer concept type from pattern characteristics
-    fn infer_concept_type(&self, pattern: &str, stats: &SegmentStats) -> ConceptType {
+    fn infer_concept_type(&self, pattern: &str, _stats: &SegmentStats) -> ConceptType {
         // Simple heuristics for concept type inference
         // In a full implementation, this would use more sophisticated NLP
         
@@ -1540,10 +1540,10 @@ impl ConceptGraphManager {
             return 1.0;
         }
 
-        let keys1: HashSet<_> = concept1.metadata.keys().collect();
-        let keys2: HashSet<_> = concept2.metadata.keys().collect();
+        let keys1: HashSet<&String> = concept1.metadata.keys().collect();
+        let keys2: HashSet<&String> = concept2.metadata.keys().collect();
         
-        let common_keys: HashSet<_> = keys1.intersection(&keys2).collect();
+        let common_keys: HashSet<&String> = keys1.intersection(&keys2).cloned().collect();
         let total_keys = keys1.union(&keys2).count();
 
         if total_keys == 0 {
@@ -1552,7 +1552,7 @@ impl ConceptGraphManager {
 
         let mut matching_values = 0;
         for key in &common_keys {
-            if concept1.metadata.get(&**key) == concept2.metadata.get(&**key) {
+            if concept1.metadata.get(key.as_str()) == concept2.metadata.get(key.as_str()) {
                 matching_values += 1;
             }
         }
