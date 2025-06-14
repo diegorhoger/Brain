@@ -38,6 +38,9 @@ rusqlite = { version = "0.30", features = ["bundled"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+# Neo4j database for concept graph (Task 4)
+neo4rs = "0.8"
+
 [dev-dependencies]
 criterion = "0.5"
 tempfile = "3.10"

@@ -11,6 +11,7 @@ pub mod segment_discovery;
 pub mod neural_architecture;
 pub mod utils;
 pub mod memory;
+pub mod concept_graph;
 
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
@@ -26,6 +27,10 @@ pub use segment_discovery::{
 };
 pub use error::{BrainError, Result};
 pub use memory::*;
+pub use concept_graph::{
+    ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType,
+    ConceptGraphStats, ConceptQuery
+};
 
 /// Current version of the Brain architecture
 pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 
