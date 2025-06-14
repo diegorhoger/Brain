@@ -95,8 +95,8 @@ fn main() -> Result<()> {
     println!("\n🔄 Memory Consolidation Process");
     println!("-------------------------------");
     
-    let candidates_count = memory_system.consolidate()?;
-    println!("Found {} candidates for consolidation to episodic memory", candidates_count);
+    let consolidation_result = memory_system.consolidate()?;
+    println!("Consolidation completed: {} items moved to episodic memory", consolidation_result.working_to_episodic);
     println!("Note: Full consolidation implementation will be completed in subtask 3.2");
 
     println!("\n✅ Memory Module Demonstration Complete!");
