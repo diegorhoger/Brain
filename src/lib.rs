@@ -25,6 +25,12 @@ pub mod auth;
 pub mod rate_limiting;
 pub mod logging;
 
+// Task 9.1 module - Meta-Memory System
+pub mod meta_memory;
+
+// Task 9.2 module - Novelty Detection
+pub mod novelty_detection;
+
 // Python API module for Task 7.1
 #[cfg(feature = "python")]
 pub mod python_api;
@@ -88,6 +94,18 @@ pub use rate_limiting::{
 pub use logging::{
     LoggingManager, LoggingConfig, ApiRequestLog, PerformanceMetrics as LoggingPerformanceMetrics, 
     ErrorLog, ErrorSeverity, ErrorCategory, UsageAnalytics
+};
+
+// Task 9.1 exports - Meta-Memory System
+pub use meta_memory::{
+    MetaMemorySystem, MetaMemoryItem, MetaMemoryConfig, MetaMemoryStats,
+    MetaMemoryQuery, KnowledgeType
+};
+
+// Task 9.2 exports - Novelty Detection
+pub use novelty_detection::{
+    NoveltyDetectionEngine, NoveltyDetectionConfig, NoveltyAssessment, NoveltyContext,
+    NoveltyMethod, NoveltyLevel, NoveltyDetectionStats
 };
 
 /// Current version of the Brain architecture
