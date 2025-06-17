@@ -1,0 +1,36 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "brain-engine"
+version = "0.1.0"
+description = "Python bindings for the Brain AI engine"
+authors = [
+    {name = "Brain Team", email = "team@brain-ai.dev"},
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = ["ai", "machine-learning", "nlp", "cognitive-architecture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+homepage = "https://github.com/brain-team/brain"
+repository = "https://github.com/brain-team/brain"
+documentation = "https://brain-ai.readthedocs.io/"
+
+[tool.maturin]
+features = ["pyo3/extension-module", "python"] 

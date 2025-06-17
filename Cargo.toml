@@ -6,6 +6,15 @@ description = "A post-transformer developmental AI architecture"
 authors = ["Brain Team"]
 license-file = "LICENSE"
 
+[lib]
+name = "brain"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+python = ["pyo3"]
+
 [dependencies]
 # Linear algebra
 nalgebra = "0.32"
@@ -41,13 +50,12 @@ chrono = { version = "0.4", features = ["serde"] }
 # Neo4j database for concept graph (Task 4)
 neo4rs = "0.8"
 
+# Python bindings for API interface (Task 7) - Optional
+pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
+
 [dev-dependencies]
 criterion = "0.5"
 tempfile = "3.10"
-
-[lib]
-name = "brain"
-path = "src/lib.rs"
 
 [[bin]]
 name = "brain-cli"

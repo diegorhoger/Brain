@@ -15,6 +15,10 @@ pub mod concept_graph;
 pub mod insight_extraction;
 pub mod simulation_engine;
 
+// Python API module for Task 7.1
+#[cfg(feature = "python")]
+pub mod python_api;
+
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
 };
