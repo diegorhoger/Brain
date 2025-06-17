@@ -53,6 +53,29 @@ neo4rs = "0.8"
 # Python bindings for API interface (Task 7) - Optional
 pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
 
+# Task 7.3 Dependencies - Authentication, Logging, and Documentation
+# JWT authentication
+jsonwebtoken = "9.0"
+# HTTP server for documentation
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+# Enhanced logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# Rate limiting
+governor = "0.6"
+# Time handling for authentication
+time = "0.3"
+# Configuration management
+config = "0.14"
+# Additional serialization for OpenAPI
+serde_yaml = "0.9"
+# SHA256 for API key hashing
+sha2 = "0.10"
+# Base64 encoding for tokens
+base64 = "0.22"
+
 [dev-dependencies]
 criterion = "0.5"
 tempfile = "3.10"

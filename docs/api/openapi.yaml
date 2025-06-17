@@ -1,0 +1,984 @@
+openapi: 3.0.3
+info:
+  title: Brain AI System API
+  description: |
+    A comprehensive API for the Brain AI system, providing access to character-level prediction,
+    segment discovery, memory management, concept graphs, insight extraction, simulation capabilities,
+    and advanced query/export functionality.
+    
+    ## Authentication
+    
+    The API supports two authentication methods:
+    - **JWT Tokens**: Bearer tokens for session-based authentication
+    - **API Keys**: Long-lived keys for programmatic access
+    
+    ## Rate Limiting
+    
+    Rate limits are enforced based on user roles:
+    - **Admin**: 1000 requests/minute
+    - **Developer**: 500 requests/minute  
+    - **Analyst**: 200 requests/minute
+    - **User**: 100 requests/minute
+    - **Guest**: 20 requests/minute
+    
+    ## Error Handling
+    
+    The API uses standard HTTP status codes and returns detailed error information:
+    - `400` - Bad Request (validation errors)
+    - `401` - Unauthorized (authentication required)
+    - `403` - Forbidden (insufficient permissions)
+    - `429` - Too Many Requests (rate limit exceeded)
+    - `500` - Internal Server Error
+    
+  version: 0.1.0
+  contact:
+    name: Brain AI Team
+    email: admin@brain-ai.local
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.brain-ai.com/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user and get JWT token
+      description: Login with credentials to receive a JWT token for API access
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "admin"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for API access
+                  expires_at:
+                    type: string
+                    format: date-time
+                  user_id:
+                    type: string
+                  role:
+                    $ref: '#/components/schemas/UserRole'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Get a new JWT token using a valid existing token
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/api-keys:
+    get:
+      tags:
+        - Authentication
+      summary: List user's API keys
+      description: Get list of API keys for the authenticated user
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Authentication
+      summary: Generate new API key
+      description: Create a new API key for programmatic access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                description:
+                  type: string
+                  example: "Production integration key"
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: Optional expiration date
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    type: string
+                    description: The generated API key (only shown once)
+                  key_id:
+                    type: string
+                    description: Unique identifier for the key
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Core API Endpoints
+  /segment:
+    post:
+      tags:
+        - Text Processing
+      summary: Segment text into processable units
+      description: Break down input text into segments using BPE and pattern discovery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  example: "The quick brown fox jumps over the lazy dog"
+                max_segments:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  default: 100
+                  description: Maximum number of segments to return
+      responses:
+        '200':
+          description: Text segmented successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  segments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TextSegment'
+                  processing_time_ms:
+                    type: integer
+                  metadata:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /learn:
+    post:
+      tags:
+        - Learning
+      summary: Learn new information
+      description: Add new information to the system's knowledge base
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - information
+              properties:
+                information:
+                  type: string
+                  example: "User prefers coffee in the morning"
+                priority:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  default: medium
+                context:
+                  type: object
+                  description: Additional context metadata
+      responses:
+        '200':
+          description: Information learned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  memory_id:
+                    type: string
+                  concepts_created:
+                    type: integer
+                  rules_generated:
+                    type: integer
+                  processing_time_ms:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /simulate:
+    post:
+      tags:
+        - Simulation
+      summary: Run predictive simulation
+      description: Execute a simulation based on a scenario description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - scenario
+              properties:
+                scenario:
+                  type: string
+                  example: "What happens if the user wakes up early?"
+                max_steps:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 10
+                confidence_threshold:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                  default: 0.5
+      responses:
+        '200':
+          description: Simulation completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /query/memory:
+    post:
+      tags:
+        - Querying
+      summary: Query memory system
+      description: Search through the system's memory using natural language or structured queries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  example: "coffee preferences"
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  default: 50
+                memory_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [working, episodic, semantic]
+                  example: ["episodic", "semantic"]
+      responses:
+        '200':
+          description: Query executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemoryResult'
+                  total_results:
+                    type: integer
+                  query_time_ms:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /query/advanced:
+    post:
+      tags:
+        - Querying
+      summary: Execute advanced structured query
+      description: Run complex queries across concepts, memories, and rules using SQL-like syntax
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  example: "SELECT * FROM concepts WHERE confidence > 0.8 ORDER BY created_at DESC"
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  default: 100
+      responses:
+        '200':
+          description: Advanced query executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueryResult'
+                  total_results:
+                    type: integer
+                  query_time_ms:
+                    type: integer
+                  query_stats:
+                    $ref: '#/components/schemas/QueryStats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /query/related-concepts:
+    post:
+      tags:
+        - Querying
+      summary: Find related concepts
+      description: Discover concepts related to a given concept through relationship traversal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - concept_name
+              properties:
+                concept_name:
+                  type: string
+                  example: "coffee"
+                max_depth:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  default: 2
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 20
+      responses:
+        '200':
+          description: Related concepts found successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RelatedConceptResult'
+                  total_results:
+                    type: integer
+                  traversal_stats:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /export:
+    post:
+      tags:
+        - Data Export
+      summary: Export system data
+      description: Export concepts, memories, or rules in various formats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - format
+              properties:
+                format:
+                  type: string
+                  enum: [json, csv, graph]
+                  example: "json"
+                data_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [concepts, memories, rules]
+                  example: ["concepts", "memories"]
+                include_metadata:
+                  type: boolean
+                  default: true
+                filters:
+                  type: object
+                  description: Optional filters to apply to exported data
+      responses:
+        '200':
+          description: Data exported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # System Management Endpoints
+  /system/status:
+    get:
+      tags:
+        - System
+      summary: Get system status
+      description: Retrieve current system health and performance metrics
+      responses:
+        '200':
+          description: System status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /system/metrics:
+    get:
+      tags:
+        - System
+      summary: Get performance metrics
+      description: Retrieve detailed performance and usage metrics (admin/developer only)
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: hour
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  performance_metrics:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PerformanceMetrics'
+                  usage_analytics:
+                    $ref: '#/components/schemas/UsageAnalytics'
+                  rate_limit_stats:
+                    $ref: '#/components/schemas/RateLimitStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /system/logs:
+    get:
+      tags:
+        - System
+      summary: Get system logs
+      description: Retrieve system logs with filtering options (admin only)
+      parameters:
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [debug, info, warn, error]
+        - name: start_time
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogEntry'
+                  total_count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    UserRole:
+      type: string
+      enum: [Admin, Developer, Analyst, User, Guest]
+      description: User role determining permissions and rate limits
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique key identifier
+        description:
+          type: string
+          description: Human-readable description
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_used:
+          type: string
+          format: date-time
+          nullable: true
+        usage_count:
+          type: integer
+        active:
+          type: boolean
+
+    TextSegment:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The segmented text content
+        start:
+          type: integer
+          description: Start position in original text
+        end:
+          type: integer
+          description: End position in original text
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Confidence score for the segmentation
+        segment_type:
+          type: string
+          description: Type of segment (character, word, phrase, etc.)
+
+    SimulationResult:
+      type: object
+      properties:
+        outcome:
+          type: string
+          description: Simulation outcome description
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Confidence in the prediction
+        steps:
+          type: integer
+          description: Number of simulation steps taken
+        execution_time_ms:
+          type: integer
+          description: Execution time in milliseconds
+        metadata:
+          type: object
+          description: Additional simulation metadata
+
+    MemoryResult:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Memory content
+        memory_type:
+          type: string
+          enum: [working, episodic, semantic]
+        relevance:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Relevance score to the query
+        timestamp:
+          type: string
+          format: date-time
+        importance:
+          type: string
+          enum: [low, medium, high, critical]
+
+    QueryResult:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Query result content
+        result_type:
+          type: string
+          enum: [concept, memory, rule]
+        score:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Confidence/relevance score
+        metadata:
+          type: object
+          description: Result metadata
+        related_items:
+          type: array
+          items:
+            type: string
+          description: Related items or connections
+
+    RelatedConceptResult:
+      type: object
+      properties:
+        concept_name:
+          type: string
+        relationship_type:
+          type: string
+        strength:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        path_length:
+          type: integer
+          description: Number of hops from original concept
+
+    ExportResult:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [json, csv, graph]
+        data:
+          type: string
+          description: Exported data (base64 encoded for binary formats)
+        metadata:
+          type: object
+          description: Export metadata
+        stats:
+          type: object
+          description: Export statistics
+
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime_seconds:
+          type: integer
+        active_connections:
+          type: integer
+        memory_usage_mb:
+          type: integer
+        cpu_usage_percent:
+          type: number
+        last_updated:
+          type: string
+          format: date-time
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        cpu_usage_percent:
+          type: number
+        memory_usage_mb:
+          type: integer
+        memory_usage_percent:
+          type: number
+        active_connections:
+          type: integer
+        requests_per_second:
+          type: number
+        avg_response_time_ms:
+          type: number
+        error_rate_percent:
+          type: number
+
+    UsageAnalytics:
+      type: object
+      properties:
+        time_period:
+          type: string
+        total_api_calls:
+          type: integer
+        unique_users:
+          type: integer
+        calls_by_operation:
+          type: object
+          additionalProperties:
+            type: integer
+        calls_by_role:
+          type: object
+          additionalProperties:
+            type: integer
+        avg_response_times:
+          type: object
+          additionalProperties:
+            type: number
+        top_users:
+          type: array
+          items:
+            type: object
+            properties:
+              user_id:
+                type: string
+              request_count:
+                type: integer
+
+    RateLimitStats:
+      type: object
+      properties:
+        total_requests:
+          type: integer
+        allowed_requests:
+          type: integer
+        blocked_requests:
+          type: integer
+        blocks_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        requests_by_role:
+          type: object
+          additionalProperties:
+            type: integer
+
+    QueryStats:
+      type: object
+      properties:
+        execution_time_ms:
+          type: integer
+        rows_scanned:
+          type: integer
+        rows_returned:
+          type: integer
+        cache_hit:
+          type: boolean
+
+    LogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [debug, info, warn, error]
+        message:
+          type: string
+        module:
+          type: string
+        metadata:
+          type: object
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type or code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          description: Unique request identifier for tracking
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error or malformed input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "validation_error"
+            message: "Invalid input parameters"
+            details:
+              field: "text"
+              issue: "Text cannot be empty"
+            request_id: "req_123456789"
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "unauthorized"
+            message: "Authentication required"
+            request_id: "req_123456789"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "forbidden"
+            message: "Insufficient permissions for this operation"
+            request_id: "req_123456789"
+
+    RateLimitExceeded:
+      description: Too many requests - rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: The rate limit ceiling for the user
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: The number of requests left for the time window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: The time at which the rate limit window resets (Unix timestamp)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "rate_limit_exceeded"
+            message: "Rate limit exceeded. Try again later."
+            request_id: "req_123456789"
+
+tags:
+  - name: Authentication
+    description: User authentication and API key management
+  - name: Text Processing
+    description: Text segmentation and character-level processing
+  - name: Learning
+    description: Information learning and knowledge acquisition
+  - name: Simulation
+    description: Predictive simulation and scenario modeling
+  - name: Querying
+    description: Memory queries and advanced search capabilities
+  - name: Data Export
+    description: Data export in various formats
+  - name: System
+    description: System management and monitoring 

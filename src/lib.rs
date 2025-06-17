@@ -20,6 +20,11 @@ pub mod query_language;
 pub mod export_system;
 pub mod specialized_queries;
 
+// Task 7.3 modules - Authentication, Logging, and Documentation
+pub mod auth;
+pub mod rate_limiting;
+pub mod logging;
+
 // Python API module for Task 7.1
 #[cfg(feature = "python")]
 pub mod python_api;
@@ -69,6 +74,20 @@ pub use specialized_queries::{
     SpecializedQueryEngine, RelatedConceptsResult, RuleChainResult, 
     ConceptRelationship, RuleConnection, ChainStatistics, QueryMetadata,
     TemporalQueryConfig, SimilarityConfig
+};
+
+// Task 7.3 exports - Authentication, Logging, and Documentation
+pub use auth::{
+    AuthManager, AuthConfig, AuthResult, UserRole, Permission, User, ApiKey, 
+    TokenClaims
+};
+pub use rate_limiting::{
+    RateLimitManager, RateLimitConfig, RateLimitResult, LimiterType, 
+    RateLimitStats, RequestContext, create_request_context
+};
+pub use logging::{
+    LoggingManager, LoggingConfig, ApiRequestLog, PerformanceMetrics as LoggingPerformanceMetrics, 
+    ErrorLog, ErrorSeverity, ErrorCategory, UsageAnalytics
 };
 
 /// Current version of the Brain architecture
