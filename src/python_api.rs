@@ -34,6 +34,9 @@ use crate::segment_discovery::{BpeSegmenter, BpeConfig};
 use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, EpisodicQuery, SemanticQuery};
 use crate::insight_extraction::RuleDatabase;
 use crate::integration::SegmentProvider;
+use crate::query_language::{QueryEngine, QueryResult};
+use crate::export_system::{ExportSystem, ExportConfig, JsonGraphExport};
+use crate::specialized_queries::SpecializedQueryEngine;
 
 /// Python-compatible segment result
 #[pyclass]
@@ -128,6 +131,67 @@ impl PyMemoryResult {
     }
 }
 
+/// Python-compatible advanced query result
+#[pyclass]
+#[derive(Clone)]
+pub struct PyQueryResult {
+    /// Query result content
+    #[pyo3(get)]
+    pub content: String,
+    /// Result type (concept, memory, rule)
+    #[pyo3(get)]
+    pub result_type: String,
+    /// Confidence/relevance score (0.0 to 1.0)
+    #[pyo3(get)]
+    pub score: f64,
+    /// Metadata as key-value pairs
+    #[pyo3(get)]
+    pub metadata: HashMap<String, String>,
+    /// Related items or connections
+    #[pyo3(get)]
+    pub related_items: Vec<String>,
+}
+
+#[pymethods]
+impl PyQueryResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "PyQueryResult(content='{}', type='{}', score={:.3}, related={})",
+            self.content, self.result_type, self.score, self.related_items.len()
+        )
+    }
+}
+
+/// Python-compatible export result
+#[pyclass]
+#[derive(Clone)]
+pub struct PyExportResult {
+    /// Export format (json, csv)
+    #[pyo3(get)]
+    pub format: String,
+    /// Export data as string
+    #[pyo3(get)]
+    pub data: String,
+    /// Export metadata
+    #[pyo3(get)]
+    pub metadata: HashMap<String, String>,
+    /// Export statistics
+    #[pyo3(get)]
+    pub stats: HashMap<String, u64>,
+}
+
+#[pymethods]
+impl PyExportResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "PyExportResult(format='{}', size={} bytes, items={})",
+            self.format, 
+            self.data.len(), 
+            self.stats.get("total_items").unwrap_or(&0)
+        )
+    }
+}
+
 /// Main unified Brain Engine interface for Python
 /// 
 /// This class provides a unified interface to all Brain engine capabilities,
@@ -146,6 +210,12 @@ pub struct BrainEngine {
     /// Rule database for insight extraction
     #[allow(dead_code)]
     rule_database: RuleDatabase,
+    /// Query engine for advanced queries (Task 7.2)
+    query_engine: QueryEngine,
+    /// Export system for data export (Task 7.2)
+    export_system: ExportSystem,
+    /// Specialized query engine for common operations (Task 7.2)
+    specialized_queries: SpecializedQueryEngine,
     /// Configuration settings
     config: HashMap<String, String>,
 }
@@ -200,15 +270,25 @@ impl BrainEngine {
         let bpe_segmenter = BpeSegmenter::new(bpe_config);
 
         let memory_capacity = engine_config.get("memory_capacity").unwrap().parse().unwrap_or(1000);
-        let memory_system = MemorySystem::new(memory_capacity);
+        let memory_system = MemorySystem::new(memory_capacity)
+            .map_err(|e| PyRuntimeError::new_err(format!("Failed to initialize memory system: {}", e)))?;
 
         let rule_database = RuleDatabase::new();
+
+        // Initialize Task 7.2 components - Query Language and Export System
+        let query_engine = QueryEngine::new();
+        let export_config = ExportConfig::default();
+        let export_system = ExportSystem::new(export_config);
+        let specialized_queries = SpecializedQueryEngine::new();
 
         Ok(Self {
             character_predictor,
             bpe_segmenter,
             memory_system,
             rule_database,
+            query_engine,
+            export_system,
+            specialized_queries,
             config: engine_config,
         })
     }
@@ -531,10 +611,245 @@ impl BrainEngine {
         Ok(status)
     }
 
+    /// Execute advanced queries using the query language (Task 7.2)
+    ///
+    /// This function executes advanced queries using a SQL-like syntax to search
+    /// concepts, memories, and rules with sophisticated filtering and ordering.
+    ///
+    /// Args:
+    ///     query (str): Query string in the Brain query language
+    ///     limit (int, optional): Maximum number of results to return
+    ///
+    /// Returns:
+    ///     list[PyQueryResult]: Query results with metadata and related items
+    ///
+    /// Raises:
+    ///     ValueError: If query syntax is invalid
+    ///     RuntimeError: If query execution fails
+    ///
+    /// Example:
+    ///     results = engine.advanced_query("SELECT CONCEPTS WHERE type = 'entity' ORDER BY confidence DESC LIMIT 10")
+    fn advanced_query(&self, query: &str, limit: Option<usize>) -> PyResult<Vec<PyQueryResult>> {
+        if query.is_empty() {
+            return Err(PyRuntimeError::new_err("Query cannot be empty"));
+        }
+
+        let limit = limit.unwrap_or(10);
+        
+        // Execute query using the query engine
+        match self.query_engine.execute_query(query) {
+            Ok(results) => {
+                let mut py_results = Vec::new();
+                
+                // Process results based on type and convert to PyQueryResult
+                match results {
+                    QueryResult::Concepts(concept_results) => {
+                        for result in concept_results.into_iter().take(limit) {
+                            let mut metadata = HashMap::new();
+                            metadata.insert("id".to_string(), result.id.clone());
+                            metadata.insert("confidence".to_string(), result.confidence.to_string());
+                            metadata.insert("usage_count".to_string(), result.usage_count.to_string());
+                            
+                            py_results.push(PyQueryResult {
+                                content: result.name,
+                                result_type: "concept".to_string(),
+                                score: result.confidence,
+                                metadata,
+                                related_items: result.related_concepts,
+                            });
+                        }
+                    },
+                    QueryResult::Memories(memory_results) => {
+                        for result in memory_results.into_iter().take(limit) {
+                            let mut metadata = HashMap::new();
+                            metadata.insert("id".to_string(), result.id.clone());
+                            metadata.insert("memory_type".to_string(), result.memory_type.clone());
+                            metadata.insert("importance".to_string(), result.importance.to_string());
+                            metadata.insert("timestamp".to_string(), result.timestamp.clone());
+                            
+                            py_results.push(PyQueryResult {
+                                content: result.content,
+                                result_type: "memory".to_string(),
+                                score: result.relevance,
+                                metadata,
+                                related_items: result.related_memories,
+                            });
+                        }
+                    },
+                    QueryResult::Rules(rule_results) => {
+                        for result in rule_results.into_iter().take(limit) {
+                            let mut metadata = HashMap::new();
+                            metadata.insert("id".to_string(), result.id.clone());
+                            metadata.insert("support".to_string(), result.support.to_string());
+                            metadata.insert("generality".to_string(), result.generality.to_string());
+                            
+                            py_results.push(PyQueryResult {
+                                content: format!("{} -> {}", result.pattern, result.outcome),
+                                result_type: "rule".to_string(),
+                                score: result.confidence,
+                                metadata,
+                                related_items: result.related_rules,
+                            });
+                        }
+                    }
+                }
+                
+                Ok(py_results)
+            },
+            Err(e) => Err(PyRuntimeError::new_err(format!("Query execution failed: {}", e)))
+        }
+    }
+
+    /// Find concepts related to a given concept (Task 7.2)
+    ///
+    /// Args:
+    ///     concept_name (str): Name of the concept to find relations for
+    ///     max_depth (int, optional): Maximum relationship traversal depth
+    ///     limit (int, optional): Maximum number of results
+    ///
+    /// Returns:
+    ///     list[PyQueryResult]: Related concepts with relationship information
+    fn find_related_concepts(&self, concept_name: &str, max_depth: Option<usize>, limit: Option<usize>) -> PyResult<Vec<PyQueryResult>> {
+        if concept_name.is_empty() {
+            return Err(PyRuntimeError::new_err("Concept name cannot be empty"));
+        }
+
+        let max_depth = max_depth.unwrap_or(3);
+        let limit = limit.unwrap_or(10);
+
+        match self.specialized_queries.find_related_concepts(concept_name, max_depth, None) {
+            Ok(result) => {
+                let mut py_results = Vec::new();
+                
+                for relationship in result.relationships.into_iter().take(limit) {
+                    let mut metadata = HashMap::new();
+                    metadata.insert("relationship_type".to_string(), relationship.relationship_type);
+                    metadata.insert("strength".to_string(), relationship.strength.to_string());
+                    metadata.insert("distance".to_string(), relationship.distance.to_string());
+                    
+                    py_results.push(PyQueryResult {
+                        content: relationship.target_concept,
+                        result_type: "related_concept".to_string(),
+                        score: relationship.strength,
+                        metadata,
+                        related_items: vec![concept_name.to_string()],
+                    });
+                }
+                
+                Ok(py_results)
+            },
+            Err(e) => Err(PyRuntimeError::new_err(format!("Failed to find related concepts: {}", e)))
+        }
+    }
+
+    /// Export system data in various formats (Task 7.2)
+    ///
+    /// Args:
+    ///     format (str): Export format ("json_graph", "csv_rules", "csv_concepts")
+    ///     include_metadata (bool, optional): Include export metadata
+    ///
+    /// Returns:
+    ///     PyExportResult: Export data and statistics
+    ///
+    /// Raises:
+    ///     ValueError: If format is unsupported
+    ///     RuntimeError: If export fails
+    fn export_data(&self, format: &str, include_metadata: Option<bool>) -> PyResult<PyExportResult> {
+        let include_metadata = include_metadata.unwrap_or(true);
+        
+        match format {
+            "json_graph" => {
+                // Export as JSON graph for visualization
+                match self.export_system.export_json_graph() {
+                    Ok(json_export) => {
+                        let data = serde_json::to_string_pretty(&json_export)
+                            .map_err(|e| PyRuntimeError::new_err(format!("JSON serialization failed: {}", e)))?;
+                        
+                        let mut metadata = HashMap::new();
+                        if include_metadata {
+                            metadata.insert("export_time".to_string(), chrono::Utc::now().to_rfc3339());
+                            metadata.insert("node_count".to_string(), json_export.nodes.len().to_string());
+                            metadata.insert("edge_count".to_string(), json_export.edges.len().to_string());
+                        }
+                        
+                        let mut stats = HashMap::new();
+                        stats.insert("total_items".to_string(), (json_export.nodes.len() + json_export.edges.len()) as u64);
+                        stats.insert("nodes".to_string(), json_export.nodes.len() as u64);
+                        stats.insert("edges".to_string(), json_export.edges.len() as u64);
+                        
+                        Ok(PyExportResult {
+                            format: "json_graph".to_string(),
+                            data,
+                            metadata,
+                            stats,
+                        })
+                    },
+                    Err(e) => Err(PyRuntimeError::new_err(format!("JSON graph export failed: {}", e)))
+                }
+            },
+            "csv_rules" => {
+                // Export rules as CSV
+                match self.export_system.export_csv("rules") {
+                    Ok(csv_data) => {
+                        let mut metadata = HashMap::new();
+                        if include_metadata {
+                            metadata.insert("export_time".to_string(), chrono::Utc::now().to_rfc3339());
+                            metadata.insert("format".to_string(), "csv".to_string());
+                            metadata.insert("type".to_string(), "rules".to_string());
+                        }
+                        
+                        let line_count = csv_data.lines().count();
+                        let mut stats = HashMap::new();
+                        stats.insert("total_items".to_string(), line_count.saturating_sub(1) as u64); // Subtract header
+                        stats.insert("lines".to_string(), line_count as u64);
+                        
+                        Ok(PyExportResult {
+                            format: "csv_rules".to_string(),
+                            data: csv_data,
+                            metadata,
+                            stats,
+                        })
+                    },
+                    Err(e) => Err(PyRuntimeError::new_err(format!("CSV rules export failed: {}", e)))
+                }
+            },
+            "csv_concepts" => {
+                // Export concepts as CSV
+                match self.export_system.export_csv("concepts") {
+                    Ok(csv_data) => {
+                        let mut metadata = HashMap::new();
+                        if include_metadata {
+                            metadata.insert("export_time".to_string(), chrono::Utc::now().to_rfc3339());
+                            metadata.insert("format".to_string(), "csv".to_string());
+                            metadata.insert("type".to_string(), "concepts".to_string());
+                        }
+                        
+                        let line_count = csv_data.lines().count();
+                        let mut stats = HashMap::new();
+                        stats.insert("total_items".to_string(), line_count.saturating_sub(1) as u64); // Subtract header
+                        stats.insert("lines".to_string(), line_count as u64);
+                        
+                        Ok(PyExportResult {
+                            format: "csv_concepts".to_string(),
+                            data: csv_data,
+                            metadata,
+                            stats,
+                        })
+                    },
+                    Err(e) => Err(PyRuntimeError::new_err(format!("CSV concepts export failed: {}", e)))
+                }
+            },
+            _ => Err(PyRuntimeError::new_err(format!("Unsupported export format: {}", format)))
+        }
+    }
+
     fn __repr__(&self) -> String {
         format!("BrainEngine(config_items={})", self.config.len())
     }
 }
+
+// We need to import chrono for timestamps
+use chrono;
 
 /// Python module definition
 #[pymodule]
@@ -543,6 +858,9 @@ fn brain(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySegment>()?;
     m.add_class::<PySimulationResult>()?;
     m.add_class::<PyMemoryResult>()?;
+    // Task 7.2 - Add new query and export result classes
+    m.add_class::<PyQueryResult>()?;
+    m.add_class::<PyExportResult>()?;
 
     // Module-level convenience functions
     
@@ -558,6 +876,20 @@ fn brain(_py: Python, m: &PyModule) -> PyResult<()> {
     fn quick_query(query: &str) -> PyResult<Vec<PyMemoryResult>> {
         let engine = BrainEngine::new(None)?;
         engine.query_memory(query, None, None)
+    }
+
+    /// Execute advanced query using default engine settings (Task 7.2)
+    #[pyfn(m)]
+    fn advanced_query(query: &str) -> PyResult<Vec<PyQueryResult>> {
+        let engine = BrainEngine::new(None)?;
+        engine.advanced_query(query, None)
+    }
+
+    /// Export data using default engine settings (Task 7.2)
+    #[pyfn(m)]
+    fn export_graph() -> PyResult<PyExportResult> {
+        let engine = BrainEngine::new(None)?;
+        engine.export_data("json_graph", None)
     }
 
     Ok(())

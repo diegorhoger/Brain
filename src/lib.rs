@@ -15,6 +15,11 @@ pub mod concept_graph;
 pub mod insight_extraction;
 pub mod simulation_engine;
 
+// Task 7.2 modules - Query Language and Export System
+pub mod query_language;
+pub mod export_system;
+pub mod specialized_queries;
+
 // Python API module for Task 7.1
 #[cfg(feature = "python")]
 pub mod python_api;
@@ -48,6 +53,22 @@ pub use insight_extraction::{
 pub use simulation_engine::{
     SimulationEngine, SimulationState, StateProperty, StateTransition,
     TextToStateParser, StateValidator, SimulationConfig
+};
+
+// Task 7.2 exports - Query Language and Export System
+pub use query_language::{
+    QueryEngine, QueryResult, ConceptQueryResult, MemoryQueryResult, 
+    RuleQueryResult, QueryStats, OrderBy, OrderDirection, QueryTarget,
+    QueryCondition, QueryOperator, QueryValue
+};
+pub use export_system::{
+    ExportSystem, JsonGraphExport, GraphNode, GraphEdge, ExportMetadata, 
+    ExportConfig, ExportStats, GraphStats, CsvExport
+};
+pub use specialized_queries::{
+    SpecializedQueryEngine, RelatedConceptsResult, RuleChainResult, 
+    ConceptRelationship, RuleConnection, ChainStatistics, QueryMetadata,
+    TemporalQueryConfig, SimilarityConfig
 };
 
 /// Current version of the Brain architecture

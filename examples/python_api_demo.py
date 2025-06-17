@@ -8,7 +8,7 @@ import sys
 import time
 
 try:
-    from brain import BrainEngine, segment_text, quick_query
+    from brain import BrainEngine, segment_text, quick_query  # type: ignore
 except ImportError as e:
     print(f"Error importing brain module: {e}")
     print("Make sure you've built the Python package with maturin")
