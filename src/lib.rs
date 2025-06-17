@@ -13,6 +13,7 @@ pub mod utils;
 pub mod memory;
 pub mod concept_graph;
 pub mod insight_extraction;
+pub mod simulation_engine;
 
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
@@ -34,7 +35,15 @@ pub use concept_graph::{
 };
 pub use insight_extraction::{
     PatternDetector, PatternDetectionConfig, DetectedPattern, PatternType,
-    PatternDetectionResult, TemporalInfo, DetectionStats
+    PatternDetectionResult, TemporalInfo, DetectionStats,
+    // Rule Formalization Framework (Task 5.2)
+    RuleFormalizationEngine, RuleFormalizationConfig, Rule, RulePattern, RuleOutcome,
+    RuleMetrics, RuleDatabase, RuleQuery, RuleValidationResult, RuleComparison,
+    ComparisonRecommendation, TemporalConstraints
+};
+pub use simulation_engine::{
+    SimulationEngine, SimulationState, StateProperty, StateTransition,
+    TextToStateParser, StateValidator, SimulationConfig
 };
 
 /// Current version of the Brain architecture

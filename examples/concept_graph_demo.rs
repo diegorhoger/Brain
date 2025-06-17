@@ -1,7 +1,8 @@
 use anyhow::Result;
 use brain::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, ConceptQuery, 
-                           ConceptRelationship, RelationshipType, RelationshipQuery, HebbianConfig};
+                           RelationshipType, RelationshipQuery, HebbianConfig};
 use tokio;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -150,9 +151,21 @@ async fn run_concept_graph_demo(mut manager: ConceptGraphManager) -> Result<()> 
     };
     
     println!("🔎 Querying Entity concepts with confidence >= 0.9:");
-    // Note: This would work with a real Neo4j connection
-    println!("    Query: type=Entity, min_confidence=0.9, sort=confidence DESC");
-    println!("    (Query functionality requires Neo4j connection)");
+    println!("    Query: type={:?}, min_confidence={:?}, limit={:?}", 
+             entity_query.concept_type, entity_query.min_confidence, entity_query.limit);
+    
+    // Try to execute the query
+    match manager.query_concepts(&entity_query).await {
+        Ok(results) => {
+            println!("    ✅ Found {} matching concepts", results.len());
+            for (i, concept) in results.iter().take(3).enumerate() {
+                println!("      {}. '{}' (confidence: {:.2})", i + 1, concept.content, concept.confidence_score);
+            }
+        }
+        Err(e) => {
+            println!("    ⚠️  Query failed (expected with in-memory storage): {}", e);
+        }
+    }
     println!();
 
     println!("📊 Phase 4: Graph Statistics and Analysis");

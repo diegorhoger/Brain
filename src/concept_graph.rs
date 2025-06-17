@@ -7,7 +7,7 @@
 //! following the same architectural patterns as the memory module.
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
