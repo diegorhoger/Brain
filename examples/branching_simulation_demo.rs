@@ -9,7 +9,6 @@
 //! - Comprehensive result analysis
 
 use anyhow::Result;
-use chrono::Utc;
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -19,7 +18,6 @@ use brain::simulation_engine::{
     BranchingConfig, ConfidenceConfig, SimulationConstraint, ConstraintType, BranchingResult,
 };
 use brain::concept_graph::{ConceptGraphManager, ConceptNode, ConceptType};
-use brain::ConceptGraphConfig;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -58,7 +56,7 @@ async fn main() -> Result<()> {
     println!("📊 Demo 1: Basic Branching Simulation");
     println!("-------------------------------------");
     
-    let initial_state = create_demo_scenario().await?;
+    let _initial_state = create_demo_scenario().await?;
     engine.reset();
     
     // Set initial state (simulating initialization from text)
