@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain AI - Concept Graph Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .control-group input, .control-group select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        #graph-container {
+            width: 100%;
+            height: calc(100% - 60px);
+            position: relative;
+        }
+
+        .sidebar h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-panel h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .node-details {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .node-details h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .node-property {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .node-property:last-child {
+            border-bottom: none;
+        }
+
+        .property-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .property-value {
+            color: #6c757d;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f);
+            transition: width 0.3s ease;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* D3.js styling */
+        .links line {
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: pointer;
+        }
+
+        .nodes circle:hover {
+            stroke-width: 3px;
+            stroke: #333;
+        }
+
+        .node-label {
+            font-size: 12px;
+            font-weight: 500;
+            fill: #333;
+            text-anchor: middle;
+            pointer-events: none;
+            dominant-baseline: central;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* Legend styles */
+        .legend-container {
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend-color-entity {
+            background: #1f77b4;
+        }
+
+        .legend-color-attribute {
+            background: #ff7f0e;
+        }
+
+        .legend-color-relation {
+            background: #2ca02c;
+        }
+
+        .legend-color-abstract {
+            background: #d62728;
+        }
+
+        .legend-text {
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧠 Brain AI - Concept Graph</h1>
+        <p>Interactive exploration of concept relationships and knowledge structures</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h3>Graph Statistics</h3>
+            <div class="info-panel">
+                <h4>Overview</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="node-count">-</div>
+                        <div class="stat-label">Concepts</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="edge-count">-</div>
+                        <div class="stat-label">Relationships</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="avg-confidence">-</div>
+                        <div class="stat-label">Avg Confidence</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="graph-density">-</div>
+                        <div class="stat-label">Density</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="node-details" id="node-details">
+                <h4>Selected Concept</h4>
+                <div id="node-properties"></div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidence-fill"></div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h4>Legend</h4>
+                <div class="legend-container">
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-entity"></div>
+                        <span class="legend-text">Entity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-attribute"></div>
+                        <span class="legend-text">Attribute</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-relation"></div>
+                        <span class="legend-text">Relation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-abstract"></div>
+                        <span class="legend-text">Abstract</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="search-input">Search:</label>
+                    <input type="text" id="search-input" placeholder="Search concepts..." />
+                </div>
+                <div class="control-group">
+                    <label for="concept-type-filter">Type:</label>
+                    <select id="concept-type-filter">
+                        <option value="">All Types</option>
+                        <option value="Entity">Entity</option>
+                        <option value="Attribute">Attribute</option>
+                        <option value="Relation">Relation</option>
+                        <option value="Abstract">Abstract</option>
+                        <option value="Temporal">Temporal</option>
+                        <option value="Spatial">Spatial</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="confidence-threshold">Min Confidence:</label>
+                    <input type="range" id="confidence-threshold" min="0" max="1" step="0.1" value="0" />
+                    <span id="confidence-value">0.0</span>
+                </div>
+                <button class="btn" onclick="resetZoom()">Reset View</button>
+                <button class="btn btn-secondary" onclick="exportGraph()">Export PNG</button>
+            </div>
+
+            <div id="graph-container">
+                <div class="loading" id="loading">Loading concept graph...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Global variables
+        let graphData = null;
+        let filteredData = null;
+        let svg = null;
+        let simulation = null;
+        let currentTransform = d3.zoomIdentity;
+
+        // Initialize the visualization
+        async function initializeVisualization() {
+            try {
+                const response = await fetch('/api/visualization/concept-graph');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                graphData = await response.json();
+                filteredData = { ...graphData };
+                
+                setupD3Visualization();
+                updateStatistics();
+                setupEventListeners();
+                
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Failed to load graph data:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Failed to load concept graph data. Please try refreshing the page.</div>';
+            }
+        }
+
+        // Setup D3.js visualization
+        function setupD3Visualization() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Clear previous visualization
+            d3.select('#graph-container svg').remove();
+
+            // Create SVG
+            svg = d3.select('#graph-container')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', handleZoom);
+
+            svg.call(zoom);
+
+            // Create main group for zoomable content
+            const g = svg.append('g');
+
+            // Create force simulation
+            simulation = d3.forceSimulation(filteredData.nodes)
+                .force('link', d3.forceLink(filteredData.edges).id(d => d.id).distance(80))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => d.size + 5));
+
+            // Create links
+            const link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(filteredData.edges)
+                .enter().append('line')
+                .attr('stroke', d => d.color)
+                .attr('stroke-width', d => Math.sqrt(d.weight) * 2);
+
+            // Create nodes
+            const node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('circle')
+                .data(filteredData.nodes)
+                .enter().append('circle')
+                .attr('r', d => d.size / 2)
+                .attr('fill', d => d.color)
+                .on('click', handleNodeClick)
+                .on('mouseover', handleNodeMouseOver)
+                .on('mouseout', handleNodeMouseOut)
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', dragged)
+                    .on('end', dragEnded));
+
+            // Add labels
+            const labels = g.append('g')
+                .attr('class', 'labels')
+                .selectAll('text')
+                .data(filteredData.nodes)
+                .enter().append('text')
+                .attr('class', 'node-label')
+                .text(d => d.name.length > 20 ? d.name.substring(0, 20) + '...' : d.name)
+                .attr('dy', d => d.size / 2 + 15);
+
+            // Update positions on simulation tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+
+            // Store references for filtering
+            svg.selectAll('.nodes circle').data(filteredData.nodes);
+            svg.selectAll('.links line').data(filteredData.edges);
+            svg.selectAll('.labels text').data(filteredData.nodes);
+        }
+
+        // Event handlers
+        function handleZoom(event) {
+            currentTransform = event.transform;
+            svg.select('g').attr('transform', currentTransform);
+        }
+
+        function handleNodeClick(event, d) {
+            showNodeDetails(d);
+        }
+
+        function handleNodeMouseOver(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${d.name}</strong><br/>
+                Type: ${d.node_type}<br/>
+                Confidence: ${(d.confidence * 100).toFixed(1)}%<br/>
+                Connections: ${d.degree}
+            `;
+            tooltip.style.opacity = 1;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+        }
+
+        function handleNodeMouseOut() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // UI functions
+        function showNodeDetails(node) {
+            const detailsPanel = document.getElementById('node-details');
+            const propertiesDiv = document.getElementById('node-properties');
+            const confidenceFill = document.getElementById('confidence-fill');
+
+            propertiesDiv.innerHTML = `
+                <div class="node-property">
+                    <span class="property-label">Name:</span>
+                    <span class="property-value">${node.name}</span>
+                </div>
+                <div class="node-property">
+                    <span class="property-label">Type:</span>
+                    <span class="property-value">${node.node_type}</span>
+                </div>
+                <div class="node-property">
+                    <span class="property-label">Connections:</span>
+                    <span class="property-value">${node.degree}</span>
+                </div>
+                <div class="node-property">
+                    <span class="property-label">Confidence:</span>
+                    <span class="property-value">${(node.confidence * 100).toFixed(1)}%</span>
+                </div>
+            `;
+
+            confidenceFill.style.width = (node.confidence * 100) + '%';
+            detailsPanel.style.display = 'block';
+        }
+
+        function updateStatistics() {
+            if (!filteredData) return;
+
+            document.getElementById('node-count').textContent = filteredData.nodes.length;
+            document.getElementById('edge-count').textContent = filteredData.edges.length;
+            
+            const avgConfidence = filteredData.nodes.reduce((sum, node) => sum + node.confidence, 0) / filteredData.nodes.length;
+            document.getElementById('avg-confidence').textContent = (avgConfidence * 100).toFixed(1) + '%';
+            
+            const maxPossibleEdges = filteredData.nodes.length * (filteredData.nodes.length - 1) / 2;
+            const density = maxPossibleEdges > 0 ? (filteredData.edges.length / maxPossibleEdges * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('graph-density').textContent = density;
+        }
+
+        function setupEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const typeFilter = document.getElementById('concept-type-filter');
+            const confidenceThreshold = document.getElementById('confidence-threshold');
+            const confidenceValue = document.getElementById('confidence-value');
+
+            searchInput.addEventListener('input', filterGraph);
+            typeFilter.addEventListener('change', filterGraph);
+            confidenceThreshold.addEventListener('input', (e) => {
+                confidenceValue.textContent = parseFloat(e.target.value).toFixed(1);
+                filterGraph();
+            });
+
+            // Window resize handler
+            window.addEventListener('resize', () => {
+                if (svg) {
+                    const container = document.getElementById('graph-container');
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    svg.attr('width', width).attr('height', height);
+                    simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                    simulation.alpha(0.3).restart();
+                }
+            });
+        }
+
+        function filterGraph() {
+            if (!graphData) return;
+
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const typeFilter = document.getElementById('concept-type-filter').value;
+            const confidenceThreshold = parseFloat(document.getElementById('confidence-threshold').value);
+
+            // Filter nodes
+            filteredData.nodes = graphData.nodes.filter(node => {
+                const matchesSearch = !searchTerm || node.name.toLowerCase().includes(searchTerm);
+                const matchesType = !typeFilter || node.node_type === typeFilter;
+                const matchesConfidence = node.confidence >= confidenceThreshold;
+                return matchesSearch && matchesType && matchesConfidence;
+            });
+
+            // Filter edges (only keep edges between filtered nodes)
+            const nodeIds = new Set(filteredData.nodes.map(n => n.id));
+            filteredData.edges = graphData.edges.filter(edge => 
+                nodeIds.has(edge.source.id || edge.source) && 
+                nodeIds.has(edge.target.id || edge.target)
+            );
+
+            setupD3Visualization();
+            updateStatistics();
+        }
+
+        function resetZoom() {
+            if (svg) {
+                svg.transition().duration(750).call(
+                    d3.zoom().transform,
+                    d3.zoomIdentity
+                );
+            }
+        }
+
+        function exportGraph() {
+            if (!svg) return;
+
+            const svgElement = svg.node();
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElement);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = svgElement.width.baseVal.value;
+            canvas.height = svgElement.height.baseVal.value;
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                const link = document.createElement('a');
+                link.download = 'concept-graph.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            };
+            
+            img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeVisualization);
+    </script>
+</body>
+</html>

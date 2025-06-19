@@ -31,6 +31,12 @@ pub mod meta_memory;
 // Task 9.2 module - Novelty Detection
 pub mod novelty_detection;
 
+// Task 9.3 module - Curiosity-Driven Learning
+pub mod curiosity_learning;
+
+// Task 8 module - Visualization Components
+pub mod visualization;
+
 // Python API module for Task 7.1
 #[cfg(feature = "python")]
 pub mod python_api;
@@ -106,6 +112,18 @@ pub use meta_memory::{
 pub use novelty_detection::{
     NoveltyDetectionEngine, NoveltyDetectionConfig, NoveltyAssessment, NoveltyContext,
     NoveltyMethod, NoveltyLevel, NoveltyDetectionStats
+};
+
+// Task 9.3 exports - Curiosity-Driven Learning
+pub use curiosity_learning::{
+    CuriosityLearningEngine, CuriosityConfig, LearningPriority, KnowledgeGap,
+    InterestModel, LearningEvent, CuriosityStats, CuriosityDrive
+};
+
+// Task 8 exports - Visualization Components
+pub use visualization::{
+    VisualizationManager, VisualizationConfig, GraphData, VisualizationNode, VisualizationEdge,
+    GraphMetadata, TimelineData, TimelineEvent, TimelineMetadata, GraphQueryParams
 };
 
 /// Current version of the Brain architecture

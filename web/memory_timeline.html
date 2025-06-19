@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain AI - Memory Timeline Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .control-group input, .control-group select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .time-range-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .time-range-buttons .btn {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        #timeline-container {
+            width: 100%;
+            height: calc(100% - 60px);
+            position: relative;
+        }
+
+        .sidebar h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-panel h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .event-details {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .event-details h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .event-property {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .event-property:last-child {
+            border-bottom: none;
+        }
+
+        .property-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .property-value {
+            color: #6c757d;
+            text-align: right;
+            max-width: 150px;
+            word-wrap: break-word;
+        }
+
+        .importance-bar {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .importance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f);
+            transition: width 0.3s ease;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Timeline specific styles */
+        .timeline-axis {
+            font-size: 12px;
+        }
+
+        .timeline-event {
+            cursor: pointer;
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+
+        .timeline-event:hover {
+            stroke-width: 3px;
+            stroke: #333;
+        }
+
+        .event-label {
+            font-size: 11px;
+            fill: #333;
+            text-anchor: middle;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .timeline-grid {
+            stroke: #e0e0e0;
+            stroke-width: 1px;
+            stroke-dasharray: 2,2;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 300px;
+        }
+
+        /* Legend styles */
+        .legend-container {
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend-color-learning { background: #2E8B57; }
+        .legend-color-system { background: #4169E1; }
+        .legend-color-consolidation { background: #FF6347; }
+        .legend-color-insight { background: #FFD700; }
+        .legend-color-interaction { background: #20B2AA; }
+        .legend-color-simulation { background: #9370DB; }
+        .legend-color-warning { background: #FF8C00; }
+        .legend-color-error { background: #DC143C; }
+
+        .legend-text {
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧠 Brain AI - Memory Timeline</h1>
+        <p>Interactive exploration of episodic memory events and AI cognitive activities</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h3>Timeline Statistics</h3>
+            <div class="info-panel">
+                <h4>Overview</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="event-count">-</div>
+                        <div class="stat-label">Events</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="time-span">-</div>
+                        <div class="stat-label">Time Span</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="avg-importance">-</div>
+                        <div class="stat-label">Avg Importance</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="event-types">-</div>
+                        <div class="stat-label">Event Types</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-details" id="event-details">
+                <h4>Selected Event</h4>
+                <div id="event-properties"></div>
+                <div class="importance-bar">
+                    <div class="importance-fill" id="importance-fill"></div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h4>Legend</h4>
+                <div class="legend-container">
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-learning"></div>
+                        <span class="legend-text">Learning</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-system"></div>
+                        <span class="legend-text">System</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-consolidation"></div>
+                        <span class="legend-text">Consolidation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-insight"></div>
+                        <span class="legend-text">Insight</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-interaction"></div>
+                        <span class="legend-text">Interaction</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-simulation"></div>
+                        <span class="legend-text">Simulation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-warning"></div>
+                        <span class="legend-text">Warning</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color-box legend-color-error"></div>
+                        <span class="legend-text">Error</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="search-input">Search:</label>
+                    <input type="text" id="search-input" placeholder="Search events..." />
+                </div>
+                <div class="control-group">
+                    <label for="event-type-filter">Type:</label>
+                    <select id="event-type-filter">
+                        <option value="">All Types</option>
+                        <option value="learning">Learning</option>
+                        <option value="system">System</option>
+                        <option value="consolidation">Consolidation</option>
+                        <option value="insight">Insight</option>
+                        <option value="interaction">Interaction</option>
+                        <option value="simulation">Simulation</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="importance-threshold">Min Importance:</label>
+                    <input type="range" id="importance-threshold" min="0" max="1" step="0.1" value="0" />
+                    <span id="importance-value">0.0</span>
+                </div>
+                <div class="time-range-buttons">
+                    <button class="btn" onclick="setTimeRange('1h')">1h</button>
+                    <button class="btn" onclick="setTimeRange('6h')">6h</button>
+                    <button class="btn" onclick="setTimeRange('24h')">24h</button>
+                    <button class="btn" onclick="setTimeRange('7d')">7d</button>
+                    <button class="btn" onclick="setTimeRange('all')">All</button>
+                </div>
+                <button class="btn btn-secondary" onclick="exportTimeline()">Export PNG</button>
+            </div>
+
+            <div id="timeline-container">
+                <div class="loading" id="loading">Loading memory timeline...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Global variables
+        let timelineData = null;
+        let filteredData = null;
+        let svg = null;
+        let currentTransform = d3.zoomIdentity;
+        let xScale = null;
+        let yScale = null;
+
+        // Color mapping for event types
+        const eventColors = {
+            'learning': '#2E8B57',
+            'system': '#4169E1',
+            'consolidation': '#FF6347',
+            'insight': '#FFD700',
+            'interaction': '#20B2AA',
+            'simulation': '#9370DB',
+            'warning': '#FF8C00',
+            'error': '#DC143C'
+        };
+
+        // Initialize the visualization
+        async function initializeVisualization() {
+            try {
+                const response = await fetch('/api/visualization/memory-timeline');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                timelineData = await response.json();
+                filteredData = { ...timelineData };
+                
+                setupTimelineVisualization();
+                updateStatistics();
+                setupEventListeners();
+                
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Failed to load timeline data:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Failed to load memory timeline data. Please try refreshing the page.</div>';
+            }
+        }
+
+        // Setup D3.js timeline visualization
+        function setupTimelineVisualization() {
+            const container = document.getElementById('timeline-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+
+            // Clear previous visualization
+            d3.select('#timeline-container svg').remove();
+
+            // Create SVG
+            svg = d3.select('#timeline-container')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 10])
+                .on('zoom', handleZoom);
+
+            svg.call(zoom);
+
+            // Create main group for zoomable content
+            const g = svg.append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Setup scales
+            const timeExtent = d3.extent(filteredData.events, d => new Date(d.timestamp));
+            xScale = d3.scaleTime()
+                .domain(timeExtent)
+                .range([0, width - margin.left - margin.right]);
+
+            // Group events by type for y-positioning
+            const eventTypes = [...new Set(filteredData.events.map(d => d.event_type))];
+            yScale = d3.scaleBand()
+                .domain(eventTypes)
+                .range([0, height - margin.top - margin.bottom])
+                .padding(0.1);
+
+            // Add grid lines
+            const xAxis = d3.axisBottom(xScale)
+                .tickFormat(d3.timeFormat('%H:%M'));
+            
+            const yAxis = d3.axisLeft(yScale);
+
+            // Add axes
+            g.append('g')
+                .attr('class', 'timeline-axis')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(xAxis);
+
+            g.append('g')
+                .attr('class', 'timeline-axis')
+                .call(yAxis);
+
+            // Add grid
+            g.append('g')
+                .attr('class', 'grid')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(xScale)
+                    .tickSize(-(height - margin.top - margin.bottom))
+                    .tickFormat('')
+                )
+                .selectAll('line')
+                .attr('class', 'timeline-grid');
+
+            // Create events
+            const events = g.append('g')
+                .attr('class', 'events')
+                .selectAll('circle')
+                .data(filteredData.events)
+                .enter().append('circle')
+                .attr('class', 'timeline-event')
+                .attr('cx', d => xScale(new Date(d.timestamp)))
+                .attr('cy', d => yScale(d.event_type) + yScale.bandwidth() / 2)
+                .attr('r', d => 3 + d.importance * 7) // Size based on importance
+                .attr('fill', d => eventColors[d.event_type] || '#666')
+                .on('click', handleEventClick)
+                .on('mouseover', handleEventMouseOver)
+                .on('mouseout', handleEventMouseOut);
+
+            // Add labels for important events
+            const labels = g.append('g')
+                .attr('class', 'labels')
+                .selectAll('text')
+                .data(filteredData.events.filter(d => d.importance > 0.7))
+                .enter().append('text')
+                .attr('class', 'event-label')
+                .attr('x', d => xScale(new Date(d.timestamp)))
+                .attr('y', d => yScale(d.event_type) + yScale.bandwidth() / 2 - 15)
+                .text(d => d.title.length > 20 ? d.title.substring(0, 20) + '...' : d.title);
+        }
+
+        // Event handlers
+        function handleZoom(event) {
+            currentTransform = event.transform;
+            
+            // Update x scale
+            const newXScale = currentTransform.rescaleX(xScale);
+            
+            // Update axes
+            svg.select('.timeline-axis')
+                .call(d3.axisBottom(newXScale).tickFormat(d3.timeFormat('%H:%M')));
+            
+            // Update grid
+            svg.select('.grid')
+                .call(d3.axisBottom(newXScale)
+                    .tickSize(-(svg.attr('height') - 80))
+                    .tickFormat('')
+                );
+            
+            // Update events
+            svg.selectAll('.timeline-event')
+                .attr('cx', d => newXScale(new Date(d.timestamp)));
+            
+            // Update labels
+            svg.selectAll('.event-label')
+                .attr('x', d => newXScale(new Date(d.timestamp)));
+        }
+
+        function handleEventClick(event, d) {
+            showEventDetails(d);
+        }
+
+        function handleEventMouseOver(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            const relatedConcepts = d.related_concepts.join(', ');
+            tooltip.innerHTML = `
+                <strong>${d.title}</strong><br/>
+                <em>${d.event_type}</em><br/>
+                ${d.description}<br/>
+                <small>Importance: ${(d.importance * 100).toFixed(1)}%</small><br/>
+                <small>Related: ${relatedConcepts}</small><br/>
+                <small>${new Date(d.timestamp).toLocaleString()}</small>
+            `;
+            tooltip.style.opacity = 1;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+        }
+
+        function handleEventMouseOut() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+
+        // UI functions
+        function showEventDetails(event) {
+            const detailsPanel = document.getElementById('event-details');
+            const propertiesDiv = document.getElementById('event-properties');
+            const importanceFill = document.getElementById('importance-fill');
+
+            const relatedConcepts = event.related_concepts.join(', ');
+            const timestamp = new Date(event.timestamp).toLocaleString();
+
+            propertiesDiv.innerHTML = `
+                <div class="event-property">
+                    <span class="property-label">Title:</span>
+                    <span class="property-value">${event.title}</span>
+                </div>
+                <div class="event-property">
+                    <span class="property-label">Type:</span>
+                    <span class="property-value">${event.event_type}</span>
+                </div>
+                <div class="event-property">
+                    <span class="property-label">Timestamp:</span>
+                    <span class="property-value">${timestamp}</span>
+                </div>
+                <div class="event-property">
+                    <span class="property-label">Importance:</span>
+                    <span class="property-value">${(event.importance * 100).toFixed(1)}%</span>
+                </div>
+                <div class="event-property">
+                    <span class="property-label">Description:</span>
+                    <span class="property-value">${event.description}</span>
+                </div>
+                <div class="event-property">
+                    <span class="property-label">Related Concepts:</span>
+                    <span class="property-value">${relatedConcepts}</span>
+                </div>
+            `;
+
+            importanceFill.style.width = (event.importance * 100) + '%';
+            detailsPanel.style.display = 'block';
+        }
+
+        function updateStatistics() {
+            if (!filteredData) return;
+
+            const events = filteredData.events;
+            document.getElementById('event-count').textContent = events.length;
+            
+            // Calculate time span
+            if (events.length > 0) {
+                const timeSpan = new Date(filteredData.metadata.end_time) - new Date(filteredData.metadata.start_time);
+                const hours = Math.round(timeSpan / (1000 * 60 * 60));
+                document.getElementById('time-span').textContent = hours > 24 ? `${Math.round(hours/24)}d` : `${hours}h`;
+            } else {
+                document.getElementById('time-span').textContent = '0h';
+            }
+            
+            // Calculate average importance
+            const avgImportance = events.reduce((sum, event) => sum + event.importance, 0) / events.length;
+            document.getElementById('avg-importance').textContent = (avgImportance * 100).toFixed(1) + '%';
+            
+            // Count unique event types
+            const uniqueTypes = new Set(events.map(e => e.event_type));
+            document.getElementById('event-types').textContent = uniqueTypes.size;
+        }
+
+        function setupEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const typeFilter = document.getElementById('event-type-filter');
+            const importanceThreshold = document.getElementById('importance-threshold');
+            const importanceValue = document.getElementById('importance-value');
+
+            searchInput.addEventListener('input', filterTimeline);
+            typeFilter.addEventListener('change', filterTimeline);
+            importanceThreshold.addEventListener('input', (e) => {
+                importanceValue.textContent = parseFloat(e.target.value).toFixed(1);
+                filterTimeline();
+            });
+
+            // Window resize handler
+            window.addEventListener('resize', () => {
+                if (svg) {
+                    setupTimelineVisualization();
+                }
+            });
+        }
+
+        function filterTimeline() {
+            if (!timelineData) return;
+
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const typeFilter = document.getElementById('event-type-filter').value;
+            const importanceThreshold = parseFloat(document.getElementById('importance-threshold').value);
+
+            // Filter events
+            filteredData.events = timelineData.events.filter(event => {
+                const matchesSearch = !searchTerm || 
+                    event.title.toLowerCase().includes(searchTerm) ||
+                    event.description.toLowerCase().includes(searchTerm) ||
+                    event.related_concepts.some(concept => concept.toLowerCase().includes(searchTerm));
+                const matchesType = !typeFilter || event.event_type === typeFilter;
+                const matchesImportance = event.importance >= importanceThreshold;
+                return matchesSearch && matchesType && matchesImportance;
+            });
+
+            // Update metadata
+            filteredData.metadata = { ...timelineData.metadata };
+            filteredData.metadata.event_count = filteredData.events.length;
+            if (filteredData.events.length > 0) {
+                filteredData.metadata.start_time = filteredData.events[0].timestamp;
+                filteredData.metadata.end_time = filteredData.events[filteredData.events.length - 1].timestamp;
+            }
+
+            setupTimelineVisualization();
+            updateStatistics();
+        }
+
+        function setTimeRange(range) {
+            if (!timelineData) return;
+
+            const now = new Date();
+            let startTime;
+
+            switch (range) {
+                case '1h':
+                    startTime = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                case '7d':
+                    startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case 'all':
+                default:
+                    startTime = null;
+                    break;
+            }
+
+            // Filter by time range
+            if (startTime) {
+                filteredData.events = timelineData.events.filter(event => 
+                    new Date(event.timestamp) >= startTime
+                );
+            } else {
+                filteredData.events = [...timelineData.events];
+            }
+
+            // Apply other filters
+            filterTimeline();
+        }
+
+        function exportTimeline() {
+            if (!svg) return;
+
+            const svgElement = svg.node();
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElement);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = svgElement.width.baseVal.value;
+            canvas.height = svgElement.height.baseVal.value;
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                const link = document.createElement('a');
+                link.download = 'memory-timeline.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            };
+            
+            img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeVisualization);
+    </script>
+</body>
+</html>
