@@ -9,7 +9,7 @@
 //! 
 //! The query language supports SQL-like syntax with extensions for AI-specific operations:
 //! 
-//! ```
+//! ```text
 //! // Basic concept queries
 //! CONCEPTS WHERE type = "entity" AND confidence > 0.8
 //! CONCEPTS WHERE created_after = "2024-01-01" LIMIT 10

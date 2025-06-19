@@ -4,6 +4,9 @@
 //! starting with character-level prediction and building up to more complex
 //! cognitive capabilities.
 
+// Task 10.1 - Core System Integration Module (NEW)
+pub mod system_integration;
+
 pub mod character_ingestion;
 pub mod error;
 pub mod integration;
@@ -40,6 +43,13 @@ pub mod visualization;
 // Python API module for Task 7.1
 #[cfg(feature = "python")]
 pub mod python_api;
+
+// Task 10.1 - Unified System Integration Exports (NEW)
+pub use system_integration::{
+    BrainSystem, BrainSystemConfig, BrainSystemBuilder, SystemComponent,
+    ComponentStatus, SystemHealth, SystemMetrics, UnifiedAPI, WorkflowEngine,
+    ComponentRegistry, SystemEvent, EventType, IntegrationResult
+};
 
 pub use character_ingestion::{
     CharacterPredictor, CharacterVocab, ModelConfig
