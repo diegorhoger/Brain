@@ -1,0 +1,73 @@
+# License
+
+## Proprietary Software License
+
+**Copyright © 2025 Memento Mori Labs LLC**  
+**All Rights Reserved.**
+
+---
+
+### BRAIN NEURAL ARCHITECTURE - PROPRIETARY LICENSE
+
+This software and associated documentation files (the "Software") are the proprietary and confidential technology of Memento Mori Labs LLC, a limited liability company organized under the laws of the United States.
+
+**COMPANY INFORMATION:**
+```
+Memento Mori Labs LLC
+447 Broadway, 2nd Floor Suite #2695
+New York, New York 10013
+United States
+```
+
+**DEVELOPED BY:** Brain Development Team
+
+---
+
+## License Terms and Conditions
+
+### 1. OWNERSHIP
+This Software is proprietary to Memento Mori Labs LLC and is protected by copyright laws and international treaty provisions. All rights, title, and interest in and to the Software, including all intellectual property rights therein, are and shall remain the exclusive property of Memento Mori Labs LLC.
+
+### 2. RESTRICTIONS
+You may **NOT**:
+- Use, copy, modify, merge, publish, distribute, sublicense, or sell the Software without express written permission from Memento Mori Labs LLC
+- Reverse engineer, disassemble, or decompile the Software
+- Remove or alter any proprietary notices, labels, or marks from the Software
+- Create derivative works based upon the Software
+- Use the Software for any commercial purposes without a separate license
+
+### 3. AUTHORIZED USE
+Any use of this Software requires explicit written authorization from Memento Mori Labs LLC. Unauthorized access or use is strictly prohibited and may result in severe civil and criminal penalties.
+
+### 4. CONFIDENTIALITY
+The Software contains confidential and proprietary information of Memento Mori Labs LLC. Any person having access to the Software agrees to maintain the confidentiality of such information and not to disclose it to any third party without prior written consent.
+
+### 5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL MEMENTO MORI LABS LLC BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.
+
+### 6. TERMINATION
+This license is effective until terminated. Memento Mori Labs LLC may terminate this license at any time without notice. Upon termination, you must destroy all copies of the Software.
+
+### 7. GOVERNING LAW
+This license shall be governed by and construed in accordance with the laws of the State of New York, United States, without regard to its conflict of law provisions.
+
+---
+
+## Contact Information
+
+For licensing inquiries, please contact:
+
+```
+Memento Mori Labs LLC
+447 Broadway, 2nd Floor Suite #2695
+New York, New York 10013
+United States
+```
+
+---
+
+**NOTICE:** This software is protected by copyright law and international treaties. Unauthorized reproduction or distribution of this software, or any portion of it, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under the law.
+
+**VERSION:** 1.0  
+**EFFECTIVE DATE:** June 13, 2025  
+**LAST UPDATED:** June 13, 2025

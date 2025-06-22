@@ -76,6 +76,19 @@ sha2 = "0.10"
 # Base64 encoding for tokens
 base64 = "0.22"
 
+# Performance monitoring and profiling dependencies (Task 10.2)
+# System resource monitoring
+sysinfo = "0.30"
+# Performance profiling and metrics collection
+metrics = "0.22"
+metrics-exporter-prometheus = "0.13"
+# CPU and memory profiling
+pprof = { version = "0.13", features = ["flamegraph", "protobuf-codec", "frame-pointer"] }
+# Async runtime monitoring
+tokio-metrics = "0.3"
+# Performance benchmarking
+flamegraph = "0.6"
+
 [dev-dependencies]
 criterion = "0.5"
 tempfile = "3.10"

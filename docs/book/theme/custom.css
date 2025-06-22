@@ -1,0 +1,244 @@
+/* Brain AI Documentation Custom Styles */
+
+/* Root variables for consistent theming */
+:root {
+    --brain-primary: #2563eb;
+    --brain-secondary: #7c3aed;
+    --brain-accent: #06b6d4;
+    --brain-success: #10b981;
+    --brain-warning: #f59e0b;
+    --brain-error: #ef4444;
+    --brain-gradient: linear-gradient(135deg, var(--brain-primary), var(--brain-secondary));
+    --brain-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom header styling */
+.chapter-title {
+    background: var(--brain-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+/* Enhanced code blocks */
+.hljs {
+    border-radius: 8px;
+    border-left: 4px solid var(--brain-primary);
+    box-shadow: var(--brain-shadow);
+}
+
+/* API endpoint styling */
+.api-endpoint {
+    background: linear-gradient(90deg, #f8fafc, #e2e8f0);
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 16px 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.api-method {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+.api-method.get { background: #10b981; color: white; }
+.api-method.post { background: #3b82f6; color: white; }
+.api-method.put { background: #f59e0b; color: white; }
+.api-method.delete { background: #ef4444; color: white; }
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-complete { background: #dcfce7; color: #166534; }
+.status-progress { background: #fef3c7; color: #92400e; }
+.status-pending { background: #e0e7ff; color: #3730a3; }
+
+/* Enhanced tables */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    box-shadow: var(--brain-shadow);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background: var(--brain-gradient);
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover {
+    background: #f9fafb;
+}
+
+/* Callout boxes */
+.callout {
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.callout.info {
+    background: #eff6ff;
+    border-color: var(--brain-primary);
+    color: #1e40af;
+}
+
+.callout.warning {
+    background: #fffbeb;
+    border-color: var(--brain-warning);
+    color: #92400e;
+}
+
+.callout.success {
+    background: #ecfdf5;
+    border-color: var(--brain-success);
+    color: #065f46;
+}
+
+.callout.error {
+    background: #fef2f2;
+    border-color: var(--brain-error);
+    color: #991b1b;
+}
+
+/* Enhanced navigation */
+.sidebar-scrollbox {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.chapter-item.expanded > .toggle {
+    color: var(--brain-primary);
+}
+
+.chapter-item a:hover {
+    background: var(--brain-gradient);
+    color: white;
+    border-radius: 4px;
+}
+
+/* Mermaid diagram enhancements */
+.mermaid {
+    text-align: center;
+    margin: 24px 0;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Code copy button styling */
+.copy-button {
+    background: var(--brain-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-button:hover {
+    background: var(--brain-secondary);
+    transform: translateY(-1px);
+}
+
+/* Search enhancements */
+#searchresults {
+    border-radius: 8px;
+    box-shadow: var(--brain-shadow);
+}
+
+.search-result-header {
+    background: var(--brain-gradient);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .api-endpoint {
+        font-size: 14px;
+        padding: 8px;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    .callout {
+        padding: 12px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .nav-wrapper,
+    .mobile-nav-toggle,
+    .sidebar-toggle,
+    .search-container {
+        display: none !important;
+    }
+    
+    .page {
+        margin-left: 0 !important;
+    }
+    
+    .callout {
+        border: 1px solid #ccc;
+        break-inside: avoid;
+    }
+}
+
+/* Dark mode enhancements */
+.navy .chapter-title {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.navy .api-endpoint {
+    background: linear-gradient(90deg, #1e293b, #334155);
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+.navy .callout.info {
+    background: #1e3a8a;
+    color: #93c5fd;
+}
+
+.navy th {
+    background: linear-gradient(135deg, #1e40af, #7c3aed);
+}
+
+.navy .mermaid {
+    background: #1e293b;
+    border-color: #475569;
+} 

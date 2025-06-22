@@ -49,10 +49,13 @@ ehthumbs_vista.db
 *.swo
 
 # Brain project specific
-# Model files (if they get large)
-*.json
-!tasks.json
-!package.json
+# Temporary files directory
+temp/
+
+# Data directory (runtime generated files)
+data/*.db
+data/*.json
+!data/README.md
 
 # Logs
 *.log

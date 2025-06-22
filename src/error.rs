@@ -95,5 +95,11 @@ impl From<std::num::ParseFloatError> for BrainError {
     }
 }
 
+impl From<anyhow::Error> for BrainError {
+    fn from(error: anyhow::Error) -> Self {
+        BrainError::Other(format!("Anyhow error: {}", error))
+    }
+}
+
 /// Result type for the Brain crate
 pub type Result<T> = std::result::Result<T, BrainError>; 

@@ -449,7 +449,7 @@ pub enum PredictionMode {
 }
 
 /// Trait for providing segments to the predictor
-pub trait SegmentProvider {
+pub trait SegmentProvider: std::fmt::Debug + Send + Sync {
     /// Get the current vocabulary of segments
     fn get_segments(&self) -> Vec<String>;
     

@@ -106,6 +106,7 @@ impl Default for ModelConfig {
 }
 
 /// Simple character predictor model using feedforward network
+#[derive(Debug)]
 pub struct CharacterPredictor {
     config: ModelConfig,
     vocab: CharacterVocab,

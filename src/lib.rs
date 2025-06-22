@@ -7,6 +7,9 @@
 // Task 10.1 - Core System Integration Module (NEW)
 pub mod system_integration;
 
+// Task 10.2 - Performance Monitoring and Optimization (NEW)
+pub mod performance_monitor;
+
 pub mod character_ingestion;
 pub mod error;
 pub mod integration;
@@ -49,6 +52,14 @@ pub use system_integration::{
     BrainSystem, BrainSystemConfig, BrainSystemBuilder, SystemComponent,
     ComponentStatus, SystemHealth, SystemMetrics, UnifiedAPI, WorkflowEngine,
     ComponentRegistry, SystemEvent, EventType, IntegrationResult
+};
+
+// Task 10.2 - Performance Monitoring and Optimization Exports (NEW)
+pub use performance_monitor::{
+    PerformanceMonitor, PerformanceConfig, SystemMetrics as PerfSystemMetrics,
+    ComponentPerformanceMetrics, PerformanceSnapshot, PerformanceBottleneck,
+    OptimizationRecommendation, PerformanceAlert, AlertType, AlertSeverity,
+    BottleneckType, RecommendationType, PerformanceReport, ReportFormat
 };
 
 pub use character_ingestion::{

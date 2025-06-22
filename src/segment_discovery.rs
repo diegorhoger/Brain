@@ -1087,6 +1087,7 @@ impl SegmentProvider for BpeSegmenter {
 }
 
 /// Extended BpeSegmenter with feedback capabilities
+#[derive(Debug)]
 pub struct FeedbackBpeSegmenter {
     /// The underlying BPE segmenter
     pub segmenter: BpeSegmenter,

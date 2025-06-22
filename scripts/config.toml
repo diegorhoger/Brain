@@ -1,0 +1,171 @@
+# Brain AI System Configuration
+# This file contains the default configuration for the Brain AI system
+# Environment variables will override these settings
+
+[system]
+id = "brain-ai-system"
+name = "Brain AI Cognitive Architecture"
+version = "1.0.0"
+description = "Advanced AI system with cognitive architecture and learning capabilities"
+
+[logging]
+level = "info"
+enable_comprehensive = true
+enable_file_logging = true
+log_directory = "./logs"
+max_log_files = 10
+max_log_size_mb = 100
+
+[performance]
+enable_monitoring = true
+enable_health_checks = true
+max_concurrent_operations = 50
+component_initialization_timeout_ms = 30000
+metrics_collection_interval_ms = 5000
+enable_detailed_metrics = true
+
+[performance.thresholds]
+cpu_alert_threshold = 85.0
+memory_alert_threshold = 90.0
+error_rate_alert_threshold = 5.0
+
+[memory]
+working_memory_capacity = 1000
+episodic_memory_retention_days = 365
+semantic_memory_max_concepts = 100000
+consolidation_interval_hours = 24
+
+[memory.databases]
+memory_path = "./data/memory.db"
+meta_memory_path = "./data/meta_memory.db"
+curiosity_path = "./data/curiosity.db"
+
+[character_predictor]
+model_type = "gru"
+embedding_dim = 128
+hidden_dim = 256
+num_layers = 2
+dropout = 0.1
+learning_rate = 0.001
+batch_size = 32
+sequence_length = 100
+
+[segment_discovery]
+vocab_size = 10000
+min_frequency = 2
+entropy_threshold = 0.5
+confidence_threshold = 0.7
+max_segments = 50000
+enable_advanced_heuristics = true
+context_window_size = 5
+
+[concept_graph]
+max_concepts = 100000
+max_relationships = 500000
+confidence_threshold = 0.5
+hebbian_learning_rate = 0.01
+decay_rate = 0.001
+pruning_threshold = 0.1
+
+[concept_graph.neo4j]
+uri = "bolt://localhost:7687"
+username = "neo4j"
+password = "brain-ai-password"
+database = "brain"
+
+[simulation_engine]
+max_entities_per_state = 50
+max_relationship_depth = 3
+min_concept_confidence = 0.6
+enable_parsing_logs = true
+parsing_timeout_seconds = 30
+max_state_complexity = 100
+
+[rule_formalization]
+min_support = 3
+min_confidence = 0.7
+max_rules = 10000
+enable_contradiction_detection = true
+rule_update_threshold = 0.05
+
+[meta_memory]
+high_confidence_threshold = 0.8
+low_confidence_threshold = 0.3
+min_validation_count = 5
+stale_age_threshold_hours = 168.0
+cleanup_interval_hours = 24.0
+auto_confidence_updates = true
+max_components = 100000
+
+[novelty_detection]
+high_novelty_threshold = 0.7
+low_novelty_threshold = 0.3
+statistical_weight = 0.4
+confidence_weight = 0.3
+context_weight = 0.3
+min_sample_size = 10
+context_window_size = 5
+enable_logging = true
+max_novelty_records = 10000
+
+[curiosity_learning]
+novelty_weight = 0.4
+uncertainty_weight = 0.3
+progress_weight = 0.3
+learning_threshold = 0.3
+max_learning_priorities = 100
+exploration_rate = 0.6
+learning_rate = 0.1
+interest_decay_rate = 0.01
+confidence_threshold = 0.7
+progress_window_size = 20
+enable_persistence = true
+
+[visualization]
+enable_concept_graph = true
+enable_memory_timeline = true
+enable_simulation_dashboard = true
+max_graph_nodes = 1000
+default_layout = "force"
+enable_interactions = true
+
+[api]
+host = "0.0.0.0"
+port = 8080
+enable_cors = true
+enable_auth = false
+enable_rate_limiting = true
+rate_limit_requests = 10000
+rate_limit_window_minutes = 60
+
+[security]
+enable_authentication = false
+enable_rate_limiting = true
+api_key_required = false
+cors_origins = ["*"]
+max_request_size_mb = 10
+
+[backup]
+enable_auto_backup = true
+backup_interval_hours = 24
+backup_retention_days = 30
+backup_compression = true
+backup_directory = "./backups"
+
+[monitoring]
+enable_prometheus = false
+prometheus_port = 9090
+enable_grafana = false
+grafana_port = 3000
+
+[experimental]
+enable_experimental_features = false
+enable_neural_architecture_experiments = false
+enable_advanced_simulation = false
+enable_hot_reload = false
+
+[ai_models]
+anthropic_model = "claude-3-opus-20240229"
+max_tokens = 8192
+temperature = 0.7
+perplexity_model = "sonar-medium-online" 

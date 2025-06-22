@@ -662,6 +662,7 @@ impl SimulationState {
 }
 
 /// Text-to-state parser for converting text descriptions into simulation states
+#[derive(Debug)]
 pub struct TextToStateParser {
     /// Configuration for parsing
     config: SimulationConfig,
@@ -962,6 +963,7 @@ impl TextToStateParser {
 }
 
 /// State validator for ensuring simulation state consistency
+#[derive(Debug)]
 pub struct StateValidator {
     /// Validation configuration
     config: SimulationConfig,
@@ -1051,6 +1053,7 @@ impl StateValidator {
 }
 
 /// Main simulation engine that orchestrates state management and transitions
+#[derive(Debug)]
 pub struct SimulationEngine {
     /// Configuration
     config: SimulationConfig,
