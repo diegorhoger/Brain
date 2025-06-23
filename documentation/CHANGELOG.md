@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Architectural Strategy Shift to Retrieval-Augmented Generation (RAG)**
+  - Adopted a new strategic direction to implement a **Conversational Intelligence Layer** on top of the core cognitive architecture.
+  - The immediate plan is to use Brain AI as a powerful, custom **Retrieval** engine to provide factual context to an external LLM, which will act as the **Generation** engine.
+  - This RAG-based approach will provide state-of-the-art conversational ability while being grounded in Brain's verifiable knowledge, eliminating hallucinations.
+  - The long-term vision, detailed in `documentation/plan.md`, is to use the high-quality data from this phase to train a specialized, embedded generative model, ultimately achieving the original goal of a fully independent AI.
+  - The project scope has been updated to include **Task 13: Conversational Intelligence Layer**, reflecting this new, critical component.
+
 ### 🎉 🎉 🎉 ULTIMATE MILESTONE: BRAIN AI PROJECT 100% COMPLETE! 🎉 🎉 🎉
 
 **HISTORIC ACHIEVEMENT (December 2024):** Complete implementation of the Brain AI cognitive architecture with 100% task completion - all 12 major tasks and 41 subtasks successfully implemented and operational!

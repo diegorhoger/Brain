@@ -150,10 +150,19 @@ pub use visualization::{
 // Add this line after the existing module declarations
 pub mod github_integration;
 
+// Task 12 - Web Interface Module (NEW)
+pub mod web_server;
+
 // Add this line to the exports section
 pub use github_integration::{
     GitHubClient, GitHubLearningEngine, GitHubLearningConfig, GitHubLearningResult,
     RepositoryInfo, RepositoryFile, FileType
+};
+
+// Task 12 exports - Web Interface
+pub use web_server::{
+    WebServer, ProcessRequest, QueryRequest, SimulationRequest, ProcessResponse,
+    StatusResponse, StatsResponse, HealthResponse, start_web_server
 };
 
 /// Current version of the Brain architecture
