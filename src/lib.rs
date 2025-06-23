@@ -165,5 +165,25 @@ pub use web_server::{
     StatusResponse, StatsResponse, HealthResponse, start_web_server
 };
 
+// Task 13.1 - Conversational Intelligence Layer (NEW)
+pub mod conversation;
+
+// Task 13.4 - Training Data Collection (NEW)
+pub mod training_data;
+
 /// Current version of the Brain architecture
-pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// Task 13.1 exports - Conversational Intelligence Layer
+pub use conversation::{
+    RagOrchestrator, RagRequest, RagResponse, ChatMessage, ConversationContext,
+    RetrievedKnowledge, ResponseQuality, AnthropicRequest, AnthropicResponse,
+    AnthropicMessage, AnthropicContent, AnthropicUsage
+};
+
+// Task 13.4 exports - Training Data Collection
+pub use training_data::{
+    TrainingDataCollector, TrainingDataConfig, ConversationRecord, MessageRecord,
+    ConversationMetadata, ConversationQualityMetrics, QualityAssessor, DataAnonymizer,
+    ConversationAnalytics, TrainingDataset, DatasetFilter, ExportFormat
+}; 

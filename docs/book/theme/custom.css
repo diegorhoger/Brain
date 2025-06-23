@@ -242,6 +242,95 @@ tr:hover {
         border: 1px solid #ccc;
         page-break-inside: avoid;
     }
+    
+    /* Override all inline page break styles with CSS classes */
+    div[style*="break-before: page"],
+    div[style*="page-break-before: always"] {
+        break-before: page !important;
+        page-break-before: always !important;
+    }
+    
+    div[style*="break-after: page"],
+    div[style*="page-break-after: always"] {
+        break-after: page !important;
+        page-break-after: always !important;
+    }
+    
+    div[style*="break-inside: avoid"],
+    div[style*="page-break-inside: avoid"] {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+    
+    /* Page break utility classes */
+    .page-break-before {
+        break-before: page !important;
+        page-break-before: always !important;
+    }
+    
+    .page-break-after {
+        break-after: page !important;
+        page-break-after: always !important;
+    }
+    
+    .page-break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
+
+/* General page break classes for both screen and print */
+.page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+}
+
+.page-break-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+}
+
+/* Global override for any div with page break inline styles */
+div[style*="break-before"],
+div[style*="page-break-before"],
+div[style*="break-after"], 
+div[style*="page-break-after"],
+div[style*="break-inside"],
+div[style*="page-break-inside"] {
+    /* Remove the visual impact of inline styles while preserving functionality */
+    display: block !important;
+}
+
+/* Ultra-specific override for the exact mdBook generated pattern */
+div[style="break-before: page; page-break-before: always;"] {
+    break-before: page !important;
+    page-break-before: always !important;
+}
+
+div[style*="break-before: page; page-break-before: always"] {
+    break-before: page !important;
+    page-break-before: always !important;
+}
+
+/* Hide the element but preserve page break functionality */
+@media screen {
+    div[style*="break-before"],
+    div[style*="page-break-before"] {
+        display: none !important;
+    }
+}
+
+/* Override all possible variations */
+div[style^="break-before"],
+div[style^="page-break-before"],
+div[style^="break-after"],
+div[style^="page-break-after"] {
+    /* CSS takes precedence over inline styles when using !important */
+    color: inherit !important;
+    background: inherit !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Navy theme specific overrides */

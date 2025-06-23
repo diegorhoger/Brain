@@ -31,10 +31,30 @@
         elementsWithInlineStyles.forEach(element => {
             const inlineStyle = element.getAttribute('style');
             
+            // Handle page break styles specifically (main source of warnings)
+            if (inlineStyle && (inlineStyle.includes('break-before: page') || inlineStyle.includes('page-break-before: always'))) {
+                element.classList.add('page-break');
+                element.removeAttribute('style');
+                return;
+            }
+            
+            if (inlineStyle && (inlineStyle.includes('break-after: page') || inlineStyle.includes('page-break-after: always'))) {
+                element.classList.add('page-break-after');
+                element.removeAttribute('style');
+                return;
+            }
+            
+            if (inlineStyle && (inlineStyle.includes('break-inside: avoid') || inlineStyle.includes('page-break-inside: avoid'))) {
+                element.classList.add('page-break-avoid');
+                element.removeAttribute('style');
+                return;
+            }
+            
             // Handle clear: both specifically
             if (inlineStyle && inlineStyle.includes('clear: both')) {
                 element.classList.add('clear-both');
                 element.removeAttribute('style');
+                return;
             }
             
             // Handle other common inline styles
@@ -66,6 +86,22 @@
             .hidden { display: none !important; }
             .text-center { text-align: center !important; }
             .no-margin { margin: 0 !important; }
+            
+            /* Page break classes to replace inline styles */
+            .page-break {
+                break-before: page !important;
+                page-break-before: always !important;
+            }
+            
+            .page-break-after {
+                break-after: page !important;
+                page-break-after: always !important;
+            }
+            
+            .page-break-avoid {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
             
             /* Ensure nav-wrapper has proper clearing */
             .nav-wrapper {
@@ -148,10 +184,52 @@
         });
     }
 
+    // Improve accessibility for form elements
+    function enhanceAccessibility() {
+        // Add proper label for sidebar toggle checkbox
+        const sidebarToggle = document.getElementById('sidebar-toggle-anchor');
+        if (sidebarToggle && !sidebarToggle.getAttribute('aria-label')) {
+            sidebarToggle.setAttribute('aria-label', 'Toggle sidebar navigation');
+            sidebarToggle.setAttribute('title', 'Toggle sidebar navigation');
+        }
+
+        // Ensure search input has proper labeling
+        const searchInput = document.getElementById('searchbar');
+        if (searchInput) {
+            if (!searchInput.getAttribute('aria-label')) {
+                searchInput.setAttribute('aria-label', 'Search documentation');
+            }
+            if (!searchInput.getAttribute('title')) {
+                searchInput.setAttribute('title', 'Search the Brain AI documentation');
+            }
+        }
+
+        // Add role and aria-label to sidebar resize handle
+        const resizeHandle = document.getElementById('sidebar-resize-handle');
+        if (resizeHandle) {
+            resizeHandle.setAttribute('role', 'separator');
+            resizeHandle.setAttribute('aria-label', 'Resize sidebar');
+            resizeHandle.setAttribute('aria-orientation', 'vertical');
+            resizeHandle.setAttribute('tabindex', '0');
+        }
+
+        // Improve focus management for sidebar links
+        const sidebarLinks = document.querySelectorAll('#sidebar a');
+        sidebarLinks.forEach(link => {
+            if (!link.getAttribute('aria-describedby')) {
+                const text = link.textContent.trim();
+                if (text) {
+                    link.setAttribute('aria-describedby', `Link to ${text} section`);
+                }
+            }
+        });
+    }
+
     // Initialize enhancements
     document.addEventListener('DOMContentLoaded', function() {
         enhanceSearchResults();
         enhanceKeyboardNavigation();
+        enhanceAccessibility();
     });
 
 })();
