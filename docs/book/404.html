@@ -82,7 +82,7 @@
                 html.classList.add("js");
             </script>
 
-            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" aria-label="Toggle sidebar navigation" title="Toggle sidebar navigation">
 
             <!-- Hide / unhide sidebar before it is displayed -->
             <script>
@@ -105,7 +105,7 @@
                 <noscript>
                     <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
                 </noscript>
-                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0">
                     <div class="sidebar-resize-indicator"></div>
                 </div>
             </nav>
@@ -116,7 +116,7 @@
 
                     <div id="search-wrapper" class="hidden">
                         <form id="searchbar-outer" class="searchbar-outer">
-                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header" aria-label="Search documentation" title="Search the Brain AI documentation">
                         </form>
                         <div id="searchresults-outer" class="searchresults-outer hidden">
                             <div id="searchresults-header" class="searchresults-header"></div>
