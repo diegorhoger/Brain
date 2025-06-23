@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Core Endpoints - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,1078 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/api/core-endpoints.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="core-endpoints"><a class="header" href="#core-endpoints">Core Endpoints</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../api/authentication.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../api/query-system.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../api/authentication.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../api/query-system.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="core-endpoints"><a class="header" href="#core-endpoints">Core Endpoints</a></h1>
+<p>This document provides detailed information about Brain AI’s core API endpoints, including request/response formats, parameters, and usage examples.</p>
+<h2 id="learning-endpoints"><a class="header" href="#learning-endpoints">Learning Endpoints</a></h2>
+<h3 id="learn-from-text"><a class="header" href="#learn-from-text">Learn from Text</a></h3>
+<p>Process and learn from text input, updating the AI’s knowledge base.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/learn</code></p>
+<p><strong>Request Headers:</strong></p>
+<pre><code class="language-http">Content-Type: application/json
+Authorization: Bearer {token}
+</code></pre>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "text": "Machine learning is a subset of artificial intelligence that focuses on algorithms",
+  "priority": "high",
+  "context": {
+    "source": "educational_content",
+    "domain": "artificial_intelligence",
+    "author": "expert",
+    "timestamp": "2024-01-01T12:00:00Z"
+  },
+  "options": {
+    "enable_concept_discovery": true,
+    "enable_relationship_inference": true,
+    "consolidation_threshold": 0.7
+  }
+}
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>text</code> (string, required): The text content to learn from</li>
+<li><code>priority</code> (string, optional): Learning priority - “low”, “medium”, “high”, “critical”</li>
+<li><code>context</code> (object, optional): Additional context information</li>
+<li><code>options</code> (object, optional): Processing options and parameters</li>
+</ul>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "message": "Text learned successfully",
+  "learning_id": "550e8400-e29b-41d4-a716-446655440000",
+  "results": {
+    "segments_discovered": 12,
+    "concepts_updated": 5,
+    "concepts_created": 2,
+    "relationships_formed": 8,
+    "memory_items_stored": 3,
+    "processing_time_ms": 156
+  },
+  "insights": [
+    {
+      "type": "concept_relationship",
+      "description": "Discovered strong relationship between 'machine learning' and 'artificial intelligence'",
+      "confidence": 0.92
+    }
+  ]
+}
+</code></pre>
+<h3 id="batch-learning"><a class="header" href="#batch-learning">Batch Learning</a></h3>
+<p>Process multiple text inputs in a single request for efficient bulk learning.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/learn/batch</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "texts": [
+    {
+      "text": "Python is a high-level programming language",
+      "priority": "high",
+      "context": {"domain": "programming"}
+    },
+    {
+      "text": "JavaScript is used for web development",
+      "priority": "medium",
+      "context": {"domain": "web_development"}
+    }
+  ],
+  "options": {
+    "parallel_processing": true,
+    "max_concurrent": 5,
+    "fail_on_error": false
+  }
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "batch_id": "batch_550e8400-e29b-41d4-a716-446655440000",
+  "results": [
+    {
+      "index": 0,
+      "success": true,
+      "learning_id": "learn_123",
+      "segments_discovered": 8,
+      "processing_time_ms": 89
+    }
+  ],
+  "summary": {
+    "total_items": 2,
+    "successful": 2,
+    "failed": 0,
+    "total_processing_time_ms": 165
+  }
+}
+</code></pre>
+<h2 id="memory-endpoints"><a class="header" href="#memory-endpoints">Memory Endpoints</a></h2>
+<h3 id="query-memory-system"><a class="header" href="#query-memory-system">Query Memory System</a></h3>
+<p>Search and retrieve information from Brain AI’s memory system.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/memory/search</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>query</code> (string, required): Search query</li>
+<li><code>type</code> (string, optional): Memory type - “semantic”, “episodic”, “procedural”, “pattern”</li>
+<li><code>limit</code> (integer, optional): Maximum results (default: 10, max: 100)</li>
+<li><code>min_confidence</code> (float, optional): Minimum confidence threshold (0.0-1.0)</li>
+</ul>
+<p><strong>Example Request:</strong></p>
+<pre><code class="language-http">GET /api/v1/memory/search?query=machine%20learning&amp;type=semantic&amp;limit=5&amp;min_confidence=0.7
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "results": [
+    {
+      "id": "mem_550e8400-e29b-41d4-a716-446655440000",
+      "content": "Machine learning is a subset of artificial intelligence",
+      "type": "semantic",
+      "confidence": 0.94,
+      "importance": 0.87,
+      "created_at": "2024-01-01T12:00:00Z",
+      "related_concepts": ["artificial_intelligence", "algorithms", "data_science"]
+    }
+  ],
+  "metadata": {
+    "total_results": 47,
+    "page": 1,
+    "limit": 5,
+    "query_time_ms": 12
+  }
+}
+</code></pre>
+<h3 id="store-memory"><a class="header" href="#store-memory">Store Memory</a></h3>
+<p>Add new information to the memory system.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/memory</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "content": "Neural networks are inspired by biological neural networks",
+  "type": "semantic",
+  "importance": 0.8,
+  "context": {
+    "domain": "machine_learning",
+    "source": "research_paper",
+    "timestamp": "2024-01-01T12:00:00Z"
+  },
+  "tags": ["neural_networks", "biology", "machine_learning"]
+}
+</code></pre>
+<p><strong>Response (201 Created):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "memory_id": "mem_550e8400-e29b-41d4-a716-446655440000",
+  "message": "Memory stored successfully",
+  "consolidation_status": "pending",
+  "related_memories_updated": 3
+}
+</code></pre>
+<h2 id="concept-graph-endpoints"><a class="header" href="#concept-graph-endpoints">Concept Graph Endpoints</a></h2>
+<h3 id="get-related-concepts"><a class="header" href="#get-related-concepts">Get Related Concepts</a></h3>
+<p>Discover concepts related to a given concept through the knowledge graph.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/concepts/{concept}/related</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>depth</code> (integer, optional): Traversal depth (default: 2, max: 5)</li>
+<li><code>limit</code> (integer, optional): Maximum results (default: 10, max: 50)</li>
+<li><code>min_strength</code> (float, optional): Minimum relationship strength (0.0-1.0)</li>
+</ul>
+<p><strong>Example Request:</strong></p>
+<pre><code class="language-http">GET /api/v1/concepts/machine_learning/related?depth=2&amp;limit=10&amp;min_strength=0.5
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "concept": "machine_learning",
+  "related_concepts": [
+    {
+      "concept": "artificial_intelligence",
+      "relationship_type": "subset_of",
+      "strength": 0.92,
+      "distance": 1
+    },
+    {
+      "concept": "neural_networks",
+      "relationship_type": "uses",
+      "strength": 0.87,
+      "distance": 1
+    }
+  ],
+  "metadata": {
+    "total_related": 23,
+    "search_depth": 2,
+    "query_time_ms": 18
+  }
+}
+</code></pre>
+<h2 id="system-status-endpoints"><a class="header" href="#system-status-endpoints">System Status Endpoints</a></h2>
+<h3 id="health-check"><a class="header" href="#health-check">Health Check</a></h3>
+<p>Check the overall health and status of the Brain AI system.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/health</code></p>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "status": "healthy",
+  "timestamp": "2024-01-02T10:30:00Z",
+  "version": "1.0.0",
+  "components": {
+    "character_ingestion": {
+      "status": "healthy",
+      "metrics": {
+        "characters_processed": 1234567,
+        "average_processing_time_ms": 12
+      }
+    },
+    "memory_system": {
+      "status": "healthy",
+      "metrics": {
+        "total_memories": 5678,
+        "working_memory_usage": 0.67
+      }
+    },
+    "concept_graph": {
+      "status": "healthy",
+      "metrics": {
+        "total_concepts": 2345,
+        "total_relationships": 8901
+      }
+    }
+  }
+}
+</code></pre>
+<p>This document provides detailed information about Brain AI’s core API endpoints, including request/response formats, parameters, and usage examples.</p>
+<h2 id="learning-endpoints-1"><a class="header" href="#learning-endpoints-1">Learning Endpoints</a></h2>
+<h3 id="learn-from-text-1"><a class="header" href="#learn-from-text-1">Learn from Text</a></h3>
+<p>Process and learn from text input, updating the AI’s knowledge base.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/learn</code></p>
+<p><strong>Request Headers:</strong></p>
+<pre><code class="language-http">Content-Type: application/json
+Authorization: Bearer {token}
+</code></pre>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "text": "Machine learning is a subset of artificial intelligence that focuses on algorithms",
+  "priority": "high",
+  "context": {
+    "source": "educational_content",
+    "domain": "artificial_intelligence",
+    "author": "expert",
+    "timestamp": "2024-01-01T12:00:00Z"
+  },
+  "options": {
+    "enable_concept_discovery": true,
+    "enable_relationship_inference": true,
+    "consolidation_threshold": 0.7
+  }
+}
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>text</code> (string, required): The text content to learn from</li>
+<li><code>priority</code> (string, optional): Learning priority - “low”, “medium”, “high”, “critical”</li>
+<li><code>context</code> (object, optional): Additional context information</li>
+<li><code>options</code> (object, optional): Processing options and parameters</li>
+</ul>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "message": "Text learned successfully",
+  "learning_id": "550e8400-e29b-41d4-a716-446655440000",
+  "results": {
+    "segments_discovered": 12,
+    "concepts_updated": 5,
+    "concepts_created": 2,
+    "relationships_formed": 8,
+    "memory_items_stored": 3,
+    "processing_time_ms": 156
+  },
+  "insights": [
+    {
+      "type": "concept_relationship",
+      "description": "Discovered strong relationship between 'machine learning' and 'artificial intelligence'",
+      "confidence": 0.92
+    }
+  ]
+}
+</code></pre>
+<p><strong>Error Responses:</strong></p>
+<pre><code class="language-json">// 400 Bad Request
+{
+  "error": "invalid_request",
+  "message": "Text content is required",
+  "details": {
+    "field": "text",
+    "code": "MISSING_REQUIRED_FIELD"
+  }
+}
+
+// 413 Payload Too Large
+{
+  "error": "payload_too_large",
+  "message": "Text content exceeds maximum size limit",
+  "details": {
+    "max_size": "1MB",
+    "provided_size": "1.5MB"
+  }
+}
+</code></pre>
+<h3 id="batch-learning-1"><a class="header" href="#batch-learning-1">Batch Learning</a></h3>
+<p>Process multiple text inputs in a single request for efficient bulk learning.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/learn/batch</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "texts": [
+    {
+      "text": "Python is a high-level programming language",
+      "priority": "high",
+      "context": {"domain": "programming"}
+    },
+    {
+      "text": "JavaScript is used for web development",
+      "priority": "medium",
+      "context": {"domain": "web_development"}
+    }
+  ],
+  "options": {
+    "parallel_processing": true,
+    "max_concurrent": 5,
+    "fail_on_error": false
+  }
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "batch_id": "batch_550e8400-e29b-41d4-a716-446655440000",
+  "results": [
+    {
+      "index": 0,
+      "success": true,
+      "learning_id": "learn_123",
+      "segments_discovered": 8,
+      "processing_time_ms": 89
+    },
+    {
+      "index": 1,
+      "success": true,
+      "learning_id": "learn_124",
+      "segments_discovered": 7,
+      "processing_time_ms": 76
+    }
+  ],
+  "summary": {
+    "total_items": 2,
+    "successful": 2,
+    "failed": 0,
+    "total_processing_time_ms": 165
+  }
+}
+</code></pre>
+<h2 id="segmentation-endpoints"><a class="header" href="#segmentation-endpoints">Segmentation Endpoints</a></h2>
+<h3 id="segment-text"><a class="header" href="#segment-text">Segment Text</a></h3>
+<p>Break down text into meaningful segments using Brain AI’s advanced segmentation algorithms.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/segment</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "text": "The quick brown fox jumps over the lazy dog",
+  "algorithm": "adaptive_bpe",
+  "options": {
+    "max_segments": 20,
+    "min_segment_length": 1,
+    "context_window": 5,
+    "confidence_threshold": 0.6,
+    "enable_validation": true
+  }
+}
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>text</code> (string, required): Text to segment</li>
+<li><code>algorithm</code> (string, optional): Segmentation algorithm - “bpe”, “adaptive_bpe”, “feedback_bpe”</li>
+<li><code>options</code> (object, optional): Algorithm-specific options</li>
+</ul>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "segments": [
+    {
+      "text": "The",
+      "start_index": 0,
+      "end_index": 3,
+      "confidence": 0.95,
+      "segment_type": "word",
+      "boundary_strength": 0.89
+    },
+    {
+      "text": "quick",
+      "start_index": 4,
+      "end_index": 9,
+      "confidence": 0.92,
+      "segment_type": "word",
+      "boundary_strength": 0.87
+    },
+    {
+      "text": "brown fox",
+      "start_index": 10,
+      "end_index": 19,
+      "confidence": 0.88,
+      "segment_type": "compound",
+      "boundary_strength": 0.82
+    }
+  ],
+  "metadata": {
+    "total_segments": 8,
+    "average_confidence": 0.91,
+    "algorithm_used": "adaptive_bpe",
+    "processing_time_ms": 23,
+    "validation_passed": true
+  }
+}
+</code></pre>
+<h3 id="get-segmentation-quality"><a class="header" href="#get-segmentation-quality">Get Segmentation Quality</a></h3>
+<p>Analyze the quality of segmentation results.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/segment/analyze</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "text": "Original text",
+  "segments": [
+    {"text": "Original", "start_index": 0, "end_index": 8},
+    {"text": "text", "start_index": 9, "end_index": 13}
+  ]
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "quality_score": 0.87,
+  "analysis": {
+    "boundary_accuracy": 0.92,
+    "semantic_coherence": 0.84,
+    "consistency_score": 0.89,
+    "length_distribution": "optimal"
+  },
+  "recommendations": [
+    "Consider merging segments with high semantic similarity",
+    "Boundary at index 8 could be refined"
+  ]
+}
+</code></pre>
+<h2 id="memory-endpoints-1"><a class="header" href="#memory-endpoints-1">Memory Endpoints</a></h2>
+<h3 id="query-memory-system-1"><a class="header" href="#query-memory-system-1">Query Memory System</a></h3>
+<p>Search and retrieve information from Brain AI’s memory system.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/memory/search</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>query</code> (string, required): Search query</li>
+<li><code>type</code> (string, optional): Memory type - “semantic”, “episodic”, “procedural”, “pattern”</li>
+<li><code>limit</code> (integer, optional): Maximum results (default: 10, max: 100)</li>
+<li><code>offset</code> (integer, optional): Pagination offset (default: 0)</li>
+<li><code>min_confidence</code> (float, optional): Minimum confidence threshold (0.0-1.0)</li>
+<li><code>sort_by</code> (string, optional): Sort criteria - “relevance”, “confidence”, “recency”</li>
+<li><code>include_associations</code> (boolean, optional): Include associated memories</li>
+</ul>
+<p><strong>Example Request:</strong></p>
+<pre><code class="language-http">GET /api/v1/memory/search?query=machine%20learning&amp;type=semantic&amp;limit=5&amp;min_confidence=0.7&amp;include_associations=true
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "results": [
+    {
+      "id": "mem_550e8400-e29b-41d4-a716-446655440000",
+      "content": "Machine learning is a subset of artificial intelligence",
+      "type": "semantic",
+      "confidence": 0.94,
+      "importance": 0.87,
+      "created_at": "2024-01-01T12:00:00Z",
+      "last_accessed": "2024-01-02T08:30:00Z",
+      "access_count": 15,
+      "context": {
+        "domain": "artificial_intelligence",
+        "source": "educational_content"
+      },
+      "related_concepts": ["artificial_intelligence", "algorithms", "data_science"],
+      "associations": [
+        {
+          "memory_id": "mem_another_id",
+          "relationship_type": "related_to",
+          "strength": 0.82
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "total_results": 47,
+    "page": 1,
+    "limit": 5,
+    "query_time_ms": 12,
+    "search_strategy": "semantic_similarity"
+  }
+}
+</code></pre>
+<h3 id="store-memory-1"><a class="header" href="#store-memory-1">Store Memory</a></h3>
+<p>Add new information to the memory system.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/memory</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "content": "Neural networks are inspired by biological neural networks",
+  "type": "semantic",
+  "importance": 0.8,
+  "context": {
+    "domain": "machine_learning",
+    "source": "research_paper",
+    "author": "expert",
+    "timestamp": "2024-01-01T12:00:00Z"
+  },
+  "tags": ["neural_networks", "biology", "machine_learning"],
+  "associations": [
+    {
+      "memory_id": "existing_memory_id",
+      "relationship_type": "builds_upon",
+      "strength": 0.75
+    }
+  ]
+}
+</code></pre>
+<p><strong>Response (201 Created):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "memory_id": "mem_550e8400-e29b-41d4-a716-446655440000",
+  "message": "Memory stored successfully",
+  "consolidation_status": "pending",
+  "related_memories_updated": 3
+}
+</code></pre>
+<h3 id="retrieve-memory-by-id"><a class="header" href="#retrieve-memory-by-id">Retrieve Memory by ID</a></h3>
+<p>Get specific memory item by its unique identifier.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/memory/{memory_id}</code></p>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "id": "mem_550e8400-e29b-41d4-a716-446655440000",
+  "content": "Neural networks are inspired by biological neural networks",
+  "type": "semantic",
+  "confidence": 0.92,
+  "importance": 0.8,
+  "created_at": "2024-01-01T12:00:00Z",
+  "last_accessed": "2024-01-02T08:30:00Z",
+  "access_count": 8,
+  "context": {
+    "domain": "machine_learning",
+    "source": "research_paper"
+  },
+  "tags": ["neural_networks", "biology", "machine_learning"],
+  "associations": [
+    {
+      "memory_id": "mem_related_id",
+      "relationship_type": "builds_upon",
+      "strength": 0.75,
+      "created_at": "2024-01-01T12:05:00Z"
+    }
+  ],
+  "access_history": [
+    {
+      "timestamp": "2024-01-02T08:30:00Z",
+      "context": "user_query"
+    }
+  ]
+}
+</code></pre>
+<h2 id="concept-graph-endpoints-1"><a class="header" href="#concept-graph-endpoints-1">Concept Graph Endpoints</a></h2>
+<h3 id="get-related-concepts-1"><a class="header" href="#get-related-concepts-1">Get Related Concepts</a></h3>
+<p>Discover concepts related to a given concept through the knowledge graph.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/concepts/{concept}/related</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>depth</code> (integer, optional): Traversal depth (default: 2, max: 5)</li>
+<li><code>limit</code> (integer, optional): Maximum results (default: 10, max: 50)</li>
+<li><code>min_strength</code> (float, optional): Minimum relationship strength (0.0-1.0)</li>
+<li><code>relationship_types</code> (string, optional): Comma-separated relationship types</li>
+<li><code>include_path</code> (boolean, optional): Include relationship path information</li>
+</ul>
+<p><strong>Example Request:</strong></p>
+<pre><code class="language-http">GET /api/v1/concepts/machine_learning/related?depth=2&amp;limit=10&amp;min_strength=0.5&amp;include_path=true
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "concept": "machine_learning",
+  "related_concepts": [
+    {
+      "concept": "artificial_intelligence",
+      "relationship_type": "subset_of",
+      "strength": 0.92,
+      "distance": 1,
+      "path": [
+        {
+          "from": "machine_learning",
+          "to": "artificial_intelligence",
+          "relationship": "subset_of",
+          "strength": 0.92
+        }
+      ]
+    },
+    {
+      "concept": "neural_networks",
+      "relationship_type": "uses",
+      "strength": 0.87,
+      "distance": 1,
+      "path": [
+        {
+          "from": "machine_learning",
+          "to": "neural_networks",
+          "relationship": "uses",
+          "strength": 0.87
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "total_related": 23,
+    "search_depth": 2,
+    "query_time_ms": 18
+  }
+}
+</code></pre>
+<h3 id="add-concept-relationship"><a class="header" href="#add-concept-relationship">Add Concept Relationship</a></h3>
+<p>Create or strengthen a relationship between two concepts.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/concepts/relationships</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "source_concept": "deep_learning",
+  "target_concept": "machine_learning",
+  "relationship_type": "subset_of",
+  "strength": 0.89,
+  "evidence": [
+    "Deep learning is a subset of machine learning",
+    "Multiple authoritative sources confirm this relationship"
+  ],
+  "context": {
+    "source": "expert_knowledge",
+    "confidence": 0.95
+  }
+}
+</code></pre>
+<p><strong>Response (201 Created):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "relationship_id": "rel_550e8400-e29b-41d4-a716-446655440000",
+  "message": "Relationship created successfully",
+  "existing_relationship_updated": false,
+  "graph_updates": {
+    "concepts_affected": 2,
+    "indirect_relationships_updated": 5
+  }
+}
+</code></pre>
+<h3 id="get-concept-details"><a class="header" href="#get-concept-details">Get Concept Details</a></h3>
+<p>Retrieve detailed information about a specific concept.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/concepts/{concept}</code></p>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "concept": "machine_learning",
+  "definition": "A method of data analysis that automates analytical model building",
+  "aliases": ["ML", "statistical_learning"],
+  "concept_type": "abstract",
+  "importance_score": 0.94,
+  "creation_date": "2024-01-01T10:00:00Z",
+  "last_updated": "2024-01-02T15:30:00Z",
+  "usage_frequency": 156,
+  "relationships": {
+    "outgoing": [
+      {
+        "target": "artificial_intelligence",
+        "type": "subset_of",
+        "strength": 0.92
+      }
+    ],
+    "incoming": [
+      {
+        "source": "deep_learning",
+        "type": "subset_of",
+        "strength": 0.89
+      }
+    ]
+  },
+  "related_memories": [
+    {
+      "memory_id": "mem_123",
+      "relevance": 0.87,
+      "content_preview": "Machine learning algorithms can learn from data..."
+    }
+  ]
+}
+</code></pre>
+<h2 id="insight-endpoints"><a class="header" href="#insight-endpoints">Insight Endpoints</a></h2>
+<h3 id="generate-insights"><a class="header" href="#generate-insights">Generate Insights</a></h3>
+<p>Extract insights from processed data or specific queries.</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/insights/generate</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "data_source": "memory",
+  "query": "trends in machine learning adoption",
+  "insight_types": ["predictive", "explanatory"],
+  "options": {
+    "min_confidence": 0.7,
+    "max_insights": 10,
+    "include_evidence": true,
+    "time_range": {
+      "start": "2024-01-01T00:00:00Z",
+      "end": "2024-01-31T23:59:59Z"
+    }
+  }
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "insights": [
+    {
+      "id": "insight_550e8400-e29b-41d4-a716-446655440000",
+      "type": "predictive",
+      "title": "Increasing Trend in Machine Learning Adoption",
+      "description": "Based on processed data, machine learning adoption shows a 23% increase trend",
+      "confidence": 0.87,
+      "importance": 0.82,
+      "evidence": [
+        "15 mentions of 'machine learning implementation' in recent content",
+        "Strong correlation with 'automation' and 'efficiency' concepts"
+      ],
+      "actionable_recommendations": [
+        "Consider expanding machine learning resources",
+        "Monitor emerging ML technologies"
+      ],
+      "generated_at": "2024-01-02T10:30:00Z"
+    }
+  ],
+  "metadata": {
+    "total_insights": 7,
+    "processing_time_ms": 234,
+    "data_points_analyzed": 1247
+  }
+}
+</code></pre>
+<h3 id="get-historical-insights"><a class="header" href="#get-historical-insights">Get Historical Insights</a></h3>
+<p>Retrieve previously generated insights with filtering options.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/insights</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>type</code> (string, optional): Insight type filter</li>
+<li><code>min_confidence</code> (float, optional): Minimum confidence threshold</li>
+<li><code>date_from</code> (string, optional): ISO date string</li>
+<li><code>date_to</code> (string, optional): ISO date string</li>
+<li><code>limit</code> (integer, optional): Maximum results</li>
+<li><code>sort_by</code> (string, optional): Sort criteria</li>
+</ul>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "insights": [
+    {
+      "id": "insight_123",
+      "type": "explanatory",
+      "title": "Correlation Between Learning Rate and Performance",
+      "confidence": 0.91,
+      "importance": 0.78,
+      "generated_at": "2024-01-01T14:20:00Z",
+      "summary": "Analysis reveals strong correlation between learning frequency and system performance"
+    }
+  ],
+  "pagination": {
+    "total": 45,
+    "page": 1,
+    "limit": 10,
+    "has_next": true
+  }
+}
+</code></pre>
+<h2 id="system-status-endpoints-1"><a class="header" href="#system-status-endpoints-1">System Status Endpoints</a></h2>
+<h3 id="health-check-1"><a class="header" href="#health-check-1">Health Check</a></h3>
+<p>Check the overall health and status of the Brain AI system.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/health</code></p>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "status": "healthy",
+  "timestamp": "2024-01-02T10:30:00Z",
+  "version": "1.0.0",
+  "components": {
+    "character_ingestion": {
+      "status": "healthy",
+      "last_check": "2024-01-02T10:29:55Z",
+      "metrics": {
+        "characters_processed": 1234567,
+        "average_processing_time_ms": 12
+      }
+    },
+    "memory_system": {
+      "status": "healthy",
+      "last_check": "2024-01-02T10:29:55Z",
+      "metrics": {
+        "total_memories": 5678,
+        "working_memory_usage": 0.67,
+        "consolidation_queue": 23
+      }
+    },
+    "concept_graph": {
+      "status": "healthy",
+      "last_check": "2024-01-02T10:29:55Z",
+      "metrics": {
+        "total_concepts": 2345,
+        "total_relationships": 8901,
+        "graph_density": 0.34
+      }
+    }
+  },
+  "performance": {
+    "cpu_usage": 0.45,
+    "memory_usage": 0.67,
+    "disk_usage": 0.23,
+    "response_time_ms": 8
+  }
+}
+</code></pre>
+<h3 id="system-metrics"><a class="header" href="#system-metrics">System Metrics</a></h3>
+<p>Get detailed system performance and usage metrics.</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/metrics</code></p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+<li><code>component</code> (string, optional): Specific component metrics</li>
+<li><code>time_range</code> (string, optional): Time range for metrics (1h, 24h, 7d, 30d)</li>
+<li><code>granularity</code> (string, optional): Data granularity (minute, hour, day)</li>
+</ul>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "metrics": {
+    "learning": {
+      "texts_processed_total": 12345,
+      "average_processing_time_ms": 156,
+      "success_rate": 0.987,
+      "last_24h": {
+        "texts_processed": 234,
+        "peak_processing_time": 1200,
+        "errors": 2
+      }
+    },
+    "memory": {
+      "total_capacity": 1000000,
+      "current_usage": 678901,
+      "consolidation_rate": 0.23,
+      "retrieval_success_rate": 0.994
+    },
+    "api": {
+      "total_requests": 56789,
+      "requests_per_minute": 45,
+      "average_response_time_ms": 23,
+      "error_rate": 0.002
+    }
+  },
+  "timestamp": "2024-01-02T10:30:00Z",
+  "time_range": "24h"
+}
+</code></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<p>All endpoints follow consistent error response formats:</p>
+<h3 id="standard-error-response"><a class="header" href="#standard-error-response">Standard Error Response</a></h3>
+<pre><code class="language-json">{
+  "error": "error_code",
+  "message": "Human-readable error description",
+  "details": {
+    "field": "specific_field_if_applicable",
+    "code": "DETAILED_ERROR_CODE",
+    "suggestions": ["Possible solutions"]
+  },
+  "request_id": "req_550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-02T10:30:00Z"
+}
+</code></pre>
+<h3 id="common-http-status-codes"><a class="header" href="#common-http-status-codes">Common HTTP Status Codes</a></h3>
+<ul>
+<li><strong>200 OK</strong>: Request successful</li>
+<li><strong>201 Created</strong>: Resource created successfully</li>
+<li><strong>400 Bad Request</strong>: Invalid request parameters</li>
+<li><strong>401 Unauthorized</strong>: Authentication required or invalid</li>
+<li><strong>403 Forbidden</strong>: Insufficient permissions</li>
+<li><strong>404 Not Found</strong>: Resource not found</li>
+<li><strong>413 Payload Too Large</strong>: Request body too large</li>
+<li><strong>429 Too Many Requests</strong>: Rate limit exceeded</li>
+<li><strong>500 Internal Server Error</strong>: Server error</li>
+<li><strong>503 Service Unavailable</strong>: Service temporarily unavailable</li>
+</ul>
+<h3 id="rate-limiting-responses"><a class="header" href="#rate-limiting-responses">Rate Limiting Responses</a></h3>
+<pre><code class="language-json">{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please try again later.",
+  "details": {
+    "limit": 100,
+    "window": "1 minute",
+    "retry_after": 45
+  }
+}
+</code></pre>
+<h2 id="requestresponse-examples"><a class="header" href="#requestresponse-examples">Request/Response Examples</a></h2>
+<h3 id="complete-learning-workflow"><a class="header" href="#complete-learning-workflow">Complete Learning Workflow</a></h3>
+<pre><code class="language-bash"># 1. Authenticate
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "user", "password": "password"}'
+
+# 2. Learn from text
+curl -X POST http://localhost:8080/api/v1/learn \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "text": "Artificial intelligence is transforming healthcare",
+    "priority": "high",
+    "context": {"domain": "healthcare"}
+  }'
+
+# 3. Query related concepts
+curl -X GET "http://localhost:8080/api/v1/concepts/artificial_intelligence/related?depth=2" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 4. Search memory
+curl -X GET "http://localhost:8080/api/v1/memory/search?query=healthcare&amp;limit=5" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+</code></pre>
+<p>This comprehensive API documentation provides developers with all the information needed to integrate with Brain AI’s cognitive capabilities through RESTful endpoints.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../api/authentication.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../api/query-system.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../api/authentication.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../api/query-system.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

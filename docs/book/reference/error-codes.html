@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Error Codes - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,458 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/reference/error-codes.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="error-codes"><a class="header" href="#error-codes">Error Codes</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../reference/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../reference/performance-metrics.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../reference/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../reference/performance-metrics.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="error-codes"><a class="header" href="#error-codes">Error Codes</a></h1>
+<p>Comprehensive reference for all Brain AI error codes, their meanings, causes, and recommended solutions.</p>
+<h2 id="error-code-format"><a class="header" href="#error-code-format">Error Code Format</a></h2>
+<p>Brain AI uses a structured error code system:</p>
+<pre><code>BRAIN-{CATEGORY}-{SEVERITY}-{CODE}
+</code></pre>
+<ul>
+<li><strong>CATEGORY</strong>: Component or subsystem (4 chars)</li>
+<li><strong>SEVERITY</strong>: Error severity level (1 char)</li>
+<li><strong>CODE</strong>: Specific error identifier (3 digits)</li>
+</ul>
+<p><strong>Severity Levels:</strong></p>
+<ul>
+<li><code>1</code> - Info/Warning</li>
+<li><code>2</code> - Error (recoverable)</li>
+<li><code>3</code> - Critical (service degraded)</li>
+<li><code>4</code> - Fatal (service unavailable)</li>
+</ul>
+<h2 id="system-errors-syst"><a class="header" href="#system-errors-syst">System Errors (SYST)</a></h2>
+<h3 id="configuration-errors-syst-2-001-to-syst-2-099"><a class="header" href="#configuration-errors-syst-2-001-to-syst-2-099">Configuration Errors (SYST-2-001 to SYST-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>SYST-2-001</td><td>Configuration File Not Found</td><td>Cannot locate configuration file</td><td>Missing config file</td><td>Ensure config file exists at specified path</td></tr>
+<tr><td>SYST-2-002</td><td>Invalid Configuration Format</td><td>Configuration file format is invalid</td><td>Malformed TOML/JSON</td><td>Validate configuration file syntax</td></tr>
+<tr><td>SYST-2-003</td><td>Missing Required Configuration</td><td>Required configuration parameter missing</td><td>Incomplete config</td><td>Add missing required parameters</td></tr>
+<tr><td>SYST-2-004</td><td>Invalid Configuration Value</td><td>Configuration value is invalid</td><td>Wrong data type/range</td><td>Correct configuration value</td></tr>
+<tr><td>SYST-2-005</td><td>Environment Variable Missing</td><td>Required environment variable not set</td><td>Missing env var</td><td>Set required environment variable</td></tr>
+<tr><td>SYST-2-006</td><td>Configuration Validation Failed</td><td>Configuration failed validation rules</td><td>Invalid config values</td><td>Fix configuration according to schema</td></tr>
+<tr><td>SYST-2-007</td><td>Configuration Encryption Failed</td><td>Cannot decrypt encrypted configuration</td><td>Wrong key/corrupted file</td><td>Check encryption key and file integrity</td></tr>
+</tbody></table>
+</div>
+<h3 id="system-resource-errors-syst-3-100-to-syst-3-199"><a class="header" href="#system-resource-errors-syst-3-100-to-syst-3-199">System Resource Errors (SYST-3-100 to SYST-3-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>SYST-3-100</td><td>Insufficient Memory</td><td>System running out of memory</td><td>High memory usage</td><td>Increase memory or reduce usage</td></tr>
+<tr><td>SYST-3-101</td><td>Memory Allocation Failed</td><td>Cannot allocate required memory</td><td>Memory exhaustion</td><td>Restart service or increase memory</td></tr>
+<tr><td>SYST-3-102</td><td>Disk Space Exhausted</td><td>Insufficient disk space</td><td>Full disk</td><td>Free disk space or add storage</td></tr>
+<tr><td>SYST-3-103</td><td>File Permission Denied</td><td>Cannot access required file</td><td>Wrong permissions</td><td>Fix file permissions</td></tr>
+<tr><td>SYST-3-104</td><td>Port Already In Use</td><td>Cannot bind to specified port</td><td>Port conflict</td><td>Change port or kill conflicting process</td></tr>
+<tr><td>SYST-3-105</td><td>Network Connection Failed</td><td>Cannot establish network connection</td><td>Network issue</td><td>Check network connectivity</td></tr>
+<tr><td>SYST-3-106</td><td>CPU Limit Exceeded</td><td>CPU usage exceeds configured limits</td><td>High CPU usage</td><td>Scale up or optimize performance</td></tr>
+</tbody></table>
+</div>
+<h3 id="service-lifecycle-errors-syst-4-200-to-syst-4-299"><a class="header" href="#service-lifecycle-errors-syst-4-200-to-syst-4-299">Service Lifecycle Errors (SYST-4-200 to SYST-4-299)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>SYST-4-200</td><td>Service Startup Failed</td><td>Service failed to start</td><td>Various startup issues</td><td>Check logs for specific cause</td></tr>
+<tr><td>SYST-4-201</td><td>Service Shutdown Timeout</td><td>Service failed to shutdown gracefully</td><td>Hanging processes</td><td>Force kill or investigate hanging operations</td></tr>
+<tr><td>SYST-4-202</td><td>Dependency Service Unavailable</td><td>Required dependency service is down</td><td>External service failure</td><td>Check and restart dependency services</td></tr>
+<tr><td>SYST-4-203</td><td>Health Check Failed</td><td>Service health check is failing</td><td>Service degradation</td><td>Investigate service health issues</td></tr>
+<tr><td>SYST-4-204</td><td>Graceful Shutdown Failed</td><td>Cannot perform graceful shutdown</td><td>Resource cleanup issues</td><td>Force shutdown and investigate</td></tr>
+</tbody></table>
+</div>
+<h2 id="database-errors-dbase"><a class="header" href="#database-errors-dbase">Database Errors (DBASE)</a></h2>
+<h3 id="connection-errors-dbase-2-001-to-dbase-2-099"><a class="header" href="#connection-errors-dbase-2-001-to-dbase-2-099">Connection Errors (DBASE-2-001 to DBASE-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>DBASE-2-001</td><td>Connection Failed</td><td>Cannot connect to database</td><td>DB down/network issue</td><td>Check database status and connectivity</td></tr>
+<tr><td>DBASE-2-002</td><td>Connection Timeout</td><td>Database connection timed out</td><td>Network latency/DB load</td><td>Increase timeout or check DB performance</td></tr>
+<tr><td>DBASE-2-003</td><td>Authentication Failed</td><td>Database authentication failed</td><td>Wrong credentials</td><td>Verify database credentials</td></tr>
+<tr><td>DBASE-2-004</td><td>Connection Pool Exhausted</td><td>No available connections in pool</td><td>High concurrent usage</td><td>Increase pool size or optimize queries</td></tr>
+<tr><td>DBASE-2-005</td><td>Connection Lost</td><td>Lost connection to database</td><td>Network interruption</td><td>Implement connection retry logic</td></tr>
+<tr><td>DBASE-2-006</td><td>SSL Connection Failed</td><td>Cannot establish SSL connection</td><td>SSL configuration issue</td><td>Check SSL certificates and configuration</td></tr>
+</tbody></table>
+</div>
+<h3 id="query-errors-dbase-2-100-to-dbase-2-199"><a class="header" href="#query-errors-dbase-2-100-to-dbase-2-199">Query Errors (DBASE-2-100 to DBASE-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>DBASE-2-100</td><td>Query Syntax Error</td><td>SQL query has syntax error</td><td>Malformed SQL</td><td>Fix SQL syntax</td></tr>
+<tr><td>DBASE-2-101</td><td>Query Timeout</td><td>Query execution timed out</td><td>Slow query/DB load</td><td>Optimize query or increase timeout</td></tr>
+<tr><td>DBASE-2-102</td><td>Constraint Violation</td><td>Database constraint violated</td><td>Data integrity issue</td><td>Fix data or adjust constraints</td></tr>
+<tr><td>DBASE-2-103</td><td>Table Not Found</td><td>Referenced table does not exist</td><td>Missing table/schema</td><td>Create table or fix table name</td></tr>
+<tr><td>DBASE-2-104</td><td>Column Not Found</td><td>Referenced column does not exist</td><td>Missing column</td><td>Add column or fix column name</td></tr>
+<tr><td>DBASE-2-105</td><td>Deadlock Detected</td><td>Database deadlock occurred</td><td>Concurrent transactions</td><td>Retry transaction with backoff</td></tr>
+<tr><td>DBASE-2-106</td><td>Transaction Rollback</td><td>Transaction was rolled back</td><td>Error during transaction</td><td>Check transaction logic and retry</td></tr>
+</tbody></table>
+</div>
+<h3 id="data-integrity-errors-dbase-3-200-to-dbase-3-299"><a class="header" href="#data-integrity-errors-dbase-3-200-to-dbase-3-299">Data Integrity Errors (DBASE-3-200 to DBASE-3-299)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>DBASE-3-200</td><td>Data Corruption Detected</td><td>Database data corruption found</td><td>Hardware/software issue</td><td>Restore from backup and investigate</td></tr>
+<tr><td>DBASE-3-201</td><td>Index Corruption</td><td>Database index is corrupted</td><td>Index damage</td><td>Rebuild indexes</td></tr>
+<tr><td>DBASE-3-202</td><td>Foreign Key Violation</td><td>Foreign key constraint violated</td><td>Referential integrity issue</td><td>Fix data relationships</td></tr>
+<tr><td>DBASE-3-203</td><td>Unique Constraint Violation</td><td>Unique constraint violated</td><td>Duplicate data</td><td>Remove duplicates or adjust constraints</td></tr>
+<tr><td>DBASE-3-204</td><td>Check Constraint Violation</td><td>Check constraint violated</td><td>Invalid data values</td><td>Fix data values</td></tr>
+</tbody></table>
+</div>
+<h2 id="memory-system-errors-memsys"><a class="header" href="#memory-system-errors-memsys">Memory System Errors (MEMSYS)</a></h2>
+<h3 id="memory-management-errors-memsys-2-001-to-memsys-2-099"><a class="header" href="#memory-management-errors-memsys-2-001-to-memsys-2-099">Memory Management Errors (MEMSYS-2-001 to MEMSYS-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>MEMSYS-2-001</td><td>Memory Capacity Exceeded</td><td>Memory system at capacity</td><td>Too many memories stored</td><td>Increase capacity or cleanup old memories</td></tr>
+<tr><td>MEMSYS-2-002</td><td>Working Memory Full</td><td>Working memory is full</td><td>High processing load</td><td>Increase working memory size</td></tr>
+<tr><td>MEMSYS-2-003</td><td>Memory Allocation Failed</td><td>Cannot allocate memory object</td><td>System resource issue</td><td>Check system memory and restart</td></tr>
+<tr><td>MEMSYS-2-004</td><td>Memory Serialization Failed</td><td>Cannot serialize memory object</td><td>Data format issue</td><td>Check memory data format</td></tr>
+<tr><td>MEMSYS-2-005</td><td>Memory Deserialization Failed</td><td>Cannot deserialize memory object</td><td>Corrupted data</td><td>Restore from backup</td></tr>
+<tr><td>MEMSYS-2-006</td><td>Invalid Memory Type</td><td>Unknown memory type specified</td><td>Programming error</td><td>Use valid memory type</td></tr>
+</tbody></table>
+</div>
+<h3 id="memory-operations-errors-memsys-2-100-to-memsys-2-199"><a class="header" href="#memory-operations-errors-memsys-2-100-to-memsys-2-199">Memory Operations Errors (MEMSYS-2-100 to MEMSYS-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>MEMSYS-2-100</td><td>Memory Not Found</td><td>Requested memory does not exist</td><td>Invalid memory ID</td><td>Verify memory ID exists</td></tr>
+<tr><td>MEMSYS-2-101</td><td>Memory Access Denied</td><td>Cannot access requested memory</td><td>Permission issue</td><td>Check memory access permissions</td></tr>
+<tr><td>MEMSYS-2-102</td><td>Memory Update Failed</td><td>Cannot update memory</td><td>Concurrent modification</td><td>Retry with proper locking</td></tr>
+<tr><td>MEMSYS-2-103</td><td>Memory Delete Failed</td><td>Cannot delete memory</td><td>Reference constraints</td><td>Remove references before deletion</td></tr>
+<tr><td>MEMSYS-2-104</td><td>Memory Search Failed</td><td>Memory search operation failed</td><td>Index/query issue</td><td>Check search parameters and indexes</td></tr>
+<tr><td>MEMSYS-2-105</td><td>Memory Consolidation Failed</td><td>Memory consolidation process failed</td><td>Background process error</td><td>Check consolidation configuration</td></tr>
+</tbody></table>
+</div>
+<h3 id="memory-consistency-errors-memsys-3-200-to-memsys-3-299"><a class="header" href="#memory-consistency-errors-memsys-3-200-to-memsys-3-299">Memory Consistency Errors (MEMSYS-3-200 to MEMSYS-3-299)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>MEMSYS-3-200</td><td>Memory Inconsistency Detected</td><td>Memory state inconsistency found</td><td>Data corruption</td><td>Run consistency check and repair</td></tr>
+<tr><td>MEMSYS-3-201</td><td>Memory Index Mismatch</td><td>Memory index out of sync</td><td>Index corruption</td><td>Rebuild memory indexes</td></tr>
+<tr><td>MEMSYS-3-202</td><td>Memory Relationship Broken</td><td>Memory relationship integrity violated</td><td>Broken references</td><td>Fix memory relationships</td></tr>
+</tbody></table>
+</div>
+<h2 id="learning-system-errors-learn"><a class="header" href="#learning-system-errors-learn">Learning System Errors (LEARN)</a></h2>
+<h3 id="learning-pipeline-errors-learn-2-001-to-learn-2-099"><a class="header" href="#learning-pipeline-errors-learn-2-001-to-learn-2-099">Learning Pipeline Errors (LEARN-2-001 to LEARN-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>LEARN-2-001</td><td>Learning Queue Full</td><td>Learning queue is at capacity</td><td>High input rate</td><td>Increase queue size or processing speed</td></tr>
+<tr><td>LEARN-2-002</td><td>Learning Worker Failed</td><td>Learning worker process failed</td><td>Worker crash/error</td><td>Restart learning workers</td></tr>
+<tr><td>LEARN-2-003</td><td>Learning Timeout</td><td>Learning operation timed out</td><td>Complex processing</td><td>Increase timeout or optimize algorithm</td></tr>
+<tr><td>LEARN-2-004</td><td>Invalid Input Format</td><td>Learning input format is invalid</td><td>Malformed data</td><td>Validate and fix input format</td></tr>
+<tr><td>LEARN-2-005</td><td>Learning Model Error</td><td>Learning model encountered error</td><td>Model corruption</td><td>Reload or retrain model</td></tr>
+<tr><td>LEARN-2-006</td><td>Batch Processing Failed</td><td>Batch learning operation failed</td><td>Data/resource issue</td><td>Check batch data and resources</td></tr>
+</tbody></table>
+</div>
+<h3 id="segment-discovery-errors-learn-2-100-to-learn-2-199"><a class="header" href="#segment-discovery-errors-learn-2-100-to-learn-2-199">Segment Discovery Errors (LEARN-2-100 to LEARN-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>LEARN-2-100</td><td>Segment Discovery Failed</td><td>Segment discovery algorithm failed</td><td>Algorithm error</td><td>Check input data quality</td></tr>
+<tr><td>LEARN-2-101</td><td>Vocabulary Size Exceeded</td><td>Vocabulary size limit exceeded</td><td>Too many unique segments</td><td>Increase limit or adjust pruning</td></tr>
+<tr><td>LEARN-2-102</td><td>Segment Frequency Too Low</td><td>Segment frequency below threshold</td><td>Sparse data</td><td>Lower threshold or provide more data</td></tr>
+<tr><td>LEARN-2-103</td><td>BPE Merge Failed</td><td>Byte-pair encoding merge failed</td><td>Algorithm state issue</td><td>Reset BPE state</td></tr>
+<tr><td>LEARN-2-104</td><td>Segment Validation Failed</td><td>Discovered segment failed validation</td><td>Invalid segment pattern</td><td>Adjust validation rules</td></tr>
+</tbody></table>
+</div>
+<h3 id="concept-extraction-errors-learn-2-200-to-learn-2-299"><a class="header" href="#concept-extraction-errors-learn-2-200-to-learn-2-299">Concept Extraction Errors (LEARN-2-200 to LEARN-2-299)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>LEARN-2-200</td><td>Concept Extraction Failed</td><td>Concept extraction process failed</td><td>Processing error</td><td>Check extraction parameters</td></tr>
+<tr><td>LEARN-2-201</td><td>Concept Similarity Error</td><td>Concept similarity calculation failed</td><td>Algorithm error</td><td>Verify similarity algorithm</td></tr>
+<tr><td>LEARN-2-202</td><td>Concept Clustering Failed</td><td>Concept clustering algorithm failed</td><td>Data/parameter issue</td><td>Adjust clustering parameters</td></tr>
+<tr><td>LEARN-2-203</td><td>Concept Relationship Error</td><td>Cannot establish concept relationship</td><td>Relationship logic error</td><td>Check relationship rules</td></tr>
+<tr><td>LEARN-2-204</td><td>Concept Graph Full</td><td>Concept graph at capacity</td><td>Too many concepts</td><td>Increase capacity or prune concepts</td></tr>
+</tbody></table>
+</div>
+<h2 id="api-errors-apier"><a class="header" href="#api-errors-apier">API Errors (APIER)</a></h2>
+<h3 id="authentication-errors-apier-2-001-to-apier-2-099"><a class="header" href="#authentication-errors-apier-2-001-to-apier-2-099">Authentication Errors (APIER-2-001 to APIER-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>APIER-2-001</td><td>Authentication Required</td><td>Request requires authentication</td><td>Missing auth header</td><td>Provide authentication credentials</td></tr>
+<tr><td>APIER-2-002</td><td>Invalid Credentials</td><td>Authentication credentials are invalid</td><td>Wrong username/password</td><td>Use correct credentials</td></tr>
+<tr><td>APIER-2-003</td><td>Token Expired</td><td>Authentication token has expired</td><td>Expired JWT/session</td><td>Refresh or obtain new token</td></tr>
+<tr><td>APIER-2-004</td><td>Token Invalid</td><td>Authentication token is invalid</td><td>Malformed/corrupted token</td><td>Obtain new valid token</td></tr>
+<tr><td>APIER-2-005</td><td>Insufficient Permissions</td><td>User lacks required permissions</td><td>Authorization issue</td><td>Grant required permissions</td></tr>
+<tr><td>APIER-2-006</td><td>Account Locked</td><td>User account is locked</td><td>Security lockout</td><td>Unlock account or contact admin</td></tr>
+</tbody></table>
+</div>
+<h3 id="request-errors-apier-2-100-to-apier-2-199"><a class="header" href="#request-errors-apier-2-100-to-apier-2-199">Request Errors (APIER-2-100 to APIER-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>APIER-2-100</td><td>Invalid Request Format</td><td>Request format is invalid</td><td>Malformed JSON/XML</td><td>Fix request format</td></tr>
+<tr><td>APIER-2-101</td><td>Missing Required Parameter</td><td>Required parameter is missing</td><td>Incomplete request</td><td>Add required parameter</td></tr>
+<tr><td>APIER-2-102</td><td>Invalid Parameter Value</td><td>Parameter value is invalid</td><td>Wrong data type/range</td><td>Correct parameter value</td></tr>
+<tr><td>APIER-2-103</td><td>Request Too Large</td><td>Request payload too large</td><td>Oversized request</td><td>Reduce request size</td></tr>
+<tr><td>APIER-2-104</td><td>Unsupported Media Type</td><td>Request media type not supported</td><td>Wrong Content-Type</td><td>Use supported media type</td></tr>
+<tr><td>APIER-2-105</td><td>Method Not Allowed</td><td>HTTP method not allowed</td><td>Wrong HTTP method</td><td>Use correct HTTP method</td></tr>
+</tbody></table>
+</div>
+<h3 id="rate-limiting-errors-apier-2-200-to-apier-2-299"><a class="header" href="#rate-limiting-errors-apier-2-200-to-apier-2-299">Rate Limiting Errors (APIER-2-200 to APIER-2-299)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>APIER-2-200</td><td>Rate Limit Exceeded</td><td>API rate limit exceeded</td><td>Too many requests</td><td>Implement request throttling</td></tr>
+<tr><td>APIER-2-201</td><td>Quota Exceeded</td><td>API quota exceeded</td><td>Usage limit reached</td><td>Upgrade quota or wait for reset</td></tr>
+<tr><td>APIER-2-202</td><td>Concurrent Limit Exceeded</td><td>Too many concurrent requests</td><td>High concurrency</td><td>Reduce concurrent requests</td></tr>
+</tbody></table>
+</div>
+<h3 id="response-errors-apier-3-300-to-apier-3-399"><a class="header" href="#response-errors-apier-3-300-to-apier-3-399">Response Errors (APIER-3-300 to APIER-3-399)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>APIER-3-300</td><td>Internal Server Error</td><td>Unexpected server error</td><td>Server-side issue</td><td>Check server logs and restart if needed</td></tr>
+<tr><td>APIER-3-301</td><td>Service Unavailable</td><td>Service temporarily unavailable</td><td>Maintenance/overload</td><td>Wait and retry later</td></tr>
+<tr><td>APIER-3-302</td><td>Gateway Timeout</td><td>Gateway timeout occurred</td><td>Upstream service slow</td><td>Check upstream services</td></tr>
+<tr><td>APIER-3-303</td><td>Response Serialization Failed</td><td>Cannot serialize response</td><td>Data format issue</td><td>Check response data format</td></tr>
+</tbody></table>
+</div>
+<h2 id="simulation-engine-errors-simul"><a class="header" href="#simulation-engine-errors-simul">Simulation Engine Errors (SIMUL)</a></h2>
+<h3 id="simulation-execution-errors-simul-2-001-to-simul-2-099"><a class="header" href="#simulation-execution-errors-simul-2-001-to-simul-2-099">Simulation Execution Errors (SIMUL-2-001 to SIMUL-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>SIMUL-2-001</td><td>Simulation Failed</td><td>Simulation execution failed</td><td>Various issues</td><td>Check simulation parameters and data</td></tr>
+<tr><td>SIMUL-2-002</td><td>Simulation Timeout</td><td>Simulation exceeded time limit</td><td>Complex scenario</td><td>Increase timeout or simplify scenario</td></tr>
+<tr><td>SIMUL-2-003</td><td>Invalid Scenario</td><td>Simulation scenario is invalid</td><td>Malformed scenario</td><td>Validate scenario format</td></tr>
+<tr><td>SIMUL-2-004</td><td>Simulation Queue Full</td><td>Simulation queue at capacity</td><td>High simulation load</td><td>Increase queue size or processing</td></tr>
+<tr><td>SIMUL-2-005</td><td>Insufficient Knowledge</td><td>Not enough knowledge for simulation</td><td>Limited training data</td><td>Provide more training data</td></tr>
+<tr><td>SIMUL-2-006</td><td>Simulation Convergence Failed</td><td>Simulation failed to converge</td><td>Algorithm issue</td><td>Adjust simulation parameters</td></tr>
+</tbody></table>
+</div>
+<h3 id="scenario-generation-errors-simul-2-100-to-simul-2-199"><a class="header" href="#scenario-generation-errors-simul-2-100-to-simul-2-199">Scenario Generation Errors (SIMUL-2-100 to SIMUL-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>SIMUL-2-100</td><td>Scenario Generation Failed</td><td>Cannot generate scenario</td><td>Algorithm error</td><td>Check generation parameters</td></tr>
+<tr><td>SIMUL-2-101</td><td>Scenario Validation Failed</td><td>Generated scenario is invalid</td><td>Validation rules</td><td>Adjust generation or validation rules</td></tr>
+<tr><td>SIMUL-2-102</td><td>Scenario Complexity Too High</td><td>Scenario too complex to process</td><td>Resource limitations</td><td>Simplify scenario or increase resources</td></tr>
+</tbody></table>
+</div>
+<h2 id="concept-graph-errors-graph"><a class="header" href="#concept-graph-errors-graph">Concept Graph Errors (GRAPH)</a></h2>
+<h3 id="graph-operations-errors-graph-2-001-to-graph-2-099"><a class="header" href="#graph-operations-errors-graph-2-001-to-graph-2-099">Graph Operations Errors (GRAPH-2-001 to GRAPH-2-099)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>GRAPH-2-001</td><td>Node Not Found</td><td>Requested graph node not found</td><td>Invalid node ID</td><td>Verify node exists</td></tr>
+<tr><td>GRAPH-2-002</td><td>Edge Not Found</td><td>Requested graph edge not found</td><td>Invalid edge ID</td><td>Verify edge exists</td></tr>
+<tr><td>GRAPH-2-003</td><td>Graph Capacity Exceeded</td><td>Graph at maximum capacity</td><td>Too many nodes/edges</td><td>Increase capacity or prune graph</td></tr>
+<tr><td>GRAPH-2-004</td><td>Circular Reference Detected</td><td>Circular reference in graph</td><td>Graph logic error</td><td>Remove circular references</td></tr>
+<tr><td>GRAPH-2-005</td><td>Graph Traversal Failed</td><td>Graph traversal operation failed</td><td>Algorithm error</td><td>Check traversal parameters</td></tr>
+<tr><td>GRAPH-2-006</td><td>Graph Update Conflict</td><td>Concurrent graph update conflict</td><td>Race condition</td><td>Implement proper locking</td></tr>
+</tbody></table>
+</div>
+<h3 id="graph-analysis-errors-graph-2-100-to-graph-2-199"><a class="header" href="#graph-analysis-errors-graph-2-100-to-graph-2-199">Graph Analysis Errors (GRAPH-2-100 to GRAPH-2-199)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Description</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>GRAPH-2-100</td><td>Clustering Algorithm Failed</td><td>Graph clustering failed</td><td>Algorithm/data issue</td><td>Adjust clustering parameters</td></tr>
+<tr><td>GRAPH-2-101</td><td>Centrality Calculation Failed</td><td>Centrality calculation failed</td><td>Algorithm error</td><td>Check algorithm parameters</td></tr>
+<tr><td>GRAPH-2-102</td><td>Community Detection Failed</td><td>Community detection failed</td><td>Graph structure issue</td><td>Use different detection algorithm</td></tr>
+<tr><td>GRAPH-2-103</td><td>Path Finding Failed</td><td>Cannot find path between nodes</td><td>Disconnected graph</td><td>Check graph connectivity</td></tr>
+</tbody></table>
+</div>
+<h2 id="error-handling-best-practices"><a class="header" href="#error-handling-best-practices">Error Handling Best Practices</a></h2>
+<h3 id="error-response-format"><a class="header" href="#error-response-format">Error Response Format</a></h3>
+<pre><code class="language-json">{
+  "error": {
+    "code": "MEMSYS-2-001",
+    "message": "Memory capacity exceeded",
+    "description": "The memory system has reached its configured capacity of 1,000,000 memories",
+    "timestamp": "2024-01-01T12:00:00Z",
+    "request_id": "req_123456789",
+    "details": {
+      "current_capacity": 1000000,
+      "memory_count": 1000000,
+      "suggested_action": "Increase memory capacity or clean up old memories"
+    },
+    "help_url": "https://docs.brain-ai.com/errors/MEMSYS-2-001"
+  }
+}
+</code></pre>
+<h3 id="error-logging-format"><a class="header" href="#error-logging-format">Error Logging Format</a></h3>
+<pre><code class="language-json">{
+  "timestamp": "2024-01-01T12:00:00Z",
+  "level": "ERROR",
+  "logger": "brain_ai::memory",
+  "message": "Memory capacity exceeded",
+  "error_code": "MEMSYS-2-001",
+  "request_id": "req_123456789",
+  "user_id": "user_123",
+  "context": {
+    "memory_count": 1000000,
+    "capacity": 1000000,
+    "operation": "store_memory"
+  },
+  "stack_trace": "..."
+}
+</code></pre>
+<h3 id="error-recovery-strategies"><a class="header" href="#error-recovery-strategies">Error Recovery Strategies</a></h3>
+<h4 id="automatic-recovery"><a class="header" href="#automatic-recovery">Automatic Recovery</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Example automatic recovery for transient errors
+match error.code {
+    "DBASE-2-002" =&gt; {
+        // Connection timeout - retry with backoff
+        retry_with_exponential_backoff(operation, max_retries: 3)
+    },
+    "MEMSYS-2-002" =&gt; {
+        // Working memory full - trigger cleanup
+        trigger_memory_cleanup().await?;
+        retry_operation(operation)
+    },
+    _ =&gt; return Err(error)
+}
+<span class="boring">}</span></code></pre></pre>
+<h4 id="manual-recovery"><a class="header" href="#manual-recovery">Manual Recovery</a></h4>
+<pre><code class="language-bash"># Example recovery scripts for common errors
+
+# SYST-3-100: Insufficient Memory
+./scripts/cleanup-memory.sh
+./scripts/restart-service.sh
+
+# DBASE-2-001: Connection Failed
+./scripts/check-database-status.sh
+./scripts/restart-database.sh
+
+# MEMSYS-3-200: Memory Inconsistency
+./scripts/memory-consistency-check.sh
+./scripts/repair-memory-indexes.sh
+</code></pre>
+<h3 id="monitoring-and-alerting"><a class="header" href="#monitoring-and-alerting">Monitoring and Alerting</a></h3>
+<pre><code class="language-yaml"># Example alert rules for error codes
+groups:
+- name: brain-ai-errors
+  rules:
+  - alert: CriticalErrors
+    expr: increase(brain_ai_errors_total{severity="3"}[5m]) &gt; 0
+    annotations:
+      summary: "Critical errors detected in Brain AI"
+      
+  - alert: FatalErrors
+    expr: increase(brain_ai_errors_total{severity="4"}[1m]) &gt; 0
+    annotations:
+      summary: "Fatal errors detected in Brain AI"
+      
+  - alert: HighErrorRate
+    expr: rate(brain_ai_errors_total[5m]) &gt; 0.1
+    annotations:
+      summary: "High error rate in Brain AI"
+</code></pre>
+<p>This comprehensive error code reference enables quick diagnosis and resolution of issues across all Brain AI components.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../reference/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../reference/performance-metrics.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../reference/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../reference/performance-metrics.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

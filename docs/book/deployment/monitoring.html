@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Monitoring &amp; Logging - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,615 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/deployment/monitoring.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="monitoring--logging"><a class="header" href="#monitoring--logging">Monitoring &amp; Logging</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../deployment/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../deployment/backup-recovery.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../deployment/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../deployment/backup-recovery.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="monitoring--logging"><a class="header" href="#monitoring--logging">Monitoring &amp; Logging</a></h1>
+<p>This guide covers comprehensive monitoring, logging, and observability setup for Brain AI in production environments.</p>
+<h2 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h2>
+<h3 id="built-in-performance-monitor"><a class="header" href="#built-in-performance-monitor">Built-in Performance Monitor</a></h3>
+<p>Brain AI includes a comprehensive performance monitoring system:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Enable performance monitoring in configuration
+[performance]
+enable_monitoring = true
+metrics_interval = 60
+alert_thresholds = { cpu = 0.8, memory = 0.9, disk = 0.95 }
+profiling_enabled = false
+<span class="boring">}</span></code></pre></pre>
+<h3 id="system-metrics-collection"><a class="header" href="#system-metrics-collection">System Metrics Collection</a></h3>
+<p>The performance monitor automatically collects:</p>
+<ul>
+<li><strong>System Resources</strong>: CPU usage, memory consumption, disk I/O</li>
+<li><strong>Component Performance</strong>: Processing times, throughput rates</li>
+<li><strong>Memory System</strong>: Memory formation rate, consolidation efficiency</li>
+<li><strong>Concept Graph</strong>: Node creation rate, relationship discovery</li>
+<li><strong>API Performance</strong>: Request latency, error rates</li>
+</ul>
+<h3 id="performance-api-endpoints"><a class="header" href="#performance-api-endpoints">Performance API Endpoints</a></h3>
+<pre><code class="language-bash"># Get current performance snapshot
+curl http://localhost:8080/api/v1/performance/snapshot \
+  -H "Authorization: Bearer $TOKEN"
+
+# Get performance history
+curl http://localhost:8080/api/v1/performance/history?duration=1h \
+  -H "Authorization: Bearer $TOKEN"
+
+# Identify bottlenecks
+curl http://localhost:8080/api/v1/performance/bottlenecks \
+  -H "Authorization: Bearer $TOKEN"
+
+# Get optimization recommendations
+curl http://localhost:8080/api/v1/performance/recommendations \
+  -H "Authorization: Bearer $TOKEN"
+</code></pre>
+<h2 id="logging-system"><a class="header" href="#logging-system">Logging System</a></h2>
+<h3 id="log-levels-and-configuration"><a class="header" href="#log-levels-and-configuration">Log Levels and Configuration</a></h3>
+<pre><code class="language-toml">[logging]
+level = "info"                    # debug, info, warn, error
+format = "json"                   # json, pretty
+output = "both"                   # console, file, both
+
+[logging.file]
+path = "/app/logs/brain-ai.log"
+max_size = "100MB"
+max_files = 10
+compress = true
+
+[logging.structured]
+include_timestamp = true
+include_level = true
+include_target = true
+include_span_info = true
+</code></pre>
+<h3 id="log-categories"><a class="header" href="#log-categories">Log Categories</a></h3>
+<p>Brain AI logs are categorized by component:</p>
+<pre><code class="language-bash"># System-level logs
+2024-01-15T10:30:00Z INFO [brain_ai::system] System startup completed
+2024-01-15T10:30:01Z INFO [brain_ai::api] Server listening on 0.0.0.0:8080
+
+# Memory system logs
+2024-01-15T10:30:15Z DEBUG [brain_ai::memory] Memory consolidation started
+2024-01-15T10:30:16Z INFO [brain_ai::memory] Consolidated 150 memories
+
+# Learning logs
+2024-01-15T10:30:30Z INFO [brain_ai::learning] Pattern discovered: text_structure
+2024-01-15T10:30:31Z DEBUG [brain_ai::concept_graph] New concept added: programming
+
+# Performance logs
+2024-01-15T10:30:45Z WARN [brain_ai::performance] High CPU usage detected: 85%
+2024-01-15T10:30:46Z INFO [brain_ai::performance] Performance alert triggered
+</code></pre>
+<h3 id="structured-logging"><a class="header" href="#structured-logging">Structured Logging</a></h3>
+<p>Example structured log entry:</p>
+<pre><code class="language-json">{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "INFO",
+  "target": "brain_ai::memory",
+  "message": "Memory formation completed",
+  "fields": {
+    "memory_id": "mem_12345",
+    "content_type": "text",
+    "processing_time_ms": 45,
+    "confidence": 0.87,
+    "session_id": "sess_67890"
+  },
+  "span": {
+    "name": "process_input",
+    "id": "span_abc123"
+  }
+}
+</code></pre>
+<h2 id="health-checks"><a class="header" href="#health-checks">Health Checks</a></h2>
+<h3 id="built-in-health-endpoints"><a class="header" href="#built-in-health-endpoints">Built-in Health Endpoints</a></h3>
+<pre><code class="language-bash"># Basic health check
+curl http://localhost:8080/api/v1/health
+
+# Detailed health check
+curl http://localhost:8080/api/v1/health/detailed
+
+# Component-specific health
+curl http://localhost:8080/api/v1/health/memory
+curl http://localhost:8080/api/v1/health/concept-graph
+</code></pre>
+<h3 id="health-check-response"><a class="header" href="#health-check-response">Health Check Response</a></h3>
+<pre><code class="language-json">{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "uptime": "2h 15m 30s",
+  "version": "1.0.0",
+  "components": {
+    "memory_system": {
+      "status": "healthy",
+      "memory_count": 12450,
+      "last_consolidation": "2024-01-15T10:15:00Z"
+    },
+    "concept_graph": {
+      "status": "healthy",
+      "node_count": 1250,
+      "edge_count": 3200
+    },
+    "character_ingestion": {
+      "status": "healthy",
+      "processed_chars": 1500000
+    },
+    "performance_monitor": {
+      "status": "healthy",
+      "cpu_usage": 0.45,
+      "memory_usage": 0.67
+    }
+  }
+}
+</code></pre>
+<h2 id="metrics-collection"><a class="header" href="#metrics-collection">Metrics Collection</a></h2>
+<h3 id="prometheus-integration"><a class="header" href="#prometheus-integration">Prometheus Integration</a></h3>
+<p>Brain AI exposes Prometheus-compatible metrics:</p>
+<pre><code class="language-bash"># Metrics endpoint
+curl http://localhost:8080/metrics
+</code></pre>
+<p>Example metrics:</p>
+<pre><code class="language-prometheus"># System metrics
+brain_ai_cpu_usage_percent 45.2
+brain_ai_memory_usage_bytes 1073741824
+brain_ai_uptime_seconds 8130
+
+# Component metrics
+brain_ai_memory_total 12450
+brain_ai_memory_formation_rate 2.5
+brain_ai_concept_nodes_total 1250
+brain_ai_concept_edges_total 3200
+
+# API metrics
+brain_ai_http_requests_total{method="GET",status="200"} 1500
+brain_ai_http_request_duration_seconds{method="POST"} 0.045
+brain_ai_http_errors_total{status="500"} 2
+
+# Performance metrics
+brain_ai_processing_time_seconds{component="memory"} 0.023
+brain_ai_throughput_operations_per_second{component="concept_graph"} 15.7
+</code></pre>
+<h3 id="grafana-dashboard"><a class="header" href="#grafana-dashboard">Grafana Dashboard</a></h3>
+<p>Example Grafana dashboard configuration:</p>
+<pre><code class="language-json">{
+  "dashboard": {
+    "title": "Brain AI Monitoring",
+    "panels": [
+      {
+        "title": "System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "brain_ai_cpu_usage_percent",
+            "legendFormat": "CPU Usage"
+          },
+          {
+            "expr": "brain_ai_memory_usage_bytes / 1024 / 1024 / 1024",
+            "legendFormat": "Memory Usage (GB)"
+          }
+        ]
+      },
+      {
+        "title": "Memory System",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "brain_ai_memory_total",
+            "legendFormat": "Total Memories"
+          },
+          {
+            "expr": "rate(brain_ai_memory_formation_rate[5m])",
+            "legendFormat": "Formation Rate"
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+<h2 id="alerting"><a class="header" href="#alerting">Alerting</a></h2>
+<h3 id="alert-configuration"><a class="header" href="#alert-configuration">Alert Configuration</a></h3>
+<pre><code class="language-toml">[alerts]
+enabled = true
+webhook_url = "https://hooks.slack.com/your-webhook"
+email_recipients = ["admin@yourcompany.com"]
+
+[alerts.thresholds]
+cpu_usage = 0.8
+memory_usage = 0.9
+disk_usage = 0.95
+error_rate = 0.05
+response_time = 2.0
+
+[alerts.rules]
+high_cpu = { threshold = 0.8, duration = "5m", severity = "warning" }
+high_memory = { threshold = 0.9, duration = "3m", severity = "critical" }
+high_error_rate = { threshold = 0.05, duration = "2m", severity = "critical" }
+</code></pre>
+<h3 id="alert-examples"><a class="header" href="#alert-examples">Alert Examples</a></h3>
+<pre><code class="language-bash"># CPU usage alert
+{
+  "alert": "high_cpu_usage",
+  "severity": "warning",
+  "message": "CPU usage is 85% for 5 minutes",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "metrics": {
+    "cpu_usage": 0.85,
+    "threshold": 0.8
+  }
+}
+
+# Memory formation stalled alert
+{
+  "alert": "memory_formation_stalled",
+  "severity": "critical",
+  "message": "No new memories formed in 10 minutes",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "metrics": {
+    "last_memory_time": "2024-01-15T10:20:00Z",
+    "formation_rate": 0.0
+  }
+}
+</code></pre>
+<h2 id="log-aggregation"><a class="header" href="#log-aggregation">Log Aggregation</a></h2>
+<h3 id="elk-stack-integration"><a class="header" href="#elk-stack-integration">ELK Stack Integration</a></h3>
+<h4 id="logstash-configuration"><a class="header" href="#logstash-configuration">Logstash Configuration</a></h4>
+<pre><code class="language-ruby">input {
+  file {
+    path =&gt; "/app/logs/brain-ai.log"
+    codec =&gt; "json"
+    type =&gt; "brain-ai"
+  }
+}
+
+filter {
+  if [type] == "brain-ai" {
+    date {
+      match =&gt; [ "timestamp", "ISO8601" ]
+    }
+    
+    mutate {
+      add_field =&gt; { "service" =&gt; "brain-ai" }
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts =&gt; ["elasticsearch:9200"]
+    index =&gt; "brain-ai-logs-%{+YYYY.MM.dd}"
+  }
+}
+</code></pre>
+<h4 id="elasticsearch-index-template"><a class="header" href="#elasticsearch-index-template">Elasticsearch Index Template</a></h4>
+<pre><code class="language-json">{
+  "index_patterns": ["brain-ai-logs-*"],
+  "mappings": {
+    "properties": {
+      "timestamp": { "type": "date" },
+      "level": { "type": "keyword" },
+      "target": { "type": "keyword" },
+      "message": { "type": "text" },
+      "fields": {
+        "properties": {
+          "memory_id": { "type": "keyword" },
+          "processing_time_ms": { "type": "integer" },
+          "confidence": { "type": "float" }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="fluentd-configuration"><a class="header" href="#fluentd-configuration">Fluentd Configuration</a></h3>
+<pre><code class="language-ruby">&lt;source&gt;
+  @type tail
+  path /app/logs/brain-ai.log
+  pos_file /var/log/fluentd/brain-ai.log.pos
+  tag brain-ai
+  format json
+&lt;/source&gt;
+
+&lt;match brain-ai&gt;
+  @type elasticsearch
+  host elasticsearch
+  port 9200
+  index_name brain-ai-logs
+  type_name _doc
+&lt;/match&gt;
+</code></pre>
+<h2 id="distributed-tracing"><a class="header" href="#distributed-tracing">Distributed Tracing</a></h2>
+<h3 id="opentelemetry-integration"><a class="header" href="#opentelemetry-integration">OpenTelemetry Integration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Enable tracing in configuration
+[tracing]
+enabled = true
+service_name = "brain-ai"
+endpoint = "http://jaeger:14268/api/traces"
+sample_rate = 0.1
+
+[tracing.attributes]
+environment = "production"
+version = "1.0.0"
+<span class="boring">}</span></code></pre></pre>
+<h3 id="trace-examples"><a class="header" href="#trace-examples">Trace Examples</a></h3>
+<pre><code class="language-bash"># Memory formation trace
+Trace: memory_formation_flow
+├── Span: character_ingestion (2ms)
+├── Span: segment_discovery (15ms)
+├── Span: pattern_analysis (8ms)
+├── Span: memory_creation (5ms)
+└── Span: concept_graph_update (3ms)
+Total: 33ms
+
+# API request trace
+Trace: api_request_/api/v1/learn
+├── Span: authentication (1ms)
+├── Span: request_validation (2ms)
+├── Span: memory_formation_flow (33ms)
+├── Span: response_serialization (1ms)
+└── Span: logging (0.5ms)
+Total: 37.5ms
+</code></pre>
+<h2 id="docker-monitoring"><a class="header" href="#docker-monitoring">Docker Monitoring</a></h2>
+<h3 id="container-monitoring"><a class="header" href="#container-monitoring">Container Monitoring</a></h3>
+<pre><code class="language-yaml">services:
+  brain-ai:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "monitoring.enable=true"
+      - "monitoring.port=8080"
+</code></pre>
+<h3 id="docker-compose-with-monitoring-stack"><a class="header" href="#docker-compose-with-monitoring-stack">Docker Compose with Monitoring Stack</a></h3>
+<pre><code class="language-yaml">version: '3.8'
+
+services:
+  brain-ai:
+    image: brain-ai:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - ENABLE_PERFORMANCE_MONITORING=true
+    volumes:
+      - brain_logs:/app/logs
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  brain_logs:
+  prometheus_data:
+  grafana_data:
+  es_data:
+</code></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-monitoring-issues"><a class="header" href="#common-monitoring-issues">Common Monitoring Issues</a></h3>
+<ol>
+<li>
+<p><strong>High Memory Usage</strong>:</p>
+<pre><code class="language-bash"># Check memory consumption
+curl http://localhost:8080/api/v1/performance/snapshot | jq '.memory'
+
+# Trigger memory cleanup
+curl -X POST http://localhost:8080/api/v1/system/cleanup
+</code></pre>
+</li>
+<li>
+<p><strong>Performance Degradation</strong>:</p>
+<pre><code class="language-bash"># Get bottleneck analysis
+curl http://localhost:8080/api/v1/performance/bottlenecks
+
+# Check component health
+curl http://localhost:8080/api/v1/health/detailed
+</code></pre>
+</li>
+<li>
+<p><strong>Log Volume Issues</strong>:</p>
+<pre><code class="language-bash"># Rotate logs manually
+docker exec brain-ai logrotate /etc/logrotate.conf
+
+# Compress old logs
+find /app/logs -name "*.log" -mtime +7 -exec gzip {} \;
+</code></pre>
+</li>
+</ol>
+<h3 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h3>
+<p>Based on monitoring data:</p>
+<pre><code class="language-bash"># Increase memory capacity if formation rate is high
+curl -X PUT http://localhost:8080/api/v1/config \
+  -d '{"memory": {"capacity": 2000000}}'
+
+# Adjust consolidation threshold if CPU usage is high
+curl -X PUT http://localhost:8080/api/v1/config \
+  -d '{"memory": {"consolidation_threshold": 0.9}}'
+
+# Enable performance profiling for detailed analysis
+curl -X POST http://localhost:8080/api/v1/performance/profiling/start
+</code></pre>
+<p>This comprehensive monitoring guide provides all the tools needed to maintain visibility into Brain AI’s performance and health in production environments.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../deployment/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../deployment/backup-recovery.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../deployment/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../deployment/backup-recovery.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

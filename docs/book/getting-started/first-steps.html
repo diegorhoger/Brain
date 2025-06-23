@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>First Steps - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,404 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/getting-started/first-steps.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="first-steps"><a class="header" href="#first-steps">First Steps</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../getting-started/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../architecture/system-architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../getting-started/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../architecture/system-architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="first-steps"><a class="header" href="#first-steps">First Steps</a></h1>
+<p>Welcome to Brain AI! This guide will walk you through your first interactions with the system and help you understand its core capabilities. By the end of this guide, you’ll have hands-on experience with Brain AI’s cognitive architecture.</p>
+<h2 id="understanding-brain-ai"><a class="header" href="#understanding-brain-ai">Understanding Brain AI</a></h2>
+<p>Brain AI is a developmental cognitive architecture that learns and evolves through interaction. Unlike traditional AI systems that are pre-trained on fixed datasets, Brain AI:</p>
+<ul>
+<li><strong>Learns continuously</strong> from character-level input</li>
+<li><strong>Discovers patterns</strong> and segments automatically</li>
+<li><strong>Forms concepts</strong> and relationships dynamically</li>
+<li><strong>Simulates scenarios</strong> based on learned knowledge</li>
+<li><strong>Adapts its architecture</strong> as it grows</li>
+</ul>
+<h2 id="your-first-session"><a class="header" href="#your-first-session">Your First Session</a></h2>
+<h3 id="1-verify-your-installation"><a class="header" href="#1-verify-your-installation">1. Verify Your Installation</a></h3>
+<p>First, make sure Brain AI is running properly:</p>
+<pre><code class="language-bash"># Check system health
+curl http://localhost:8080/health
+
+# Expected response:
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00Z",
+  "components": {
+    "character_ingestion": "ready",
+    "segment_discovery": "ready",
+    "memory_system": "ready",
+    "concept_graph": "ready",
+    "simulation_engine": "ready"
+  }
+}
+</code></pre>
+<h3 id="2-start-with-character-prediction"><a class="header" href="#2-start-with-character-prediction">2. Start with Character Prediction</a></h3>
+<p>Brain AI begins by learning at the character level. Let’s see it in action:</p>
+<pre><code class="language-python">from brain import BrainEngine
+
+# Initialize the system
+brain = BrainEngine()
+
+# Start with simple character prediction
+text = "Hello wor"
+next_chars = brain.predict_next_chars(text, num_predictions=3)
+print(f"Predicted next characters: {next_chars}")
+# Output: ['l', 'd', ' '] (with confidence scores)
+</code></pre>
+<h3 id="3-discover-patterns-and-segments"><a class="header" href="#3-discover-patterns-and-segments">3. Discover Patterns and Segments</a></h3>
+<p>As Brain AI processes text, it automatically discovers meaningful patterns:</p>
+<pre><code class="language-python"># Feed it some text to learn from
+brain.learn("The quick brown fox jumps over the lazy dog")
+brain.learn("The cat sat on the mat")
+brain.learn("The dog ran in the park")
+
+# See what segments it discovered
+segments = brain.get_discovered_segments()
+print("Discovered segments:")
+for segment, stats in segments.items():
+    print(f"  '{segment}': frequency={stats.frequency}, confidence={stats.confidence}")
+
+# Expected output might include:
+#   'the': frequency=4, confidence=0.95
+#   'cat': frequency=1, confidence=0.78
+#   'dog': frequency=2, confidence=0.82
+</code></pre>
+<h3 id="4-explore-memory-formation"><a class="header" href="#4-explore-memory-formation">4. Explore Memory Formation</a></h3>
+<p>Brain AI has three types of memory working together:</p>
+<pre><code class="language-python"># Working memory (temporary, high-priority information)
+brain.add_to_working_memory("Current task: learning about animals", priority=0.9)
+
+# Episodic memory (events and experiences)
+brain.store_episode("I saw a cat chase a mouse", timestamp="now", importance=0.7)
+
+# Semantic memory (abstract knowledge)
+brain.store_semantic("Cats are predators that hunt small animals")
+
+# Query memories
+memories = brain.query_memory("cat", memory_type="all")
+for memory in memories:
+    print(f"{memory.type}: {memory.content} (confidence: {memory.confidence})")
+</code></pre>
+<h3 id="5-watch-concepts-form"><a class="header" href="#5-watch-concepts-form">5. Watch Concepts Form</a></h3>
+<p>As Brain AI learns, it forms abstract concepts and relationships:</p>
+<pre><code class="language-python"># Add related information
+brain.learn("Dogs bark loudly")
+brain.learn("Cats meow softly")
+brain.learn("Both dogs and cats are pets")
+brain.learn("Pets live with humans")
+
+# Explore the concept graph
+concepts = brain.get_concepts_near("cat", radius=2)
+print("Concepts related to 'cat':")
+for concept in concepts:
+    print(f"  {concept.name}: {concept.concept_type} (strength: {concept.activation})")
+
+# Get relationships
+relationships = brain.get_concept_relationships("cat")
+for rel in relationships:
+    print(f"  {rel.source} --{rel.relationship_type}--&gt; {rel.target} (weight: {rel.weight})")
+</code></pre>
+<h3 id="6-try-simple-simulation"><a class="header" href="#6-try-simple-simulation">6. Try Simple Simulation</a></h3>
+<p>Brain AI can simulate scenarios based on what it has learned:</p>
+<pre><code class="language-python"># Run a simple simulation
+result = brain.simulate(
+    scenario="A cat sees a mouse",
+    max_steps=3,
+    confidence_threshold=0.3
+)
+
+print(f"Simulation result: {result.outcome}")
+print(f"Confidence: {result.confidence}")
+print("Steps taken:")
+for i, step in enumerate(result.steps):
+    print(f"  {i+1}. {step.action} -&gt; {step.result}")
+
+# Example output:
+# 1. cat notices mouse -&gt; cat becomes alert
+# 2. cat stalks mouse -&gt; cat moves closer
+# 3. cat pounces -&gt; mouse tries to escape
+</code></pre>
+<h2 id="understanding-the-learning-process"><a class="header" href="#understanding-the-learning-process">Understanding the Learning Process</a></h2>
+<h3 id="character-level-foundation"><a class="header" href="#character-level-foundation">Character-Level Foundation</a></h3>
+<p>Brain AI starts by learning character-by-character patterns. This foundational layer allows it to:</p>
+<ul>
+<li>Handle any language or writing system</li>
+<li>Discover natural word boundaries</li>
+<li>Learn spelling and grammar implicitly</li>
+<li>Adapt to new vocabularies automatically</li>
+</ul>
+<h3 id="pattern-discovery"><a class="header" href="#pattern-discovery">Pattern Discovery</a></h3>
+<p>As it processes text, Brain AI automatically:</p>
+<ul>
+<li>Identifies frequently occurring character sequences</li>
+<li>Forms proto-words and morphemes</li>
+<li>Builds a dynamic vocabulary</li>
+<li>Tracks usage statistics and contexts</li>
+</ul>
+<h3 id="concept-formation"><a class="header" href="#concept-formation">Concept Formation</a></h3>
+<p>From patterns and segments, Brain AI forms abstract concepts:</p>
+<ul>
+<li>Groups related segments into concept nodes</li>
+<li>Creates weighted relationships between concepts</li>
+<li>Strengthens connections through repeated use (Hebbian learning)</li>
+<li>Prunes weak or unused connections</li>
+</ul>
+<h3 id="memory-consolidation"><a class="header" href="#memory-consolidation">Memory Consolidation</a></h3>
+<p>Information flows between memory types:</p>
+<ul>
+<li><strong>Working Memory</strong> → <strong>Episodic Memory</strong> (important experiences)</li>
+<li><strong>Episodic Memory</strong> → <strong>Semantic Memory</strong> (repeated patterns)</li>
+<li><strong>Semantic Memory</strong> → <strong>Concept Graph</strong> (abstract relationships)</li>
+</ul>
+<h2 id="monitoring-learning-progress"><a class="header" href="#monitoring-learning-progress">Monitoring Learning Progress</a></h2>
+<h3 id="check-learning-statistics"><a class="header" href="#check-learning-statistics">Check Learning Statistics</a></h3>
+<pre><code class="language-python"># Get overall system statistics
+stats = brain.get_learning_stats()
+print(f"Characters processed: {stats.characters_processed}")
+print(f"Segments discovered: {stats.segments_discovered}")
+print(f"Concepts formed: {stats.concepts_formed}")
+print(f"Memory entries: {stats.memory_entries}")
+</code></pre>
+<h3 id="visualize-progress"><a class="header" href="#visualize-progress">Visualize Progress</a></h3>
+<pre><code class="language-python"># Generate learning progress visualization
+brain.generate_learning_report("learning_progress.html")
+# Opens a web page showing:
+# - Character prediction accuracy over time
+# - Segment discovery timeline
+# - Concept graph growth
+# - Memory consolidation patterns
+</code></pre>
+<h3 id="performance-metrics"><a class="header" href="#performance-metrics">Performance Metrics</a></h3>
+<pre><code class="language-python"># Check prediction performance
+performance = brain.get_prediction_performance()
+print(f"Character accuracy: {performance.character_accuracy:.2%}")
+print(f"Segment accuracy: {performance.segment_accuracy:.2%}")
+print(f"Average confidence: {performance.avg_confidence:.2f}")
+</code></pre>
+<h2 id="common-first-session-patterns"><a class="header" href="#common-first-session-patterns">Common First-Session Patterns</a></h2>
+<h3 id="1-start-simple"><a class="header" href="#1-start-simple">1. Start Simple</a></h3>
+<p>Begin with basic, clear text:</p>
+<pre><code class="language-python">brain.learn("The sun is bright")
+brain.learn("The moon is dim")
+brain.learn("Stars shine at night")
+</code></pre>
+<h3 id="2-build-gradually"><a class="header" href="#2-build-gradually">2. Build Gradually</a></h3>
+<p>Add related concepts:</p>
+<pre><code class="language-python">brain.learn("The sun gives light during the day")
+brain.learn("The moon appears at night")
+brain.learn("Stars are distant suns")
+</code></pre>
+<h3 id="3-explore-relationships"><a class="header" href="#3-explore-relationships">3. Explore Relationships</a></h3>
+<pre><code class="language-python"># See how concepts connect
+sun_concepts = brain.get_related_concepts("sun")
+# Might show: light, bright, day, star, heat, solar
+</code></pre>
+<h3 id="4-test-understanding"><a class="header" href="#4-test-understanding">4. Test Understanding</a></h3>
+<pre><code class="language-python"># Ask questions through simulation
+result = brain.simulate("What happens when the sun sets?")
+# Brain AI will use learned relationships to predict outcomes
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Once you’re comfortable with these basics:</p>
+<ol>
+<li><strong>Explore the <a href="../architecture/system-architecture.html">Architecture Guide</a></strong> to understand how components work together</li>
+<li><strong>Try the <a href="../examples/basic-examples.html">Python Examples</a></strong> for more complex use cases</li>
+<li><strong>Read about <a href="../components/">Component Deep-Dives</a></strong> for detailed technical information</li>
+<li><strong>Check out <a href="../advanced/">Advanced Features</a></strong> like meta-memory and novelty detection</li>
+</ol>
+<h2 id="troubleshooting-first-steps"><a class="header" href="#troubleshooting-first-steps">Troubleshooting First Steps</a></h2>
+<h3 id="brain-ai-seems-slow"><a class="header" href="#brain-ai-seems-slow">Brain AI Seems Slow</a></h3>
+<ul>
+<li>Check if you’re running in debug mode (use <code>--release</code> for faster performance)</li>
+<li>Ensure adequate RAM (4GB minimum, 8GB recommended)</li>
+<li>Consider enabling performance monitoring to identify bottlenecks</li>
+</ul>
+<h3 id="predictions-seem-random"><a class="header" href="#predictions-seem-random">Predictions Seem Random</a></h3>
+<ul>
+<li>Brain AI needs time to learn patterns (try feeding it more text)</li>
+<li>Check if the text domain is consistent (mixing languages/styles can confuse early learning)</li>
+<li>Verify character encoding is correct (UTF-8 recommended)</li>
+</ul>
+<h3 id="memory-not-persisting"><a class="header" href="#memory-not-persisting">Memory Not Persisting</a></h3>
+<ul>
+<li>Ensure database connections are configured correctly</li>
+<li>Check file permissions for data directories</li>
+<li>Verify disk space is available for database growth</li>
+</ul>
+<h3 id="concepts-not-forming"><a class="header" href="#concepts-not-forming">Concepts Not Forming</a></h3>
+<ul>
+<li>Feed Brain AI more structured, related text</li>
+<li>Check that concept formation thresholds aren’t too high</li>
+<li>Allow more time for pattern discovery (concepts emerge gradually)</li>
+</ul>
+<h2 id="getting-help"><a class="header" href="#getting-help">Getting Help</a></h2>
+<ul>
+<li><strong>Documentation</strong>: Browse the full documentation for detailed guides</li>
+<li><strong>Examples</strong>: Check the <code>examples/</code> directory for working code samples</li>
+<li><strong>Issues</strong>: Report problems on the project’s issue tracker</li>
+<li><strong>Community</strong>: Join discussions in the project forums</li>
+</ul>
+<p>Remember: Brain AI learns and grows over time. Don’t expect perfect performance immediately—like a developing mind, it needs experience to become capable and nuanced in its understanding.</p>
+<h2 id="whats-next"><a class="header" href="#whats-next">What’s Next?</a></h2>
+<p>Now that you’ve taken your first steps with Brain AI, you’re ready to:</p>
+<ul>
+<li><strong>Dive deeper</strong> into specific components</li>
+<li><strong>Integrate</strong> Brain AI into your own projects</li>
+<li><strong>Experiment</strong> with different learning scenarios</li>
+<li><strong>Contribute</strong> to the Brain AI ecosystem</li>
+</ul>
+<p>Welcome to the journey of developmental AI! 🧠✨</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../getting-started/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../architecture/system-architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../getting-started/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../architecture/system-architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

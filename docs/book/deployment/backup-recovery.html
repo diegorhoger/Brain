@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Backup &amp; Recovery - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,442 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/deployment/backup-recovery.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="backup--recovery"><a class="header" href="#backup--recovery">Backup &amp; Recovery</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../deployment/monitoring.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../deployment/scaling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../deployment/monitoring.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../deployment/scaling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="backup--recovery"><a class="header" href="#backup--recovery">Backup &amp; Recovery</a></h1>
+<p>Comprehensive backup and recovery strategies for Brain AI production deployments, ensuring data safety and business continuity.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Brain AI stores critical data across multiple components that require different backup strategies:</p>
+<ul>
+<li><strong>Memory System</strong>: Semantic, episodic, and procedural memories</li>
+<li><strong>Concept Graph</strong>: Dynamic knowledge relationships</li>
+<li><strong>Learning State</strong>: Character prediction models and segment discovery</li>
+<li><strong>Configuration</strong>: System settings and user preferences</li>
+<li><strong>Logs</strong>: Operational and audit logs</li>
+</ul>
+<h2 id="backup-strategy"><a class="header" href="#backup-strategy">Backup Strategy</a></h2>
+<h3 id="automated-daily-backups"><a class="header" href="#automated-daily-backups">Automated Daily Backups</a></h3>
+<p>Configure automated backups using the provided scripts:</p>
+<pre><code class="language-bash"># Set up daily backup cron job
+crontab -e
+# Add: 0 2 * * * /opt/brain-ai/scripts/backup.sh daily
+
+# Backup script configuration
+export BACKUP_RETENTION_DAYS=30
+export BACKUP_LOCATION="/backups/brain-ai"
+export S3_BUCKET="brain-ai-backups"  # Optional cloud storage
+</code></pre>
+<h3 id="backup-types"><a class="header" href="#backup-types">Backup Types</a></h3>
+<h4 id="1-full-system-backup"><a class="header" href="#1-full-system-backup">1. Full System Backup</a></h4>
+<p>Complete backup including all data and configuration:</p>
+<pre><code class="language-bash"># Manual full backup
+./scripts/backup.sh full
+
+# What's included:
+# - Memory database (SQLite/PostgreSQL)
+# - Concept graph data
+# - Learning models and weights
+# - Configuration files
+# - User data and preferences
+</code></pre>
+<h4 id="2-incremental-backup"><a class="header" href="#2-incremental-backup">2. Incremental Backup</a></h4>
+<p>Daily incremental backups for efficiency:</p>
+<pre><code class="language-bash"># Automated incremental backup
+./scripts/backup.sh incremental
+
+# Backs up only:
+# - New memories since last backup
+# - Updated concept relationships
+# - Recent learning progress
+# - Log files
+</code></pre>
+<h4 id="3-critical-data-backup"><a class="header" href="#3-critical-data-backup">3. Critical Data Backup</a></h4>
+<p>Essential data only for emergency recovery:</p>
+<pre><code class="language-bash"># Critical data backup (fastest)
+./scripts/backup.sh critical
+
+# Includes:
+# - Core memory database
+# - Primary concept graph
+# - Essential configuration
+</code></pre>
+<h2 id="backup-configuration"><a class="header" href="#backup-configuration">Backup Configuration</a></h2>
+<h3 id="local-backup-setup"><a class="header" href="#local-backup-setup">Local Backup Setup</a></h3>
+<pre><code class="language-toml"># config/backup.toml
+[backup]
+enabled = true
+schedule = "0 2 * * *"  # Daily at 2 AM
+retention_days = 30
+compression = "gzip"
+
+[backup.local]
+path = "/backups/brain-ai"
+max_size_gb = 100
+cleanup_old = true
+
+[backup.verification]
+verify_after_backup = true
+test_restore_weekly = true
+</code></pre>
+<h3 id="cloud-backup-integration"><a class="header" href="#cloud-backup-integration">Cloud Backup Integration</a></h3>
+<pre><code class="language-bash"># AWS S3 configuration
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_DEFAULT_REGION=us-west-2
+
+# Google Cloud Storage
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+export GCS_BUCKET="brain-ai-backups"
+
+# Azure Blob Storage
+export AZURE_STORAGE_ACCOUNT=your_account
+export AZURE_STORAGE_KEY=your_key
+</code></pre>
+<h3 id="backup-verification"><a class="header" href="#backup-verification">Backup Verification</a></h3>
+<pre><code class="language-bash"># Verify backup integrity
+./scripts/verify-backup.sh /backups/brain-ai/backup-2024-01-01.tar.gz
+
+# Test restore process (safe environment)
+./scripts/test-restore.sh backup-2024-01-01.tar.gz
+</code></pre>
+<h2 id="recovery-procedures"><a class="header" href="#recovery-procedures">Recovery Procedures</a></h2>
+<h3 id="emergency-recovery"><a class="header" href="#emergency-recovery">Emergency Recovery</a></h3>
+<h4 id="1-quick-recovery-service-restart"><a class="header" href="#1-quick-recovery-service-restart">1. Quick Recovery (Service Restart)</a></h4>
+<p>For minor issues or corruption:</p>
+<pre><code class="language-bash"># Stop Brain AI service
+systemctl stop brain-ai
+
+# Restore from latest backup
+./scripts/restore.sh latest
+
+# Verify system integrity
+./scripts/health-check.sh
+
+# Restart service
+systemctl start brain-ai
+</code></pre>
+<h4 id="2-full-system-recovery"><a class="header" href="#2-full-system-recovery">2. Full System Recovery</a></h4>
+<p>For complete system failure:</p>
+<pre><code class="language-bash"># 1. Prepare clean environment
+sudo systemctl stop brain-ai
+sudo rm -rf /opt/brain-ai/data/*
+
+# 2. Restore from backup
+./scripts/restore.sh full /backups/brain-ai/backup-2024-01-01.tar.gz
+
+# 3. Verify configuration
+./scripts/verify-config.sh
+
+# 4. Test system functionality
+./scripts/integration-test.sh
+
+# 5. Start service
+sudo systemctl start brain-ai
+</code></pre>
+<h4 id="3-point-in-time-recovery"><a class="header" href="#3-point-in-time-recovery">3. Point-in-Time Recovery</a></h4>
+<p>Restore to specific timestamp:</p>
+<pre><code class="language-bash"># List available backups
+./scripts/list-backups.sh
+
+# Restore to specific date/time
+./scripts/restore.sh point-in-time "2024-01-01 14:30:00"
+
+# Verify data integrity
+./scripts/verify-data.sh
+</code></pre>
+<h3 id="recovery-validation"><a class="header" href="#recovery-validation">Recovery Validation</a></h3>
+<pre><code class="language-bash"># Post-recovery validation checklist
+./scripts/post-recovery-check.sh
+
+# Checks performed:
+# ✓ Memory system accessibility
+# ✓ Concept graph integrity  
+# ✓ Learning model functionality
+# ✓ API endpoint responses
+# ✓ Authentication system
+# ✓ Performance benchmarks
+</code></pre>
+<h2 id="disaster-recovery"><a class="header" href="#disaster-recovery">Disaster Recovery</a></h2>
+<h3 id="multi-site-recovery"><a class="header" href="#multi-site-recovery">Multi-Site Recovery</a></h3>
+<p>For production environments with geographic redundancy:</p>
+<pre><code class="language-bash"># Primary site failure - activate secondary
+./scripts/failover-to-secondary.sh
+
+# Sync data from backup site
+./scripts/sync-from-backup-site.sh
+
+# Validate secondary site functionality
+./scripts/validate-secondary.sh
+</code></pre>
+<h3 id="recovery-time-objectives-rto"><a class="header" href="#recovery-time-objectives-rto">Recovery Time Objectives (RTO)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Scenario</th><th>Target RTO</th><th>Procedure</th></tr></thead><tbody>
+<tr><td>Service restart</td><td>2 minutes</td><td>Quick recovery</td></tr>
+<tr><td>Data corruption</td><td>15 minutes</td><td>Restore from latest backup</td></tr>
+<tr><td>Full system failure</td><td>1 hour</td><td>Complete system rebuild</td></tr>
+<tr><td>Site disaster</td><td>4 hours</td><td>Geographic failover</td></tr>
+</tbody></table>
+</div>
+<h3 id="recovery-point-objectives-rpo"><a class="header" href="#recovery-point-objectives-rpo">Recovery Point Objectives (RPO)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Data Type</th><th>Target RPO</th><th>Backup Frequency</th></tr></thead><tbody>
+<tr><td>Critical memories</td><td>1 hour</td><td>Continuous replication</td></tr>
+<tr><td>Concept relationships</td><td>4 hours</td><td>Every 4 hours</td></tr>
+<tr><td>Learning progress</td><td>24 hours</td><td>Daily backup</td></tr>
+<tr><td>Configuration</td><td>24 hours</td><td>Daily backup</td></tr>
+</tbody></table>
+</div>
+<h2 id="monitoring-and-alerting"><a class="header" href="#monitoring-and-alerting">Monitoring and Alerting</a></h2>
+<h3 id="backup-monitoring"><a class="header" href="#backup-monitoring">Backup Monitoring</a></h3>
+<pre><code class="language-bash"># Monitor backup job status
+./scripts/monitor-backups.sh
+
+# Set up alerts for backup failures
+crontab -e
+# Add: 0 3 * * * /opt/brain-ai/scripts/check-backup-status.sh
+</code></pre>
+<h3 id="health-checks"><a class="header" href="#health-checks">Health Checks</a></h3>
+<pre><code class="language-bash"># Automated health monitoring
+./scripts/health-check.sh --continuous
+
+# Alerts configured for:
+# - Backup job failures
+# - Storage space issues
+# - Data corruption detection
+# - Recovery test failures
+</code></pre>
+<h2 id="security-considerations"><a class="header" href="#security-considerations">Security Considerations</a></h2>
+<h3 id="backup-encryption"><a class="header" href="#backup-encryption">Backup Encryption</a></h3>
+<pre><code class="language-bash"># Encrypt backups at rest
+export BACKUP_ENCRYPTION_KEY="your-encryption-key"
+./scripts/backup.sh --encrypt
+
+# Decrypt for recovery
+./scripts/restore.sh --decrypt backup-encrypted.tar.gz.enc
+</code></pre>
+<h3 id="access-control"><a class="header" href="#access-control">Access Control</a></h3>
+<pre><code class="language-bash"># Secure backup storage permissions
+chmod 600 /backups/brain-ai/*
+chown brain-ai:brain-ai /backups/brain-ai/*
+
+# Cloud storage IAM policies
+# - Backup service: read/write access
+# - Recovery team: read-only access
+# - Auditors: list-only access
+</code></pre>
+<h2 id="backup-scripts-reference"><a class="header" href="#backup-scripts-reference">Backup Scripts Reference</a></h2>
+<h3 id="available-scripts"><a class="header" href="#available-scripts">Available Scripts</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Script</th><th>Purpose</th><th>Usage</th></tr></thead><tbody>
+<tr><td><code>backup.sh</code></td><td>Create backups</td><td><code>./backup.sh [full|incremental|critical]</code></td></tr>
+<tr><td><code>restore.sh</code></td><td>Restore from backup</td><td><code>./restore.sh [latest|full|point-in-time]</code></td></tr>
+<tr><td><code>verify-backup.sh</code></td><td>Verify backup integrity</td><td><code>./verify-backup.sh &lt;backup-file&gt;</code></td></tr>
+<tr><td><code>health-check.sh</code></td><td>System health validation</td><td><code>./health-check.sh [--continuous]</code></td></tr>
+<tr><td><code>monitor-backups.sh</code></td><td>Backup monitoring</td><td><code>./monitor-backups.sh</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="script-configuration"><a class="header" href="#script-configuration">Script Configuration</a></h3>
+<pre><code class="language-bash"># scripts/backup-config.env
+BACKUP_RETENTION_DAYS=30
+BACKUP_COMPRESSION=gzip
+BACKUP_ENCRYPTION=true
+CLOUD_BACKUP_ENABLED=true
+VERIFICATION_ENABLED=true
+</code></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<h4 id="backup-failures"><a class="header" href="#backup-failures">Backup Failures</a></h4>
+<pre><code class="language-bash"># Check disk space
+df -h /backups
+
+# Check permissions
+ls -la /backups/brain-ai/
+
+# Check backup logs
+tail -f /var/log/brain-ai/backup.log
+</code></pre>
+<h4 id="recovery-issues"><a class="header" href="#recovery-issues">Recovery Issues</a></h4>
+<pre><code class="language-bash"># Verify backup integrity
+./scripts/verify-backup.sh &lt;backup-file&gt;
+
+# Check system dependencies
+./scripts/check-dependencies.sh
+
+# Validate configuration
+./scripts/verify-config.sh
+</code></pre>
+<h3 id="emergency-contacts"><a class="header" href="#emergency-contacts">Emergency Contacts</a></h3>
+<ul>
+<li><strong>Primary DBA</strong>: Contact for database recovery issues</li>
+<li><strong>System Administrator</strong>: Infrastructure and storage issues</li>
+<li><strong>DevOps Team</strong>: Automation and deployment issues</li>
+<li><strong>Security Team</strong>: Encryption and access control</li>
+</ul>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="backup-best-practices"><a class="header" href="#backup-best-practices">Backup Best Practices</a></h3>
+<ol>
+<li><strong>Test Recovery Regularly</strong>: Monthly recovery drills</li>
+<li><strong>Multiple Backup Locations</strong>: Local + cloud storage</li>
+<li><strong>Encryption</strong>: Always encrypt sensitive data</li>
+<li><strong>Monitoring</strong>: Automated backup success/failure alerts</li>
+<li><strong>Documentation</strong>: Keep recovery procedures updated</li>
+</ol>
+<h3 id="recovery-best-practices"><a class="header" href="#recovery-best-practices">Recovery Best Practices</a></h3>
+<ol>
+<li><strong>Validate Before Restore</strong>: Always verify backup integrity</li>
+<li><strong>Test Environment First</strong>: Test recovery in staging</li>
+<li><strong>Communicate</strong>: Notify stakeholders of recovery operations</li>
+<li><strong>Document</strong>: Log all recovery actions and outcomes</li>
+<li><strong>Post-Recovery Validation</strong>: Comprehensive system testing</li>
+</ol>
+<p>This backup and recovery system ensures Brain AI data safety and enables rapid recovery from any failure scenario.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../deployment/monitoring.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../deployment/scaling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../deployment/monitoring.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../deployment/scaling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

@@ -73,7 +73,7 @@ config = "0.14"
 serde_yaml = "0.9"
 # SHA256 for API key hashing
 sha2 = "0.10"
-# Base64 encoding for tokens
+# Base64 encoding for tokens and GitHub API
 base64 = "0.22"
 
 # Performance monitoring and profiling dependencies (Task 10.2)
@@ -88,6 +88,9 @@ pprof = { version = "0.13", features = ["flamegraph", "protobuf-codec", "frame-p
 tokio-metrics = "0.3"
 # Performance benchmarking
 flamegraph = "0.6"
+
+# GitHub integration dependencies
+reqwest = { version = "0.11", features = ["json"] }
 
 [dev-dependencies]
 criterion = "0.5"

@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Advanced Use Cases - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,778 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/examples/advanced-use-cases.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="advanced-use-cases"><a class="header" href="#advanced-use-cases">Advanced Use Cases</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../examples/basic-examples.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../examples/integration-examples.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../examples/basic-examples.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../examples/integration-examples.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="advanced-use-cases"><a class="header" href="#advanced-use-cases">Advanced Use Cases</a></h1>
+<p>This guide demonstrates sophisticated applications of Brain AI for complex real-world scenarios, showcasing advanced features and integration patterns.</p>
+<h2 id="document-analysis-and-knowledge-extraction"><a class="header" href="#document-analysis-and-knowledge-extraction">Document Analysis and Knowledge Extraction</a></h2>
+<h3 id="legal-document-processing"><a class="header" href="#legal-document-processing">Legal Document Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, DocumentProcessor, LegalAnalyzer};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for legal document analysis
+    let config = brain.config_mut();
+    config.set_domain_specialization("legal");
+    config.enable_entity_extraction(true);
+    config.enable_relationship_mapping(true);
+    
+    // Process legal documents
+    let documents = vec![
+        "Contract_2024_001.pdf",
+        "Legal_Brief_Smith_v_Jones.pdf",
+        "Regulatory_Compliance_Guide.pdf"
+    ];
+    
+    for doc_path in documents {
+        let content = std::fs::read_to_string(doc_path)?;
+        
+        // Process document with legal context
+        let result = brain.process_document(&amp;content, "legal").await?;
+        
+        // Extract legal entities
+        let entities = brain.extract_legal_entities(&amp;result.memory_id).await?;
+        println!("Legal entities found: {:?}", entities);
+        
+        // Identify key clauses
+        let clauses = brain.identify_clauses(&amp;result.memory_id).await?;
+        for clause in clauses {
+            println!("Clause: {} (type: {})", clause.text, clause.clause_type);
+        }
+    }
+    
+    // Generate legal insights
+    let insights = brain.extract_legal_insights().await?;
+    for insight in insights {
+        println!("Legal insight: {}", insight.description);
+        println!("Confidence: {:.2}", insight.confidence);
+        println!("Supporting documents: {:?}", insight.source_documents);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h3 id="scientific-paper-analysis"><a class="header" href="#scientific-paper-analysis">Scientific Paper Analysis</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, ScientificAnalyzer, CitationTracker};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for scientific analysis
+    brain.enable_citation_tracking(true).await?;
+    brain.enable_methodology_extraction(true).await?;
+    brain.set_domain_vocabulary("computer_science").await?;
+    
+    // Process research papers
+    let papers = vec![
+        "transformer_attention_paper.pdf",
+        "neural_architecture_search.pdf", 
+        "federated_learning_survey.pdf"
+    ];
+    
+    for paper in papers {
+        let content = std::fs::read_to_string(paper)?;
+        
+        // Extract paper structure
+        let structure = brain.analyze_paper_structure(&amp;content).await?;
+        println!("Paper structure: {:?}", structure);
+        
+        // Extract methodology
+        let methodology = brain.extract_methodology(&amp;content).await?;
+        println!("Methodology: {}", methodology.description);
+        
+        // Track citations
+        let citations = brain.extract_citations(&amp;content).await?;
+        for citation in citations {
+            brain.add_citation_relationship(citation).await?;
+        }
+        
+        // Process with scientific context
+        brain.process_input_with_context(&amp;content, "scientific_paper").await?;
+    }
+    
+    // Generate research insights
+    let trends = brain.identify_research_trends().await?;
+    for trend in trends {
+        println!("Research trend: {}", trend.topic);
+        println!("Growth rate: {:.2}%", trend.growth_rate);
+        println!("Key papers: {:?}", trend.influential_papers);
+    }
+    
+    // Find research gaps
+    let gaps = brain.identify_research_gaps().await?;
+    for gap in gaps {
+        println!("Research gap: {}", gap.description);
+        println!("Opportunity score: {:.2}", gap.opportunity_score);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="multi-modal-learning-and-analysis"><a class="header" href="#multi-modal-learning-and-analysis">Multi-Modal Learning and Analysis</a></h2>
+<h3 id="code-repository-analysis"><a class="header" href="#code-repository-analysis">Code Repository Analysis</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, CodeAnalyzer, RepositoryProcessor};
+use std::path::Path;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for code analysis
+    brain.enable_code_analysis(true).await?;
+    brain.set_programming_languages(vec!["rust", "python", "javascript"]).await?;
+    
+    // Process entire repository
+    let repo_path = Path::new("./target_repository");
+    let processor = RepositoryProcessor::new();
+    
+    // Analyze code structure
+    let files = processor.scan_repository(repo_path).await?;
+    
+    for file in files {
+        if file.is_code_file() {
+            let content = std::fs::read_to_string(&amp;file.path)?;
+            
+            // Extract code patterns
+            let patterns = brain.analyze_code_patterns(&amp;content, &amp;file.language).await?;
+            
+            // Identify functions and classes
+            let structures = brain.extract_code_structures(&amp;content).await?;
+            
+            // Analyze dependencies
+            let dependencies = brain.analyze_dependencies(&amp;content).await?;
+            
+            // Process with code context
+            brain.process_code(&amp;content, &amp;file.language).await?;
+        }
+    }
+    
+    // Generate code insights
+    let architecture_insights = brain.analyze_architecture().await?;
+    println!("Architecture patterns: {:?}", architecture_insights.patterns);
+    
+    let quality_metrics = brain.calculate_code_quality().await?;
+    println!("Code quality score: {:.2}", quality_metrics.overall_score);
+    
+    // Identify refactoring opportunities
+    let refactoring_suggestions = brain.suggest_refactoring().await?;
+    for suggestion in refactoring_suggestions {
+        println!("Refactoring: {} (impact: {})", 
+                 suggestion.description, suggestion.impact_score);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h3 id="multi-language-content-processing"><a class="header" href="#multi-language-content-processing">Multi-Language Content Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, LanguageDetector, TranslationManager};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Enable multi-language support
+    brain.enable_language_detection(true).await?;
+    brain.enable_cross_language_concepts(true).await?;
+    
+    // Process content in multiple languages
+    let multilingual_content = vec![
+        ("Hello world", "en"),
+        ("Hola mundo", "es"),
+        ("Bonjour le monde", "fr"),
+        ("こんにちは世界", "ja"),
+        ("你好世界", "zh")
+    ];
+    
+    for (text, expected_lang) in multilingual_content {
+        // Detect language
+        let detected_lang = brain.detect_language(text).await?;
+        println!("Detected language: {} (expected: {})", detected_lang, expected_lang);
+        
+        // Process with language context
+        let result = brain.process_multilingual_input(text, detected_lang).await?;
+        
+        // Extract universal concepts
+        let concepts = brain.extract_universal_concepts(&amp;result.memory_id).await?;
+        println!("Universal concepts: {:?}", concepts);
+    }
+    
+    // Find cross-language concept mappings
+    let mappings = brain.get_cross_language_mappings().await?;
+    for mapping in mappings {
+        println!("Concept '{}' appears in languages: {:?}", 
+                 mapping.concept, mapping.languages);
+    }
+    
+    // Generate multilingual insights
+    let insights = brain.extract_multilingual_insights().await?;
+    for insight in insights {
+        println!("Multilingual insight: {}", insight.description);
+        println!("Languages involved: {:?}", insight.languages);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="real-time-learning-and-adaptation"><a class="header" href="#real-time-learning-and-adaptation">Real-Time Learning and Adaptation</a></h2>
+<h3 id="streaming-data-processing"><a class="header" href="#streaming-data-processing">Streaming Data Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, StreamProcessor, AdaptiveLearning};
+use tokio::time::{interval, Duration};
+use futures_util::StreamExt;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for streaming
+    brain.enable_streaming_mode(true).await?;
+    brain.set_adaptation_rate(0.1).await?; // 10% adaptation per update
+    
+    // Create data stream
+    let mut data_stream = create_data_stream().await?;
+    let mut adaptation_timer = interval(Duration::from_secs(60));
+    
+    loop {
+        tokio::select! {
+            // Process incoming data
+            Some(data) = data_stream.next() =&gt; {
+                let result = brain.process_streaming_input(&amp;data).await?;
+                
+                // Check for concept drift
+                if brain.detect_concept_drift(&amp;result).await? {
+                    println!("Concept drift detected, adapting...");
+                    brain.adapt_to_drift().await?;
+                }
+                
+                // Update real-time insights
+                brain.update_realtime_insights(&amp;result).await?;
+            }
+            
+            // Periodic adaptation
+            _ = adaptation_timer.tick() =&gt; {
+                brain.perform_periodic_adaptation().await?;
+                
+                // Evaluate adaptation effectiveness
+                let effectiveness = brain.evaluate_adaptation_effectiveness().await?;
+                println!("Adaptation effectiveness: {:.2}", effectiveness);
+                
+                // Adjust adaptation parameters if needed
+                if effectiveness &lt; 0.7 {
+                    brain.increase_adaptation_rate().await?;
+                } else if effectiveness &gt; 0.95 {
+                    brain.decrease_adaptation_rate().await?;
+                }
+            }
+        }
+    }
+}
+
+async fn create_data_stream() -&gt; Result&lt;impl futures_util::Stream&lt;Item = String&gt;, Box&lt;dyn std::error::Error&gt;&gt; {
+    // Implementation for creating data stream
+    // This could be from Kafka, WebSocket, file system, etc.
+    Ok(futures_util::stream::empty())
+}</code></pre></pre>
+<h3 id="collaborative-learning-system"><a class="header" href="#collaborative-learning-system">Collaborative Learning System</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, CollaborativeLearning, PeerNetwork};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for collaborative learning
+    brain.enable_collaborative_learning(true).await?;
+    brain.set_peer_network_config(PeerNetworkConfig {
+        max_peers: 10,
+        trust_threshold: 0.8,
+        knowledge_sharing_rate: 0.3,
+    }).await?;
+    
+    // Connect to peer network
+    let peer_network = PeerNetwork::new("brain_ai_network").await?;
+    brain.connect_to_network(peer_network).await?;
+    
+    // Local learning loop
+    let local_data = vec![
+        "Local observation 1",
+        "Local insight 2", 
+        "Local pattern 3"
+    ];
+    
+    for data in local_data {
+        // Learn locally
+        let local_result = brain.process_input(data).await?;
+        
+        // Share knowledge with peers
+        if local_result.confidence &gt; 0.8 {
+            brain.share_knowledge_with_peers(&amp;local_result).await?;
+        }
+        
+        // Receive knowledge from peers
+        let peer_knowledge = brain.receive_peer_knowledge().await?;
+        for knowledge in peer_knowledge {
+            // Validate peer knowledge
+            if brain.validate_peer_knowledge(&amp;knowledge).await? {
+                brain.integrate_peer_knowledge(knowledge).await?;
+            }
+        }
+    }
+    
+    // Collaborative insight generation
+    let collaborative_insights = brain.generate_collaborative_insights().await?;
+    for insight in collaborative_insights {
+        println!("Collaborative insight: {}", insight.description);
+        println!("Contributing peers: {:?}", insight.peer_contributors);
+        println!("Consensus score: {:.2}", insight.consensus_score);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="advanced-analytics-and-visualization"><a class="header" href="#advanced-analytics-and-visualization">Advanced Analytics and Visualization</a></h2>
+<h3 id="trend-analysis-and-prediction"><a class="header" href="#trend-analysis-and-prediction">Trend Analysis and Prediction</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, TrendAnalyzer, PredictionEngine};
+use chrono::{DateTime, Utc};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure for trend analysis
+    brain.enable_temporal_analysis(true).await?;
+    brain.set_prediction_horizon(Duration::from_days(30)).await?;
+    
+    // Historical data with timestamps
+    let historical_data = vec![
+        ("Market sentiment positive", DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")?.with_timezone(&amp;Utc)),
+        ("Technology adoption increasing", DateTime::parse_from_rfc3339("2024-01-15T00:00:00Z")?.with_timezone(&amp;Utc)),
+        ("User engagement growing", DateTime::parse_from_rfc3339("2024-02-01T00:00:00Z")?.with_timezone(&amp;Utc)),
+    ];
+    
+    // Process temporal data
+    for (content, timestamp) in historical_data {
+        brain.process_temporal_input(content, timestamp).await?;
+    }
+    
+    // Analyze trends
+    let trends = brain.analyze_trends().await?;
+    for trend in trends {
+        println!("Trend: {}", trend.description);
+        println!("Direction: {:?}", trend.direction);
+        println!("Strength: {:.2}", trend.strength);
+        println!("Confidence: {:.2}", trend.confidence);
+    }
+    
+    // Generate predictions
+    let predictions = brain.generate_predictions().await?;
+    for prediction in predictions {
+        println!("Prediction: {}", prediction.description);
+        println!("Probability: {:.2}", prediction.probability);
+        println!("Time horizon: {} days", prediction.time_horizon.num_days());
+    }
+    
+    // Identify anomalies
+    let anomalies = brain.detect_temporal_anomalies().await?;
+    for anomaly in anomalies {
+        println!("Anomaly detected: {}", anomaly.description);
+        println!("Anomaly score: {:.2}", anomaly.score);
+        println!("Timestamp: {}", anomaly.timestamp);
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h3 id="knowledge-graph-visualization"><a class="header" href="#knowledge-graph-visualization">Knowledge Graph Visualization</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, GraphVisualizer, NetworkAnalyzer};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Build knowledge base
+    let knowledge_statements = vec![
+        "Artificial intelligence is a branch of computer science",
+        "Machine learning is a subset of artificial intelligence",
+        "Deep learning is a subset of machine learning",
+        "Neural networks are used in deep learning",
+        "Transformers are a type of neural network",
+        "GPT is based on transformer architecture"
+    ];
+    
+    for statement in knowledge_statements {
+        brain.process_input(statement).await?;
+    }
+    
+    // Analyze graph structure
+    let graph_metrics = brain.analyze_graph_structure().await?;
+    println!("Graph metrics:");
+    println!("  Nodes: {}", graph_metrics.node_count);
+    println!("  Edges: {}", graph_metrics.edge_count);
+    println!("  Density: {:.3}", graph_metrics.density);
+    println!("  Clustering coefficient: {:.3}", graph_metrics.clustering_coefficient);
+    
+    // Find central concepts
+    let central_concepts = brain.find_central_concepts().await?;
+    println!("Central concepts:");
+    for concept in central_concepts {
+        println!("  {}: centrality = {:.3}", concept.name, concept.centrality_score);
+    }
+    
+    // Detect communities
+    let communities = brain.detect_communities().await?;
+    println!("Communities detected: {}", communities.len());
+    for (i, community) in communities.iter().enumerate() {
+        println!("  Community {}: {:?}", i + 1, community.concepts);
+    }
+    
+    // Generate visualization data
+    let viz_data = brain.generate_visualization_data().await?;
+    
+    // Export for visualization
+    brain.export_graph_for_visualization("knowledge_graph.json", &amp;viz_data).await?;
+    
+    // Generate interactive HTML visualization
+    brain.generate_interactive_visualization("knowledge_graph.html").await?;
+    
+    println!("Visualization files generated successfully!");
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="enterprise-integration-patterns"><a class="header" href="#enterprise-integration-patterns">Enterprise Integration Patterns</a></h2>
+<h3 id="microservices-architecture"><a class="header" href="#microservices-architecture">Microservices Architecture</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, MicroserviceAdapter, ServiceMesh};
+use axum::{routing::post, Router, Json};
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let brain = BrainSystem::new().await?;
+    let brain_service = Arc::new(Mutex::new(brain));
+    
+    // Create microservice adapter
+    let adapter = MicroserviceAdapter::new(brain_service.clone());
+    
+    // Configure service mesh integration
+    let service_mesh = ServiceMesh::new()
+        .with_service_discovery("consul://localhost:8500")
+        .with_load_balancing("round_robin")
+        .with_circuit_breaker(CircuitBreakerConfig::default())
+        .with_rate_limiting(RateLimitConfig::new(1000, Duration::from_secs(60)));
+    
+    // Build application with middleware
+    let app = Router::new()
+        .route("/api/v1/learn", post(learn_handler))
+        .route("/api/v1/query", post(query_handler))
+        .route("/api/v1/insights", post(insights_handler))
+        .layer(
+            ServiceBuilder::new()
+                .layer(TraceLayer::new_for_http())
+                .layer(service_mesh.middleware())
+                .into_inner()
+        )
+        .with_state(brain_service);
+    
+    // Start server
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+    axum::serve(listener, app).await?;
+    
+    Ok(())
+}
+
+async fn learn_handler(
+    State(brain): State&lt;Arc&lt;Mutex&lt;BrainSystem&gt;&gt;&gt;,
+    Json(request): Json&lt;LearnRequest&gt;
+) -&gt; Result&lt;Json&lt;LearnResponse&gt;, AppError&gt; {
+    let mut brain = brain.lock().await;
+    let result = brain.process_input(&amp;request.content).await?;
+    
+    Ok(Json(LearnResponse {
+        memory_id: result.memory_id,
+        confidence: result.confidence,
+        concepts_extracted: result.concepts_count,
+    }))
+}</code></pre></pre>
+<h3 id="event-driven-architecture"><a class="header" href="#event-driven-architecture">Event-Driven Architecture</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, EventProcessor, EventBus};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+enum BusinessEvent {
+    UserRegistered { user_id: String, email: String },
+    OrderPlaced { order_id: String, amount: f64 },
+    ProductViewed { product_id: String, user_id: String },
+    SupportTicketCreated { ticket_id: String, category: String },
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut brain = BrainSystem::new().await?;
+    
+    // Configure event processing
+    brain.enable_event_processing(true).await?;
+    brain.set_event_retention_period(Duration::from_days(30)).await?;
+    
+    // Create event bus
+    let event_bus = EventBus::new("kafka://localhost:9092").await?;
+    
+    // Subscribe to business events
+    let mut event_stream = event_bus.subscribe("business_events").await?;
+    
+    while let Some(event) = event_stream.next().await {
+        match event {
+            BusinessEvent::UserRegistered { user_id, email } =&gt; {
+                let context = format!("User {} registered with email {}", user_id, email);
+                brain.process_business_event(&amp;context, "user_lifecycle").await?;
+            }
+            
+            BusinessEvent::OrderPlaced { order_id, amount } =&gt; {
+                let context = format!("Order {} placed for ${:.2}", order_id, amount);
+                brain.process_business_event(&amp;context, "sales").await?;
+                
+                // Trigger real-time analysis
+                if amount &gt; 1000.0 {
+                    let insights = brain.analyze_high_value_order(&amp;order_id).await?;
+                    for insight in insights {
+                        event_bus.publish("insights", insight).await?;
+                    }
+                }
+            }
+            
+            BusinessEvent::ProductViewed { product_id, user_id } =&gt; {
+                let context = format!("User {} viewed product {}", user_id, product_id);
+                brain.process_business_event(&amp;context, "user_behavior").await?;
+            }
+            
+            BusinessEvent::SupportTicketCreated { ticket_id, category } =&gt; {
+                let context = format!("Support ticket {} created in category {}", ticket_id, category);
+                brain.process_business_event(&amp;context, "customer_support").await?;
+                
+                // Analyze support patterns
+                let patterns = brain.analyze_support_patterns(&amp;category).await?;
+                if patterns.indicates_systemic_issue() {
+                    event_bus.publish("alerts", SystemicIssueAlert {
+                        category: category.clone(),
+                        severity: patterns.severity,
+                        description: patterns.description,
+                    }).await?;
+                }
+            }
+        }
+    }
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="performance-optimization-patterns"><a class="header" href="#performance-optimization-patterns">Performance Optimization Patterns</a></h2>
+<h3 id="distributed-processing"><a class="header" href="#distributed-processing">Distributed Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust">use brain_ai::{BrainSystem, DistributedProcessor, WorkerPool};
+use tokio::sync::mpsc;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // Create worker pool
+    let worker_pool = WorkerPool::new(8).await?;
+    
+    // Create distributed processor
+    let mut distributed_brain = DistributedProcessor::new(worker_pool).await?;
+    
+    // Large dataset to process
+    let large_dataset = generate_large_dataset(100000).await?;
+    
+    // Process in parallel chunks
+    let chunk_size = 1000;
+    let chunks: Vec&lt;_&gt; = large_dataset.chunks(chunk_size).collect();
+    
+    let (tx, mut rx) = mpsc::channel(100);
+    
+    // Spawn processing tasks
+    for (i, chunk) in chunks.into_iter().enumerate() {
+        let tx = tx.clone();
+        let chunk = chunk.to_vec();
+        
+        tokio::spawn(async move {
+            let worker_brain = BrainSystem::new().await.unwrap();
+            
+            let mut results = Vec::new();
+            for item in chunk {
+                let result = worker_brain.process_input(&amp;item).await.unwrap();
+                results.push(result);
+            }
+            
+            tx.send((i, results)).await.unwrap();
+        });
+    }
+    
+    drop(tx); // Close the channel
+    
+    // Collect results
+    let mut all_results = Vec::new();
+    while let Some((chunk_id, results)) = rx.recv().await {
+        println!("Processed chunk {}: {} items", chunk_id, results.len());
+        all_results.extend(results);
+    }
+    
+    // Merge distributed results
+    let merged_insights = distributed_brain.merge_results(all_results).await?;
+    
+    println!("Distributed processing complete!");
+    println!("Total items processed: {}", large_dataset.len());
+    println!("Insights generated: {}", merged_insights.len());
+    
+    Ok(())
+}
+
+async fn generate_large_dataset(size: usize) -&gt; Result&lt;Vec&lt;String&gt;, Box&lt;dyn std::error::Error&gt;&gt; {
+    // Generate synthetic dataset
+    Ok((0..size).map(|i| format!("Data item {}", i)).collect())
+}</code></pre></pre>
+<p>These advanced use cases demonstrate Brain AI’s capabilities in complex, real-world scenarios including document analysis, multi-modal learning, real-time adaptation, advanced analytics, enterprise integration, and distributed processing patterns.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../examples/basic-examples.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../examples/integration-examples.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../examples/basic-examples.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../examples/integration-examples.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

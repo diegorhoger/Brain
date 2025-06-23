@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Cognitive Pipeline - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,555 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/architecture/cognitive-pipeline.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="cognitive-pipeline"><a class="header" href="#cognitive-pipeline">Cognitive Pipeline</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../architecture/system-architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../architecture/data-flow.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../architecture/system-architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../architecture/data-flow.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="cognitive-pipeline"><a class="header" href="#cognitive-pipeline">Cognitive Pipeline</a></h1>
+<p>The Brain AI cognitive pipeline represents the flow of information processing that mirrors human-like cognitive development. This document details how raw input transforms into knowledge, understanding, and actionable insights through multiple processing stages.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Brain AI’s cognitive pipeline is designed to process information through increasingly sophisticated levels of abstraction, similar to how human cognition develops from basic perception to complex reasoning.</p>
+<pre class="mermaid">graph TD
+    subgraph &quot;Stage 1: Perception&quot;
+        A[Raw Text Input] --&gt; B[Character Recognition]
+        B --&gt; C[Character Prediction]
+        C --&gt; D[Pattern Detection]
+    end
+    
+    subgraph &quot;Stage 2: Segmentation&quot;
+        D --&gt; E[Frequency Analysis]
+        E --&gt; F[Boundary Detection]
+        F --&gt; G[Segment Formation]
+        G --&gt; H[Vocabulary Building]
+    end
+    
+    subgraph &quot;Stage 3: Memory Formation&quot;
+        H --&gt; I[Working Memory Storage]
+        I --&gt; J[Importance Assessment]
+        J --&gt; K[Episodic Memory]
+        K --&gt; L[Semantic Abstraction]
+        L --&gt; M[Long-term Storage]
+    end
+    
+    subgraph &quot;Stage 4: Concept Development&quot;
+        M --&gt; N[Pattern Recognition]
+        N --&gt; O[Concept Formation]
+        O --&gt; P[Relationship Discovery]
+        P --&gt; Q[Graph Construction]
+    end
+    
+    subgraph &quot;Stage 5: Rule Extraction&quot;
+        Q --&gt; R[Pattern Generalization]
+        R --&gt; S[Rule Formulation]
+        S --&gt; T[Causal Inference]
+        T --&gt; U[Knowledge Validation]
+    end
+    
+    subgraph &quot;Stage 6: Simulation &amp; Prediction&quot;
+        U --&gt; V[Scenario Construction]
+        V --&gt; W[Outcome Prediction]
+        W --&gt; X[Confidence Assessment]
+        X --&gt; Y[Action Planning]
+    end
+    
+    subgraph &quot;Meta-Cognitive Layer&quot;
+        Z[Meta-Memory] --&gt; I
+        Z --&gt; K
+        Z --&gt; O
+        Z --&gt; S
+        Z --&gt; V
+        AA[Novelty Detection] --&gt; E
+        AA --&gt; N
+        AA --&gt; R
+        BB[Curiosity Learning] --&gt; A
+        BB --&gt; G
+        BB --&gt; O
+    end
+</pre>
+<h2 id="stage-1-perception-and-character-processing"><a class="header" href="#stage-1-perception-and-character-processing">Stage 1: Perception and Character Processing</a></h2>
+<h3 id="character-recognition-and-prediction"><a class="header" href="#character-recognition-and-prediction">Character Recognition and Prediction</a></h3>
+<p>The cognitive journey begins with the most fundamental level of text understanding - individual characters.</p>
+<p><strong>Process Flow:</strong></p>
+<ol>
+<li><strong>Input Reception</strong>: Raw text is received character by character</li>
+<li><strong>Context Building</strong>: Previous characters provide context for prediction</li>
+<li><strong>Pattern Matching</strong>: Character sequences are matched against learned patterns</li>
+<li><strong>Confidence Scoring</strong>: Each prediction receives a confidence score</li>
+<li><strong>Learning Update</strong>: Prediction accuracy updates internal models</li>
+</ol>
+<p><strong>Key Components:</strong></p>
+<ul>
+<li><strong>CharacterPredictor</strong>: GRU-based neural network for character prediction</li>
+<li><strong>CharacterVocab</strong>: Dynamic vocabulary that grows with new characters</li>
+<li><strong>Context Window</strong>: Sliding window of recent characters for context</li>
+</ul>
+<p><strong>Example Process:</strong></p>
+<pre><code>Input: "The cat s"
+Context: ["T", "h", "e", " ", "c", "a", "t", " ", "s"]
+Prediction: "a" (confidence: 0.85), "i" (confidence: 0.12), "o" (confidence: 0.03)
+Learning: If next character is "a", strengthen "cat s" → "a" pattern
+</code></pre>
+<h3 id="pattern-detection"><a class="header" href="#pattern-detection">Pattern Detection</a></h3>
+<p>As character prediction improves, patterns emerge naturally:</p>
+<p><strong>Detection Mechanisms:</strong></p>
+<ul>
+<li><strong>Frequency Analysis</strong>: Tracks how often character sequences appear</li>
+<li><strong>Entropy Calculation</strong>: Measures predictability of character transitions</li>
+<li><strong>Context Sensitivity</strong>: Considers surrounding characters for pattern validation</li>
+<li><strong>Temporal Patterns</strong>: Recognizes patterns that emerge over time</li>
+</ul>
+<h2 id="stage-2-segmentation-and-vocabulary-building"><a class="header" href="#stage-2-segmentation-and-vocabulary-building">Stage 2: Segmentation and Vocabulary Building</a></h2>
+<h3 id="dynamic-segmentation"><a class="header" href="#dynamic-segmentation">Dynamic Segmentation</a></h3>
+<p>Brain AI discovers meaningful segments without pre-defined word boundaries:</p>
+<p><strong>Segmentation Process:</strong></p>
+<ol>
+<li><strong>Frequency Tracking</strong>: Monitor character sequence frequencies</li>
+<li><strong>Boundary Detection</strong>: Identify natural breaking points using entropy</li>
+<li><strong>Segment Validation</strong>: Confirm segments through prediction improvement</li>
+<li><strong>Vocabulary Integration</strong>: Add validated segments to dynamic vocabulary</li>
+<li><strong>Usage Monitoring</strong>: Track segment usage and effectiveness</li>
+</ol>
+<p><strong>BPE-Style Algorithm:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Simplified segmentation logic
+for sequence in character_sequences {
+    if sequence.frequency &gt; min_threshold {
+        if entropy_at_boundaries(sequence) &gt; entropy_threshold {
+            if improves_prediction(sequence) {
+                add_to_vocabulary(sequence);
+                update_usage_stats(sequence);
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="vocabulary-evolution"><a class="header" href="#vocabulary-evolution">Vocabulary Evolution</a></h3>
+<p>The vocabulary continuously evolves based on usage and effectiveness:</p>
+<p><strong>Evolution Mechanisms:</strong></p>
+<ul>
+<li><strong>Segment Promotion</strong>: Frequently used character sequences become segments</li>
+<li><strong>Segment Demotion</strong>: Rarely used segments are pruned</li>
+<li><strong>Segment Merging</strong>: Related segments can be combined</li>
+<li><strong>Segment Splitting</strong>: Overly general segments can be specialized</li>
+</ul>
+<h2 id="stage-3-memory-formation-and-consolidation"><a class="header" href="#stage-3-memory-formation-and-consolidation">Stage 3: Memory Formation and Consolidation</a></h2>
+<h3 id="working-memory-processing"><a class="header" href="#working-memory-processing">Working Memory Processing</a></h3>
+<p>Information first enters working memory for immediate processing:</p>
+<p><strong>Working Memory Characteristics:</strong></p>
+<ul>
+<li><strong>Limited Capacity</strong>: Typically 1000 items (configurable)</li>
+<li><strong>Priority-Based</strong>: High-importance items stay longer</li>
+<li><strong>Temporal Decay</strong>: Unused items fade over time</li>
+<li><strong>Active Processing</strong>: Items can be manipulated and combined</li>
+</ul>
+<p><strong>Processing Steps:</strong></p>
+<ol>
+<li><strong>Intake</strong>: New information enters with priority score</li>
+<li><strong>Integration</strong>: Attempts to connect with existing memories</li>
+<li><strong>Evaluation</strong>: Assesses importance and relevance</li>
+<li><strong>Retention Decision</strong>: Determines if information should be retained</li>
+</ol>
+<h3 id="memory-consolidation"><a class="header" href="#memory-consolidation">Memory Consolidation</a></h3>
+<p>Important information moves from working memory to long-term storage:</p>
+<p><strong>Consolidation Process:</strong></p>
+<pre class="mermaid">graph LR
+    A[Working Memory] --&gt; B{Importance Check}
+    B --&gt;|High| C[Episodic Memory]
+    B --&gt;|Low| D[Decay/Forget]
+    C --&gt; E{Pattern Recognition}
+    E --&gt;|Patterns Found| F[Semantic Memory]
+    E --&gt;|No Patterns| G[Remain Episodic]
+    F --&gt; H[Concept Formation]
+</pre>
+<p><strong>Consolidation Criteria:</strong></p>
+<ul>
+<li><strong>Frequency</strong>: How often the information is accessed</li>
+<li><strong>Recency</strong>: How recently the information was used</li>
+<li><strong>Importance</strong>: Explicit importance scores</li>
+<li><strong>Connections</strong>: How well it connects to existing knowledge</li>
+</ul>
+<h3 id="memory-types-and-their-roles"><a class="header" href="#memory-types-and-their-roles">Memory Types and Their Roles</a></h3>
+<p><strong>Working Memory:</strong></p>
+<ul>
+<li>Temporary storage for active processing</li>
+<li>Limited capacity with priority-based eviction</li>
+<li>Real-time integration with ongoing cognition</li>
+</ul>
+<p><strong>Episodic Memory:</strong></p>
+<ul>
+<li>Specific events and experiences</li>
+<li>Temporal context and relationships</li>
+<li>Source of patterns for semantic abstraction</li>
+</ul>
+<p><strong>Semantic Memory:</strong></p>
+<ul>
+<li>Abstract knowledge and concepts</li>
+<li>General rules and relationships</li>
+<li>Foundation for reasoning and prediction</li>
+</ul>
+<h2 id="stage-4-concept-development-and-graph-construction"><a class="header" href="#stage-4-concept-development-and-graph-construction">Stage 4: Concept Development and Graph Construction</a></h2>
+<h3 id="concept-formation"><a class="header" href="#concept-formation">Concept Formation</a></h3>
+<p>Abstract concepts emerge from patterns in memory:</p>
+<p><strong>Formation Process:</strong></p>
+<ol>
+<li><strong>Pattern Recognition</strong>: Identify recurring themes in memories</li>
+<li><strong>Abstraction</strong>: Extract common features across instances</li>
+<li><strong>Concept Creation</strong>: Form new concept nodes in the graph</li>
+<li><strong>Relationship Mapping</strong>: Connect concepts based on co-occurrence</li>
+<li><strong>Validation</strong>: Confirm concept utility through usage</li>
+</ol>
+<p><strong>Example Concept Formation:</strong></p>
+<pre><code>Episodic Memories:
+- "The cat sat on the mat"
+- "A cat chased the mouse"
+- "Cats are good pets"
+
+Pattern Recognition:
+- "cat" appears in multiple contexts
+- Associated with actions (sat, chased)
+- Associated with properties (good pets)
+
+Concept Formation:
+- Create concept node "CAT"
+- Properties: [animal, pet, predator]
+- Relationships: [chases → MOUSE, sits_on → MAT, is_a → PET]
+</code></pre>
+<h3 id="relationship-discovery"><a class="header" href="#relationship-discovery">Relationship Discovery</a></h3>
+<p>Concepts are connected through various relationship types:</p>
+<p><strong>Relationship Types:</strong></p>
+<ul>
+<li><strong>IS_A</strong>: Taxonomic relationships (cat IS_A animal)</li>
+<li><strong>PART_OF</strong>: Compositional relationships (tail PART_OF cat)</li>
+<li><strong>CAUSES</strong>: Causal relationships (rain CAUSES wet)</li>
+<li><strong>SIMILAR_TO</strong>: Similarity relationships (cat SIMILAR_TO dog)</li>
+<li><strong>OPPOSITE_OF</strong>: Antonym relationships (hot OPPOSITE_OF cold)</li>
+<li><strong>USED_FOR</strong>: Functional relationships (key USED_FOR opening)</li>
+</ul>
+<h3 id="hebbian-learning"><a class="header" href="#hebbian-learning">Hebbian Learning</a></h3>
+<p>Relationships strengthen through repeated co-activation:</p>
+<p><strong>Strengthening Mechanism:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Simplified Hebbian learning
+fn update_relationship_strength(concept_a: &amp;Concept, concept_b: &amp;Concept) {
+    if concept_a.is_active() &amp;&amp; concept_b.is_active() {
+        let relationship = get_relationship(concept_a, concept_b);
+        relationship.weight += learning_rate * activation_product;
+        relationship.last_used = current_time();
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Decay Mechanism:</strong></p>
+<ul>
+<li>Unused relationships gradually weaken</li>
+<li>Very weak relationships are pruned</li>
+<li>Strengthening can overcome decay</li>
+</ul>
+<h2 id="stage-5-rule-extraction-and-knowledge-formation"><a class="header" href="#stage-5-rule-extraction-and-knowledge-formation">Stage 5: Rule Extraction and Knowledge Formation</a></h2>
+<h3 id="pattern-generalization"><a class="header" href="#pattern-generalization">Pattern Generalization</a></h3>
+<p>Specific observations become general rules:</p>
+<p><strong>Generalization Process:</strong></p>
+<ol>
+<li><strong>Instance Collection</strong>: Gather multiple similar examples</li>
+<li><strong>Common Feature Extraction</strong>: Identify shared characteristics</li>
+<li><strong>Rule Formulation</strong>: Express patterns as general rules</li>
+<li><strong>Exception Handling</strong>: Account for cases that don’t fit</li>
+<li><strong>Confidence Assessment</strong>: Assign confidence based on supporting evidence</li>
+</ol>
+<p><strong>Example Rule Formation:</strong></p>
+<pre><code>Observations:
+- "Birds fly in the sky"
+- "Eagles soar high above"
+- "Sparrows flutter between trees"
+
+Pattern: [BIRD] + [FLY/SOAR/FLUTTER] + [IN/ABOVE] + [LOCATION]
+
+Rule: "Birds typically move through the air"
+Confidence: 0.85
+Exceptions: ["Penguins don't fly", "Ostriches run instead"]
+</code></pre>
+<h3 id="causal-inference"><a class="header" href="#causal-inference">Causal Inference</a></h3>
+<p>Brain AI develops understanding of cause-and-effect relationships:</p>
+<p><strong>Inference Mechanisms:</strong></p>
+<ul>
+<li><strong>Temporal Correlation</strong>: Events that frequently occur in sequence</li>
+<li><strong>Spatial Correlation</strong>: Events that occur in similar contexts</li>
+<li><strong>Intervention Analysis</strong>: Understanding what changes when actions are taken</li>
+<li><strong>Counterfactual Reasoning</strong>: Considering what would happen if conditions were different</li>
+</ul>
+<h3 id="knowledge-validation"><a class="header" href="#knowledge-validation">Knowledge Validation</a></h3>
+<p>Rules and knowledge are continuously validated:</p>
+<p><strong>Validation Methods:</strong></p>
+<ul>
+<li><strong>Prediction Accuracy</strong>: How well rules predict outcomes</li>
+<li><strong>Consistency Checking</strong>: Ensuring rules don’t contradict each other</li>
+<li><strong>Evidence Accumulation</strong>: Gathering supporting or contradicting evidence</li>
+<li><strong>Peer Review</strong>: Comparing with other learned rules</li>
+</ul>
+<h2 id="stage-6-simulation-and-prediction"><a class="header" href="#stage-6-simulation-and-prediction">Stage 6: Simulation and Prediction</a></h2>
+<h3 id="scenario-construction"><a class="header" href="#scenario-construction">Scenario Construction</a></h3>
+<p>Brain AI can construct and explore hypothetical scenarios:</p>
+<p><strong>Construction Process:</strong></p>
+<ol>
+<li><strong>Initial State Setup</strong>: Define starting conditions</li>
+<li><strong>Rule Application</strong>: Apply learned rules to predict changes</li>
+<li><strong>Branching Exploration</strong>: Consider multiple possible outcomes</li>
+<li><strong>Constraint Validation</strong>: Ensure scenarios remain plausible</li>
+<li><strong>Outcome Assessment</strong>: Evaluate final states and their likelihood</li>
+</ol>
+<h3 id="prediction-and-planning"><a class="header" href="#prediction-and-planning">Prediction and Planning</a></h3>
+<p>The system can predict outcomes and plan actions:</p>
+<p><strong>Prediction Pipeline:</strong></p>
+<pre class="mermaid">graph LR
+    A[Current State] --&gt; B[Apply Rules]
+    B --&gt; C[Generate Possibilities]
+    C --&gt; D[Prune Implausible]
+    D --&gt; E[Score Outcomes]
+    E --&gt; F[Select Best Path]
+    F --&gt; G[Action Recommendation]
+</pre>
+<p><strong>Planning Capabilities:</strong></p>
+<ul>
+<li><strong>Goal-Oriented</strong>: Work backward from desired outcomes</li>
+<li><strong>Multi-Step</strong>: Plan sequences of actions</li>
+<li><strong>Contingency Planning</strong>: Prepare for multiple scenarios</li>
+<li><strong>Risk Assessment</strong>: Evaluate potential negative outcomes</li>
+</ul>
+<h2 id="meta-cognitive-layer"><a class="header" href="#meta-cognitive-layer">Meta-Cognitive Layer</a></h2>
+<h3 id="meta-memory-awareness"><a class="header" href="#meta-memory-awareness">Meta-Memory Awareness</a></h3>
+<p>Brain AI develops awareness of its own knowledge:</p>
+<p><strong>Meta-Memory Functions:</strong></p>
+<ul>
+<li><strong>Knowledge Confidence</strong>: Understanding certainty levels</li>
+<li><strong>Knowledge Gaps</strong>: Recognizing what it doesn’t know</li>
+<li><strong>Learning Efficiency</strong>: Tracking how well it learns</li>
+<li><strong>Knowledge Quality</strong>: Assessing reliability of information</li>
+</ul>
+<h3 id="novelty-detection"><a class="header" href="#novelty-detection">Novelty Detection</a></h3>
+<p>The system actively identifies new or unexpected information:</p>
+<p><strong>Detection Methods:</strong></p>
+<ul>
+<li><strong>Statistical Deviation</strong>: Information that doesn’t match learned patterns</li>
+<li><strong>Prediction Failure</strong>: When predictions are consistently wrong</li>
+<li><strong>Context Mismatch</strong>: Familiar elements in unfamiliar combinations</li>
+<li><strong>Temporal Anomalies</strong>: Events occurring at unexpected times</li>
+</ul>
+<h3 id="curiosity-driven-learning"><a class="header" href="#curiosity-driven-learning">Curiosity-Driven Learning</a></h3>
+<p>Brain AI prioritizes learning based on curiosity and gaps:</p>
+<p><strong>Curiosity Mechanisms:</strong></p>
+<ul>
+<li><strong>Information Gap Theory</strong>: Seek information to fill knowledge gaps</li>
+<li><strong>Prediction Error Minimization</strong>: Focus on areas with poor prediction</li>
+<li><strong>Novelty Seeking</strong>: Prioritize new and unusual information</li>
+<li><strong>Optimal Challenge</strong>: Seek information that’s neither too easy nor too hard</li>
+</ul>
+<h2 id="pipeline-optimization"><a class="header" href="#pipeline-optimization">Pipeline Optimization</a></h2>
+<h3 id="adaptive-processing"><a class="header" href="#adaptive-processing">Adaptive Processing</a></h3>
+<p>The pipeline adapts based on performance and context:</p>
+<p><strong>Adaptation Mechanisms:</strong></p>
+<ul>
+<li><strong>Dynamic Thresholds</strong>: Adjust sensitivity based on performance</li>
+<li><strong>Resource Allocation</strong>: Distribute processing power where needed most</li>
+<li><strong>Learning Rate Adjustment</strong>: Modify learning speed based on progress</li>
+<li><strong>Pipeline Reconfiguration</strong>: Change processing order for efficiency</li>
+</ul>
+<h3 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h3>
+<p>Each stage is continuously monitored for optimization:</p>
+<p><strong>Monitoring Metrics:</strong></p>
+<ul>
+<li><strong>Processing Speed</strong>: Time taken for each stage</li>
+<li><strong>Accuracy</strong>: Correctness of predictions and classifications</li>
+<li><strong>Memory Usage</strong>: Resource consumption at each stage</li>
+<li><strong>Learning Progress</strong>: Rate of knowledge acquisition</li>
+</ul>
+<h3 id="error-handling-and-recovery"><a class="header" href="#error-handling-and-recovery">Error Handling and Recovery</a></h3>
+<p>The pipeline includes robust error handling:</p>
+<p><strong>Error Recovery Strategies:</strong></p>
+<ul>
+<li><strong>Graceful Degradation</strong>: Continue processing with reduced capability</li>
+<li><strong>Rollback Mechanisms</strong>: Revert to previous stable states</li>
+<li><strong>Alternative Pathways</strong>: Use backup processing methods</li>
+<li><strong>Error Learning</strong>: Learn from errors to prevent repetition</li>
+</ul>
+<h2 id="integration-with-external-systems"><a class="header" href="#integration-with-external-systems">Integration with External Systems</a></h2>
+<h3 id="api-integration"><a class="header" href="#api-integration">API Integration</a></h3>
+<p>The cognitive pipeline can be accessed through various interfaces:</p>
+<p><strong>Integration Points:</strong></p>
+<ul>
+<li><strong>Real-time Processing</strong>: Stream processing for live input</li>
+<li><strong>Batch Processing</strong>: Efficient processing of large datasets</li>
+<li><strong>Interactive Queries</strong>: Direct access to specific pipeline stages</li>
+<li><strong>Monitoring Interfaces</strong>: Real-time pipeline status and metrics</li>
+</ul>
+<h3 id="customization-and-extension"><a class="header" href="#customization-and-extension">Customization and Extension</a></h3>
+<p>The pipeline is designed for customization:</p>
+<p><strong>Extension Mechanisms:</strong></p>
+<ul>
+<li><strong>Plugin Architecture</strong>: Add custom processing stages</li>
+<li><strong>Configuration Parameters</strong>: Tune behavior for specific use cases</li>
+<li><strong>Custom Models</strong>: Integrate domain-specific models</li>
+<li><strong>Callback Systems</strong>: Hook into pipeline events</li>
+</ul>
+<p>This cognitive pipeline represents a sophisticated approach to artificial intelligence that mirrors human cognitive development while providing the flexibility and power needed for diverse applications. Each stage builds upon the previous ones, creating an emergent intelligence that can learn, reason, and adapt to new situations.</p>
+<h2 id="future-developments"><a class="header" href="#future-developments">Future Developments</a></h2>
+<p>The cognitive pipeline continues to evolve with ongoing research:</p>
+<p><strong>Planned Enhancements:</strong></p>
+<ul>
+<li><strong>Multi-Modal Processing</strong>: Integration of visual and auditory inputs</li>
+<li><strong>Emotional Modeling</strong>: Understanding and simulating emotional responses</li>
+<li><strong>Social Cognition</strong>: Modeling interactions with other agents</li>
+<li><strong>Creative Synthesis</strong>: Generating novel combinations of existing knowledge</li>
+</ul>
+<p>This pipeline provides the foundation for Brain AI’s cognitive capabilities and serves as a platform for future cognitive architecture research and development.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../architecture/system-architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../architecture/data-flow.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../architecture/system-architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../architecture/data-flow.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

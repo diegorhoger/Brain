@@ -147,5 +147,14 @@ pub use visualization::{
     GraphMetadata, TimelineData, TimelineEvent, TimelineMetadata, GraphQueryParams
 };
 
+// Add this line after the existing module declarations
+pub mod github_integration;
+
+// Add this line to the exports section
+pub use github_integration::{
+    GitHubClient, GitHubLearningEngine, GitHubLearningConfig, GitHubLearningResult,
+    RepositoryInfo, RepositoryFile, FileType
+};
+
 /// Current version of the Brain architecture
 pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 

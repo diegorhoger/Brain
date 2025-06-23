@@ -1,3 +1,254 @@
+/**
+ * Brain AI Documentation Custom JavaScript
+ * Handles browser compatibility and removes inline styles for better validation
+ */
+
+// Fix browser compatibility issues
+(function() {
+    'use strict';
+
+    // Remove theme-color meta tag for browsers that don't support it
+    function fixThemeColorCompatibility() {
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+            // Check if browser supports theme-color
+            const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+            const isOpera = navigator.userAgent.toLowerCase().indexOf('opera') > -1 || 
+                           navigator.userAgent.toLowerCase().indexOf('opr') > -1;
+            
+            // Remove for unsupported browsers to avoid warnings
+            if (isFirefox || isOpera) {
+                themeColorMeta.remove();
+            }
+        }
+    }
+
+    // Remove inline styles and replace with CSS classes
+    function removeInlineStyles() {
+        // Find all elements with inline styles
+        const elementsWithInlineStyles = document.querySelectorAll('[style]');
+        
+        elementsWithInlineStyles.forEach(element => {
+            const inlineStyle = element.getAttribute('style');
+            
+            // Handle clear: both specifically
+            if (inlineStyle && inlineStyle.includes('clear: both')) {
+                element.classList.add('clear-both');
+                element.removeAttribute('style');
+            }
+            
+            // Handle other common inline styles
+            if (inlineStyle) {
+                // Replace common inline styles with classes
+                if (inlineStyle.includes('display: none')) {
+                    element.classList.add('hidden');
+                    element.removeAttribute('style');
+                }
+                
+                if (inlineStyle.includes('text-align: center')) {
+                    element.classList.add('text-center');
+                    element.removeAttribute('style');
+                }
+                
+                if (inlineStyle.includes('margin: 0')) {
+                    element.classList.add('no-margin');
+                    element.removeAttribute('style');
+                }
+            }
+        });
+    }
+
+    // Add utility CSS classes dynamically if they don't exist
+    function addUtilityClasses() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .clear-both { clear: both !important; }
+            .hidden { display: none !important; }
+            .text-center { text-align: center !important; }
+            .no-margin { margin: 0 !important; }
+            
+            /* Ensure nav-wrapper has proper clearing */
+            .nav-wrapper {
+                clear: both !important;
+            }
+            
+            .nav-wrapper::after {
+                content: "";
+                display: table;
+                clear: both;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Initialize fixes when DOM is ready
+    function initializeFixes() {
+        fixThemeColorCompatibility();
+        addUtilityClasses();
+        
+        // Use a small delay to ensure all content is loaded
+        setTimeout(() => {
+            removeInlineStyles();
+        }, 100);
+        
+        // Also run after any dynamic content changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    setTimeout(removeInlineStyles, 50);
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeFixes);
+    } else {
+        initializeFixes();
+    }
+
+})();
+
+// Enhanced search functionality
+(function() {
+    'use strict';
+
+    // Improve search results display
+    function enhanceSearchResults() {
+        const searchResults = document.getElementById('searchresults');
+        if (searchResults) {
+            searchResults.addEventListener('DOMNodeInserted', function() {
+                const results = searchResults.querySelectorAll('li');
+                results.forEach(result => {
+                    result.style.borderRadius = '4px';
+                    result.style.marginBottom = '8px';
+                    result.style.padding = '8px';
+                    result.style.border = '1px solid #e5e7eb';
+                });
+            });
+        }
+    }
+
+    // Add keyboard navigation improvements
+    function enhanceKeyboardNavigation() {
+        document.addEventListener('keydown', function(e) {
+            // Improve accessibility
+            if (e.key === 'Escape') {
+                const searchWrapper = document.getElementById('search-wrapper');
+                if (searchWrapper && !searchWrapper.classList.contains('hidden')) {
+                    document.getElementById('search-toggle').click();
+                }
+            }
+        });
+    }
+
+    // Initialize enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        enhanceSearchResults();
+        enhanceKeyboardNavigation();
+    });
+
+})();
+
+// Code block enhancements
+(function() {
+    'use strict';
+
+    // Add copy buttons to code blocks
+    function addCopyButtons() {
+        const codeBlocks = document.querySelectorAll('pre code');
+        
+        codeBlocks.forEach(codeBlock => {
+            const pre = codeBlock.parentElement;
+            
+            // Skip if copy button already exists
+            if (pre.querySelector('.copy-button')) {
+                return;
+            }
+            
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.textContent = 'Copy';
+            copyButton.setAttribute('aria-label', 'Copy code to clipboard');
+            
+            copyButton.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(codeBlock.textContent);
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy code:', err);
+                    copyButton.textContent = 'Failed';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy';
+                    }, 2000);
+                }
+            });
+            
+            pre.style.position = 'relative';
+            copyButton.style.position = 'absolute';
+            copyButton.style.top = '8px';
+            copyButton.style.right = '8px';
+            
+            pre.appendChild(copyButton);
+        });
+    }
+
+    // Initialize code enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        addCopyButtons();
+        
+        // Re-add copy buttons when new content is loaded
+        const observer = new MutationObserver(() => {
+            addCopyButtons();
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+
+})();
+
+// Theme enhancements
+(function() {
+    'use strict';
+
+    // Smooth theme transitions
+    function enableSmoothThemeTransitions() {
+        const style = document.createElement('style');
+        style.textContent = `
+            * {
+                transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            }
+            
+            .chapter-title {
+                transition: all 0.3s ease;
+            }
+            
+            .sidebar {
+                transition: all 0.3s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Initialize theme enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        enableSmoothThemeTransitions();
+    });
+
+})();
+
 // Brain AI Documentation Custom JavaScript
 
 (function() {

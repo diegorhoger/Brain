@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Testing Strategy - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,764 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/development/testing.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="testing-strategy"><a class="header" href="#testing-strategy">Testing Strategy</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../development/code-organization.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../development/contributing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../development/code-organization.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../development/contributing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="testing-strategy"><a class="header" href="#testing-strategy">Testing Strategy</a></h1>
+<p>This guide covers the comprehensive testing strategy for Brain AI, including unit tests, integration tests, performance tests, and testing best practices.</p>
+<h2 id="testing-philosophy"><a class="header" href="#testing-philosophy">Testing Philosophy</a></h2>
+<p>Brain AI follows a multi-layered testing approach:</p>
+<ol>
+<li><strong>Unit Tests</strong>: Test individual components in isolation</li>
+<li><strong>Integration Tests</strong>: Test component interactions</li>
+<li><strong>System Tests</strong>: Test the complete system end-to-end</li>
+<li><strong>Performance Tests</strong>: Validate performance characteristics</li>
+<li><strong>Property Tests</strong>: Test with generated inputs</li>
+</ol>
+<h2 id="test-organization"><a class="header" href="#test-organization">Test Organization</a></h2>
+<h3 id="test-structure"><a class="header" href="#test-structure">Test Structure</a></h3>
+<pre><code>tests/
+├── unit/                    # Unit tests (also in src/ modules)
+├── integration/             # Integration tests
+├── system/                  # System-level tests
+├── performance/             # Performance benchmarks
+├── fixtures/                # Test data and fixtures
+└── common/                  # Shared test utilities
+</code></pre>
+<h3 id="running-tests"><a class="header" href="#running-tests">Running Tests</a></h3>
+<pre><code class="language-bash"># Run all tests
+cargo test
+
+# Run specific test categories
+cargo test --test unit_tests
+cargo test --test integration_tests
+cargo test --test system_integration_tests
+
+# Run with nextest (faster)
+cargo nextest run
+
+# Run with coverage
+cargo tarpaulin --out html
+</code></pre>
+<h2 id="unit-testing"><a class="header" href="#unit-testing">Unit Testing</a></h2>
+<h3 id="component-level-tests"><a class="header" href="#component-level-tests">Component-Level Tests</a></h3>
+<p>Each component has comprehensive unit tests:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Example: Memory system unit tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_memory_formation() {
+        let mut memory_system = MemorySystem::new(1000);
+        let content = "test content";
+        
+        let memory_id = memory_system.form_memory(content, 0.8).unwrap();
+        assert!(memory_system.get_memory(&amp;memory_id).is_some());
+    }
+    
+    #[test]
+    fn test_memory_consolidation() {
+        let mut memory_system = MemorySystem::new(1000);
+        
+        // Add multiple memories
+        for i in 0..10 {
+            memory_system.form_memory(&amp;format!("content {}", i), 0.8).unwrap();
+        }
+        
+        // Trigger consolidation
+        memory_system.consolidate_memories();
+        
+        // Verify consolidation occurred
+        assert!(memory_system.get_consolidation_count() &gt; 0);
+    }
+    
+    #[tokio::test]
+    async fn test_async_memory_operations() {
+        let memory_system = Arc::new(Mutex::new(MemorySystem::new(1000)));
+        
+        // Test concurrent memory formation
+        let handles: Vec&lt;_&gt; = (0..10).map(|i| {
+            let memory_system = Arc::clone(&amp;memory_system);
+            tokio::spawn(async move {
+                let content = format!("async content {}", i);
+                memory_system.lock().await.form_memory(&amp;content, 0.8)
+            })
+        }).collect();
+        
+        // Wait for all operations
+        for handle in handles {
+            handle.await.unwrap().unwrap();
+        }
+        
+        assert_eq!(memory_system.lock().await.memory_count(), 10);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-utilities"><a class="header" href="#testing-utilities">Testing Utilities</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/common/mod.rs
+pub fn create_test_memory_system() -&gt; MemorySystem {
+    MemorySystem::new(1000)
+}
+
+pub fn create_test_concept_graph() -&gt; ConceptGraph {
+    ConceptGraph::new()
+}
+
+pub fn load_test_data(filename: &amp;str) -&gt; String {
+    std::fs::read_to_string(format!("tests/fixtures/{}", filename))
+        .expect("Failed to load test data")
+}
+
+pub async fn wait_for_condition&lt;F&gt;(mut condition: F, timeout: Duration) -&gt; bool
+where
+    F: FnMut() -&gt; bool,
+{
+    let start = Instant::now();
+    while start.elapsed() &lt; timeout {
+        if condition() {
+            return true;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    false
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h2>
+<h3 id="component-integration-tests"><a class="header" href="#component-integration-tests">Component Integration Tests</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/integration_tests.rs
+use brain_ai::*;
+use tokio;
+
+#[tokio::test]
+async fn test_memory_concept_integration() {
+    let mut system = BrainSystem::new().await.unwrap();
+    
+    // Form memory
+    let input = "The cat sat on the mat";
+    let result = system.process_input(input).await.unwrap();
+    
+    // Verify memory formation
+    assert!(result.memory_formed);
+    
+    // Verify concept extraction
+    let concepts = system.get_concepts().await.unwrap();
+    assert!(concepts.iter().any(|c| c.name.contains("cat")));
+    assert!(concepts.iter().any(|c| c.name.contains("mat")));
+    
+    // Verify concept relationships
+    let relationships = system.get_concept_relationships().await.unwrap();
+    assert!(!relationships.is_empty());
+}
+
+#[tokio::test]
+async fn test_learning_pipeline() {
+    let mut system = BrainSystem::new().await.unwrap();
+    
+    // Process multiple related inputs
+    let inputs = vec![
+        "Cats are animals",
+        "Dogs are animals", 
+        "Animals need food",
+        "Food provides energy"
+    ];
+    
+    for input in inputs {
+        system.process_input(input).await.unwrap();
+    }
+    
+    // Verify learning occurred
+    let insights = system.get_insights().await.unwrap();
+    assert!(!insights.is_empty());
+    
+    // Verify concept graph structure
+    let graph = system.get_concept_graph().await.unwrap();
+    assert!(graph.node_count() &gt; 4);
+    assert!(graph.edge_count() &gt; 0);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="api-integration-tests"><a class="header" href="#api-integration-tests">API Integration Tests</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/api_tests.rs
+use axum::http::StatusCode;
+use axum_test::TestServer;
+use brain_ai::create_app;
+
+#[tokio::test]
+async fn test_learn_endpoint() {
+    let app = create_app().await;
+    let server = TestServer::new(app).unwrap();
+    
+    // Test learning endpoint
+    let response = server
+        .post("/api/v1/learn")
+        .json(&amp;serde_json::json!({
+            "content": "Test learning content",
+            "priority": "high"
+        }))
+        .await;
+    
+    assert_eq!(response.status_code(), StatusCode::OK);
+    
+    let body: serde_json::Value = response.json();
+    assert!(body["memory_formed"].as_bool().unwrap());
+    assert!(body["memory_id"].as_str().is_some());
+}
+
+#[tokio::test]
+async fn test_query_endpoint() {
+    let app = create_app().await;
+    let server = TestServer::new(app).unwrap();
+    
+    // First, add some content
+    server
+        .post("/api/v1/learn")
+        .json(&amp;serde_json::json!({
+            "content": "Rust is a systems programming language"
+        }))
+        .await;
+    
+    // Then query for it
+    let response = server
+        .post("/api/v1/query")
+        .json(&amp;serde_json::json!({
+            "query": "programming language",
+            "limit": 10
+        }))
+        .await;
+    
+    assert_eq!(response.status_code(), StatusCode::OK);
+    
+    let body: serde_json::Value = response.json();
+    assert!(!body["results"].as_array().unwrap().is_empty());
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="system-testing"><a class="header" href="#system-testing">System Testing</a></h2>
+<h3 id="end-to-end-system-tests"><a class="header" href="#end-to-end-system-tests">End-to-End System Tests</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/system_integration_tests.rs
+use brain_ai::*;
+use std::time::Duration;
+use tokio::time::timeout;
+
+#[tokio::test]
+async fn test_complete_learning_cycle() {
+    let mut system = BrainSystem::new().await.unwrap();
+    
+    // Phase 1: Character-level learning
+    let text = "The quick brown fox jumps over the lazy dog";
+    for chunk in text.chars().collect::&lt;Vec&lt;_&gt;&gt;().chunks(5) {
+        let chunk_str: String = chunk.iter().collect();
+        system.process_input(&amp;chunk_str).await.unwrap();
+    }
+    
+    // Phase 2: Pattern discovery
+    system.trigger_pattern_discovery().await.unwrap();
+    
+    // Phase 3: Concept formation
+    system.trigger_concept_formation().await.unwrap();
+    
+    // Phase 4: Insight extraction
+    let insights = system.extract_insights().await.unwrap();
+    
+    // Verify complete pipeline
+    assert!(system.get_memory_count().await.unwrap() &gt; 0);
+    assert!(system.get_concept_count().await.unwrap() &gt; 0);
+    assert!(!insights.is_empty());
+}
+
+#[tokio::test]
+async fn test_system_resilience() {
+    let mut system = BrainSystem::new().await.unwrap();
+    
+    // Test with invalid inputs
+    let invalid_inputs = vec![
+        "",           // Empty string
+        " ",          // Whitespace only
+        "a".repeat(1000000), // Very long string
+        "\0\0\0",     // Null bytes
+        "🦀🦀🦀",    // Unicode
+    ];
+    
+    for input in invalid_inputs {
+        let result = system.process_input(&amp;input).await;
+        // Should handle gracefully without panicking
+        assert!(result.is_ok() || result.is_err());
+    }
+    
+    // System should still be functional
+    let result = system.process_input("normal input").await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn test_concurrent_operations() {
+    let system = Arc::new(Mutex::new(BrainSystem::new().await.unwrap()));
+    
+    // Spawn multiple concurrent operations
+    let handles: Vec&lt;_&gt; = (0..10).map(|i| {
+        let system = Arc::clone(&amp;system);
+        tokio::spawn(async move {
+            let input = format!("concurrent input {}", i);
+            system.lock().await.process_input(&amp;input).await
+        })
+    }).collect();
+    
+    // Wait for all operations with timeout
+    let results = timeout(Duration::from_secs(30), async {
+        let mut results = Vec::new();
+        for handle in handles {
+            results.push(handle.await.unwrap());
+        }
+        results
+    }).await.unwrap();
+    
+    // Verify all operations completed successfully
+    for result in results {
+        assert!(result.is_ok());
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-testing"><a class="header" href="#performance-testing">Performance Testing</a></h2>
+<h3 id="benchmarks"><a class="header" href="#benchmarks">Benchmarks</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// benches/memory_benchmarks.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use brain_ai::memory::MemorySystem;
+
+fn memory_formation_benchmark(c: &amp;mut Criterion) {
+    let mut memory_system = MemorySystem::new(10000);
+    
+    c.bench_function("memory_formation", |b| {
+        b.iter(|| {
+            let content = format!("benchmark content {}", black_box(rand::random::&lt;u32&gt;()));
+            memory_system.form_memory(black_box(&amp;content), black_box(0.8))
+        })
+    });
+}
+
+fn memory_retrieval_benchmark(c: &amp;mut Criterion) {
+    let mut memory_system = MemorySystem::new(10000);
+    
+    // Pre-populate with memories
+    let memory_ids: Vec&lt;_&gt; = (0..1000).map(|i| {
+        memory_system.form_memory(&amp;format!("content {}", i), 0.8).unwrap()
+    }).collect();
+    
+    c.bench_function("memory_retrieval", |b| {
+        b.iter(|| {
+            let id = &amp;memory_ids[black_box(rand::random::&lt;usize&gt;() % memory_ids.len())];
+            memory_system.get_memory(black_box(id))
+        })
+    });
+}
+
+criterion_group!(benches, memory_formation_benchmark, memory_retrieval_benchmark);
+criterion_main!(benches);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="load-testing"><a class="header" href="#load-testing">Load Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/load_tests.rs
+use brain_ai::*;
+use std::time::{Duration, Instant};
+use tokio::time::timeout;
+
+#[tokio::test]
+async fn test_memory_system_load() {
+    let mut system = BrainSystem::new().await.unwrap();
+    let start = Instant::now();
+    
+    // Process 1000 memories
+    for i in 0..1000 {
+        let content = format!("load test content {}", i);
+        system.process_input(&amp;content).await.unwrap();
+    }
+    
+    let duration = start.elapsed();
+    println!("Processed 1000 memories in {:?}", duration);
+    
+    // Verify performance requirements
+    assert!(duration &lt; Duration::from_secs(60)); // Should complete within 1 minute
+    assert!(system.get_memory_count().await.unwrap() == 1000);
+}
+
+#[tokio::test]
+async fn test_concurrent_load() {
+    let system = Arc::new(Mutex::new(BrainSystem::new().await.unwrap()));
+    let start = Instant::now();
+    
+    // Spawn 100 concurrent tasks, each processing 10 memories
+    let handles: Vec&lt;_&gt; = (0..100).map(|task_id| {
+        let system = Arc::clone(&amp;system);
+        tokio::spawn(async move {
+            for i in 0..10 {
+                let content = format!("concurrent load test {} {}", task_id, i);
+                system.lock().await.process_input(&amp;content).await.unwrap();
+            }
+        })
+    }).collect();
+    
+    // Wait for all tasks
+    for handle in handles {
+        handle.await.unwrap();
+    }
+    
+    let duration = start.elapsed();
+    println!("Processed 1000 memories concurrently in {:?}", duration);
+    
+    // Verify all memories were processed
+    assert!(system.lock().await.get_memory_count().await.unwrap() == 1000);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="property-testing"><a class="header" href="#property-testing">Property Testing</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/property_tests.rs
+use proptest::prelude::*;
+use brain_ai::memory::MemorySystem;
+
+proptest! {
+    #[test]
+    fn test_memory_formation_properties(
+        content in "\\PC*",  // Any string
+        confidence in 0.0f64..1.0f64
+    ) {
+        let mut memory_system = MemorySystem::new(1000);
+        
+        if !content.is_empty() {
+            let result = memory_system.form_memory(&amp;content, confidence);
+            prop_assert!(result.is_ok());
+            
+            let memory_id = result.unwrap();
+            let retrieved = memory_system.get_memory(&amp;memory_id);
+            prop_assert!(retrieved.is_some());
+            prop_assert_eq!(retrieved.unwrap().content, content);
+        }
+    }
+    
+    #[test]
+    fn test_concept_extraction_properties(
+        words in prop::collection::vec("[a-zA-Z]+", 1..20)
+    ) {
+        let content = words.join(" ");
+        let mut system = futures::executor::block_on(BrainSystem::new()).unwrap();
+        
+        let result = futures::executor::block_on(system.process_input(&amp;content));
+        prop_assert!(result.is_ok());
+        
+        // Properties that should always hold
+        let concepts = futures::executor::block_on(system.get_concepts()).unwrap();
+        prop_assert!(concepts.len() &lt;= words.len()); // Can't have more concepts than words
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="test-data-management"><a class="header" href="#test-data-management">Test Data Management</a></h2>
+<h3 id="fixtures"><a class="header" href="#fixtures">Fixtures</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/fixtures/mod.rs
+use std::path::Path;
+
+pub struct TestFixtures;
+
+impl TestFixtures {
+    pub fn load_sample_text() -&gt; String {
+        std::fs::read_to_string("tests/fixtures/sample_text.txt")
+            .expect("Failed to load sample text")
+    }
+    
+    pub fn load_concept_data() -&gt; Vec&lt;String&gt; {
+        std::fs::read_to_string("tests/fixtures/concepts.json")
+            .map(|s| serde_json::from_str(&amp;s).expect("Invalid JSON"))
+            .expect("Failed to load concept data")
+    }
+    
+    pub fn create_temp_db() -&gt; tempfile::TempDir {
+        tempfile::tempdir().expect("Failed to create temp directory")
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="mock-services"><a class="header" href="#mock-services">Mock Services</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// tests/mocks/mod.rs
+use brain_ai::*;
+use mockall::mock;
+
+mock! {
+    ExternalService {}
+    
+    #[async_trait]
+    impl ExternalServiceTrait for ExternalService {
+        async fn fetch_data(&amp;self, query: &amp;str) -&gt; Result&lt;String, BrainError&gt;;
+        async fn validate_content(&amp;self, content: &amp;str) -&gt; Result&lt;bool, BrainError&gt;;
+    }
+}
+
+// Usage in tests
+#[tokio::test]
+async fn test_with_mock_service() {
+    let mut mock_service = MockExternalService::new();
+    mock_service
+        .expect_fetch_data()
+        .with(eq("test query"))
+        .times(1)
+        .returning(|_| Ok("mock response".to_string()));
+    
+    // Use mock in test
+    let result = mock_service.fetch_data("test query").await;
+    assert_eq!(result.unwrap(), "mock response");
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="continuous-integration"><a class="header" href="#continuous-integration">Continuous Integration</a></h2>
+<h3 id="github-actions-workflow"><a class="header" href="#github-actions-workflow">GitHub Actions Workflow</a></h3>
+<pre><code class="language-yaml"># .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run tests
+      run: |
+        cargo test --all-features
+        cargo test --release --all-features
+    
+    - name: Run clippy
+      run: cargo clippy --all-features -- -D warnings
+    
+    - name: Check formatting
+      run: cargo fmt -- --check
+    
+    - name: Generate coverage
+      run: |
+        cargo install cargo-tarpaulin
+        cargo tarpaulin --out xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+</code></pre>
+<h2 id="testing-best-practices"><a class="header" href="#testing-best-practices">Testing Best Practices</a></h2>
+<h3 id="test-organization-1"><a class="header" href="#test-organization-1">Test Organization</a></h3>
+<ol>
+<li><strong>Arrange-Act-Assert</strong>: Structure tests clearly</li>
+<li><strong>Single Responsibility</strong>: One test per behavior</li>
+<li><strong>Descriptive Names</strong>: Test names should describe the scenario</li>
+<li><strong>Independent Tests</strong>: Tests should not depend on each other</li>
+</ol>
+<h3 id="performance-considerations"><a class="header" href="#performance-considerations">Performance Considerations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Use lazy_static for expensive setup
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref TEST_SYSTEM: Mutex&lt;BrainSystem&gt; = {
+        Mutex::new(futures::executor::block_on(BrainSystem::new()).unwrap())
+    };
+}
+
+#[tokio::test]
+async fn test_with_shared_system() {
+    let system = TEST_SYSTEM.lock().await;
+    // Use shared system for faster tests
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="error-testing"><a class="header" href="#error-testing">Error Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_error_conditions() {
+    let mut system = BrainSystem::new().await.unwrap();
+    
+    // Test various error conditions
+    let result = system.process_input("").await;
+    assert!(matches!(result, Err(BrainError::InvalidInput(_))));
+    
+    let result = system.get_memory(&amp;"invalid_id".to_string()).await;
+    assert!(matches!(result, Err(BrainError::MemoryNotFound(_))));
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This comprehensive testing strategy ensures Brain AI maintains high quality and reliability across all components and use cases.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../development/code-organization.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../development/contributing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../development/code-organization.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../development/contributing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

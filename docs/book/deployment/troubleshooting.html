@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Troubleshooting - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,675 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/deployment/troubleshooting.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../deployment/scaling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../development/setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../deployment/scaling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../development/setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h1>
+<p>Comprehensive troubleshooting guide for diagnosing and resolving common issues in Brain AI production deployments.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>This guide covers systematic approaches to identifying, diagnosing, and resolving issues across all Brain AI components:</p>
+<ul>
+<li><strong>System-Level Issues</strong>: Infrastructure, networking, storage</li>
+<li><strong>Application Issues</strong>: Memory system, concept graph, learning pipeline</li>
+<li><strong>Performance Issues</strong>: Latency, throughput, resource utilization</li>
+<li><strong>Data Issues</strong>: Corruption, consistency, backup/recovery</li>
+<li><strong>Integration Issues</strong>: API, authentication, external services</li>
+</ul>
+<h2 id="diagnostic-tools"><a class="header" href="#diagnostic-tools">Diagnostic Tools</a></h2>
+<h3 id="health-check-system"><a class="header" href="#health-check-system">Health Check System</a></h3>
+<pre><code class="language-bash"># Comprehensive system health check
+./scripts/health-check.sh --comprehensive
+
+# Component-specific checks
+./scripts/health-check.sh --component memory
+./scripts/health-check.sh --component concepts
+./scripts/health-check.sh --component learning
+./scripts/health-check.sh --component api
+
+# Output format:
+# ✓ Memory System: Healthy (response time: 12ms)
+# ✓ Concept Graph: Healthy (nodes: 45,231, edges: 128,445)
+# ✗ Learning Pipeline: Degraded (queue depth: 15,000/10,000)
+# ✓ API Endpoints: Healthy (avg response: 23ms)
+</code></pre>
+<h3 id="log-analysis"><a class="header" href="#log-analysis">Log Analysis</a></h3>
+<pre><code class="language-bash"># Real-time log monitoring
+tail -f /var/log/brain-ai/application.log | grep -E "(ERROR|WARN|PANIC)"
+
+# Structured log analysis
+./scripts/analyze-logs.sh --since "1 hour ago" --level error
+
+# Common log patterns
+./scripts/find-log-patterns.sh --pattern "memory_allocation_failed"
+./scripts/find-log-patterns.sh --pattern "database_connection_timeout"
+</code></pre>
+<h3 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h3>
+<pre><code class="language-bash"># Real-time performance dashboard
+./scripts/performance-dashboard.sh
+
+# Resource utilization
+htop
+iotop
+nethogs
+
+# Application-specific metrics
+./scripts/brain-ai-metrics.sh --component all --interval 5
+</code></pre>
+<h2 id="common-issues-and-solutions"><a class="header" href="#common-issues-and-solutions">Common Issues and Solutions</a></h2>
+<h3 id="1-service-startup-issues"><a class="header" href="#1-service-startup-issues">1. Service Startup Issues</a></h3>
+<h4 id="issue-brain-ai-fails-to-start"><a class="header" href="#issue-brain-ai-fails-to-start">Issue: Brain AI fails to start</a></h4>
+<p><strong>Symptoms:</strong></p>
+<pre><code class="language-bash"># Service status shows failed
+systemctl status brain-ai
+● brain-ai.service - Brain AI Cognitive System
+   Loaded: loaded (/etc/systemd/system/brain-ai.service; enabled)
+   Active: failed (Result: exit-code) since Mon 2024-01-01 10:00:00 UTC
+</code></pre>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Check service logs
+journalctl -u brain-ai.service -n 50
+
+# Check configuration
+./scripts/validate-config.sh
+
+# Check dependencies
+./scripts/check-dependencies.sh
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Configuration Issues:</strong></li>
+</ol>
+<pre><code class="language-bash"># Validate configuration file
+./scripts/validate-config.sh
+# Fix: Correct invalid configuration parameters
+
+# Check environment variables
+env | grep BRAIN_AI
+# Fix: Set required environment variables
+export ANTHROPIC_API_KEY=your_key_here
+</code></pre>
+<ol start="2">
+<li><strong>Database Connection Issues:</strong></li>
+</ol>
+<pre><code class="language-bash"># Test database connectivity
+./scripts/test-database-connection.sh
+# Fix: Verify database is running and accessible
+systemctl start postgresql
+./scripts/create-database.sh
+</code></pre>
+<ol start="3">
+<li><strong>Port Conflicts:</strong></li>
+</ol>
+<pre><code class="language-bash"># Check port availability
+netstat -tlnp | grep 8080
+# Fix: Kill conflicting process or change port
+sudo kill -9 &lt;pid&gt;
+# or update config to use different port
+</code></pre>
+<h3 id="2-memory-system-issues"><a class="header" href="#2-memory-system-issues">2. Memory System Issues</a></h3>
+<h4 id="issue-high-memory-usage-or-memory-leaks"><a class="header" href="#issue-high-memory-usage-or-memory-leaks">Issue: High memory usage or memory leaks</a></h4>
+<p><strong>Symptoms:</strong></p>
+<pre><code class="language-bash"># High memory usage
+free -h
+              total        used        free      shared  buff/cache   available
+Mem:           8.0G        7.2G        100M         0B        700M        600M
+
+# Memory allocation errors in logs
+grep "memory allocation failed" /var/log/brain-ai/application.log
+</code></pre>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Memory usage analysis
+./scripts/analyze-memory-usage.sh
+
+# Check for memory leaks
+valgrind --leak-check=full ./target/release/brain-ai
+
+# Monitor memory patterns
+./scripts/monitor-memory-patterns.sh --duration 300
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase Memory Limits:</strong></li>
+</ol>
+<pre><code class="language-toml"># config/brain.toml
+[memory]
+capacity = 2000000  # Increase from 1000000
+cache_size_mb = 1024  # Increase cache
+</code></pre>
+<ol start="2">
+<li><strong>Enable Memory Compression:</strong></li>
+</ol>
+<pre><code class="language-toml">[performance]
+memory_compression = true
+compression_algorithm = "lz4"
+</code></pre>
+<ol start="3">
+<li><strong>Implement Memory Cleanup:</strong></li>
+</ol>
+<pre><code class="language-bash"># Manual memory cleanup
+curl -X POST http://localhost:8080/api/v1/admin/cleanup/memory
+
+# Automated cleanup configuration
+[memory.cleanup]
+enabled = true
+interval_minutes = 30
+threshold_percent = 80
+</code></pre>
+<h3 id="3-database-issues"><a class="header" href="#3-database-issues">3. Database Issues</a></h3>
+<h4 id="issue-database-connection-timeouts"><a class="header" href="#issue-database-connection-timeouts">Issue: Database connection timeouts</a></h4>
+<p><strong>Symptoms:</strong></p>
+<pre><code class="language-bash"># Connection timeout errors
+grep "database connection timeout" /var/log/brain-ai/application.log
+2024-01-01T10:00:00Z ERROR database connection timeout after 30s
+</code></pre>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Check database status
+systemctl status postgresql
+
+# Test connection
+psql -h localhost -U brain_ai -d brain_ai -c "SELECT 1;"
+
+# Check connection pool
+./scripts/check-connection-pool.sh
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase Connection Pool:</strong></li>
+</ol>
+<pre><code class="language-toml">[database]
+connection_pool_size = 50  # Increase from 20
+connection_timeout_seconds = 60  # Increase timeout
+</code></pre>
+<ol start="2">
+<li><strong>Database Optimization:</strong></li>
+</ol>
+<pre><code class="language-sql">-- Increase PostgreSQL connection limits
+ALTER SYSTEM SET max_connections = 200;
+SELECT pg_reload_conf();
+
+-- Optimize queries
+ANALYZE;
+REINDEX DATABASE brain_ai;
+</code></pre>
+<ol start="3">
+<li><strong>Connection Pool Monitoring:</strong></li>
+</ol>
+<pre><code class="language-bash"># Monitor connection pool health
+./scripts/monitor-connection-pool.sh --continuous
+</code></pre>
+<h3 id="4-api-issues"><a class="header" href="#4-api-issues">4. API Issues</a></h3>
+<h4 id="issue-high-api-response-times"><a class="header" href="#issue-high-api-response-times">Issue: High API response times</a></h4>
+<p><strong>Symptoms:</strong></p>
+<pre><code class="language-bash"># Slow API responses
+curl -w "@curl-format.txt" -s -o /dev/null http://localhost:8080/api/v1/health
+     time_namelookup:  0.001
+        time_connect:  0.002
+     time_appconnect:  0.000
+    time_pretransfer:  0.002
+       time_redirect:  0.000
+  time_starttransfer:  2.456  # High response time
+          time_total:  2.456
+</code></pre>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># API performance analysis
+./scripts/analyze-api-performance.sh --endpoint /api/v1/memory/search
+
+# Check request queue depth
+./scripts/check-request-queue.sh
+
+# Monitor database query performance
+./scripts/monitor-slow-queries.sh
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase Worker Threads:</strong></li>
+</ol>
+<pre><code class="language-toml">[system]
+worker_threads = 16  # Increase from 8
+max_concurrent_requests = 200  # Increase from 100
+</code></pre>
+<ol start="2">
+<li><strong>Enable Caching:</strong></li>
+</ol>
+<pre><code class="language-toml">[cache]
+enabled = true
+size_mb = 512
+ttl_seconds = 300
+</code></pre>
+<ol start="3">
+<li><strong>Database Query Optimization:</strong></li>
+</ol>
+<pre><code class="language-sql">-- Add missing indexes
+CREATE INDEX CONCURRENTLY idx_memories_content_gin ON memories USING gin(to_tsvector('english', content));
+CREATE INDEX CONCURRENTLY idx_concepts_name ON concepts(name);
+</code></pre>
+<h3 id="5-learning-pipeline-issues"><a class="header" href="#5-learning-pipeline-issues">5. Learning Pipeline Issues</a></h3>
+<h4 id="issue-learning-pipeline-stalled-or-slow"><a class="header" href="#issue-learning-pipeline-stalled-or-slow">Issue: Learning pipeline stalled or slow</a></h4>
+<p><strong>Symptoms:</strong></p>
+<pre><code class="language-bash"># Learning queue backing up
+./scripts/check-learning-queue.sh
+Learning queue depth: 15,000 items (threshold: 10,000)
+Average processing time: 45s per item (expected: 5s)
+</code></pre>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Learning pipeline analysis
+./scripts/analyze-learning-pipeline.sh
+
+# Check resource bottlenecks
+./scripts/check-learning-resources.sh
+
+# Monitor learning throughput
+./scripts/monitor-learning-throughput.sh --duration 300
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase Learning Workers:</strong></li>
+</ol>
+<pre><code class="language-toml">[learning]
+worker_count = 16  # Increase from 8
+batch_size = 1000  # Increase batch size
+parallel_processing = true
+</code></pre>
+<ol start="2">
+<li><strong>Optimize Learning Parameters:</strong></li>
+</ol>
+<pre><code class="language-toml">[learning.segment_discovery]
+min_frequency = 3  # Increase threshold
+max_segment_length = 20  # Reduce complexity
+
+[learning.concept_extraction]
+similarity_threshold = 0.8  # Increase threshold
+</code></pre>
+<ol start="3">
+<li><strong>Resource Allocation:</strong></li>
+</ol>
+<pre><code class="language-toml">[system]
+learning_priority = "high"
+learning_cpu_affinity = [0, 1, 2, 3]  # Dedicate CPU cores
+</code></pre>
+<h2 id="error-code-reference"><a class="header" href="#error-code-reference">Error Code Reference</a></h2>
+<h3 id="system-errors-1000-1999"><a class="header" href="#system-errors-1000-1999">System Errors (1000-1999)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>1001</td><td>Configuration Invalid</td><td>Missing or invalid config</td><td>Validate config file</td></tr>
+<tr><td>1002</td><td>Database Connection Failed</td><td>DB unavailable</td><td>Check DB status and connection</td></tr>
+<tr><td>1003</td><td>Memory Allocation Failed</td><td>Insufficient memory</td><td>Increase memory or reduce usage</td></tr>
+<tr><td>1004</td><td>File Permission Denied</td><td>Incorrect permissions</td><td>Fix file permissions</td></tr>
+<tr><td>1005</td><td>Port Already In Use</td><td>Port conflict</td><td>Change port or kill conflicting process</td></tr>
+</tbody></table>
+</div>
+<h3 id="memory-errors-2000-2999"><a class="header" href="#memory-errors-2000-2999">Memory Errors (2000-2999)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>2001</td><td>Memory Capacity Exceeded</td><td>Too many memories</td><td>Increase capacity or cleanup</td></tr>
+<tr><td>2002</td><td>Memory Corruption Detected</td><td>Data integrity issue</td><td>Restore from backup</td></tr>
+<tr><td>2003</td><td>Working Memory Full</td><td>High processing load</td><td>Increase working memory size</td></tr>
+<tr><td>2004</td><td>Memory Consolidation Failed</td><td>Background process error</td><td>Check consolidation settings</td></tr>
+</tbody></table>
+</div>
+<h3 id="learning-errors-3000-3999"><a class="header" href="#learning-errors-3000-3999">Learning Errors (3000-3999)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>3001</td><td>Segment Discovery Failed</td><td>Algorithm error</td><td>Check input data quality</td></tr>
+<tr><td>3002</td><td>Concept Extraction Timeout</td><td>Processing too slow</td><td>Optimize parameters</td></tr>
+<tr><td>3003</td><td>Learning Queue Overflow</td><td>High input rate</td><td>Increase queue size or workers</td></tr>
+<tr><td>3004</td><td>Model Update Failed</td><td>Concurrent modification</td><td>Implement proper locking</td></tr>
+</tbody></table>
+</div>
+<h3 id="api-errors-4000-4999"><a class="header" href="#api-errors-4000-4999">API Errors (4000-4999)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Error</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>4001</td><td>Authentication Failed</td><td>Invalid credentials</td><td>Check API key</td></tr>
+<tr><td>4002</td><td>Rate Limit Exceeded</td><td>Too many requests</td><td>Implement backoff</td></tr>
+<tr><td>4003</td><td>Request Timeout</td><td>Slow processing</td><td>Optimize query or increase timeout</td></tr>
+<tr><td>4004</td><td>Invalid Request Format</td><td>Malformed JSON</td><td>Validate request format</td></tr>
+</tbody></table>
+</div>
+<h2 id="performance-troubleshooting"><a class="header" href="#performance-troubleshooting">Performance Troubleshooting</a></h2>
+<h3 id="high-cpu-usage"><a class="header" href="#high-cpu-usage">High CPU Usage</a></h3>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Identify CPU-intensive processes
+top -p $(pgrep brain-ai)
+
+# CPU profiling
+perf record -g ./target/release/brain-ai
+perf report
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<pre><code class="language-bash"># Reduce CPU-intensive operations
+[performance]
+enable_background_processing = false
+reduce_concept_analysis_frequency = true
+
+# Scale horizontally
+docker-compose up --scale brain-ai=3
+</code></pre>
+<h3 id="high-memory-usage"><a class="header" href="#high-memory-usage">High Memory Usage</a></h3>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Memory profiling
+./scripts/memory-profile.sh --duration 300
+
+# Check memory fragmentation
+cat /proc/buddyinfo
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<pre><code class="language-bash"># Memory optimization
+[memory]
+enable_compression = true
+aggressive_cleanup = true
+consolidation_frequency = "high"
+</code></pre>
+<h3 id="disk-io-issues"><a class="header" href="#disk-io-issues">Disk I/O Issues</a></h3>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Disk I/O monitoring
+iotop -o -d 1
+
+# Check disk usage
+df -h
+du -sh /var/lib/brain-ai/*
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<pre><code class="language-bash"># I/O optimization
+[storage]
+use_ssd_optimizations = true
+batch_write_size = 1000
+fsync_frequency = "low"
+</code></pre>
+<h2 id="network-troubleshooting"><a class="header" href="#network-troubleshooting">Network Troubleshooting</a></h2>
+<h3 id="connection-issues"><a class="header" href="#connection-issues">Connection Issues</a></h3>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Network connectivity
+ping &lt;database_host&gt;
+telnet &lt;database_host&gt; 5432
+
+# Check firewall rules
+iptables -L
+ufw status
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<pre><code class="language-bash"># Firewall configuration
+sudo ufw allow 8080/tcp
+sudo ufw allow from &lt;trusted_ip&gt; to any port 5432
+</code></pre>
+<h3 id="load-balancer-issues"><a class="header" href="#load-balancer-issues">Load Balancer Issues</a></h3>
+<p><strong>Diagnosis:</strong></p>
+<pre><code class="language-bash"># Check load balancer status
+curl -I http://load-balancer/health
+
+# Backend health
+for backend in backend1 backend2 backend3; do
+  curl -I http://$backend:8080/health
+done
+</code></pre>
+<p><strong>Solutions:</strong></p>
+<pre><code class="language-bash"># Update load balancer configuration
+# Remove unhealthy backends
+# Adjust health check parameters
+</code></pre>
+<h2 id="recovery-procedures"><a class="header" href="#recovery-procedures">Recovery Procedures</a></h2>
+<h3 id="automated-recovery"><a class="header" href="#automated-recovery">Automated Recovery</a></h3>
+<pre><code class="language-bash"># Automatic recovery script
+./scripts/auto-recovery.sh
+
+# Recovery workflow:
+# 1. Detect issue type
+# 2. Apply appropriate fix
+# 3. Validate recovery
+# 4. Alert if manual intervention needed
+</code></pre>
+<h3 id="manual-recovery-steps"><a class="header" href="#manual-recovery-steps">Manual Recovery Steps</a></h3>
+<ol>
+<li><strong>Identify Issue:</strong></li>
+</ol>
+<pre><code class="language-bash">./scripts/diagnose-issue.sh --comprehensive
+</code></pre>
+<ol start="2">
+<li><strong>Stop Services:</strong></li>
+</ol>
+<pre><code class="language-bash">systemctl stop brain-ai
+</code></pre>
+<ol start="3">
+<li><strong>Apply Fix:</strong></li>
+</ol>
+<pre><code class="language-bash"># Based on diagnosis results
+./scripts/apply-fix.sh --issue-type &lt;type&gt;
+</code></pre>
+<ol start="4">
+<li><strong>Validate Fix:</strong></li>
+</ol>
+<pre><code class="language-bash">./scripts/validate-fix.sh
+</code></pre>
+<ol start="5">
+<li><strong>Restart Services:</strong></li>
+</ol>
+<pre><code class="language-bash">systemctl start brain-ai
+./scripts/post-recovery-check.sh
+</code></pre>
+<h2 id="monitoring-and-alerting"><a class="header" href="#monitoring-and-alerting">Monitoring and Alerting</a></h2>
+<h3 id="critical-alerts"><a class="header" href="#critical-alerts">Critical Alerts</a></h3>
+<pre><code class="language-yaml"># alertmanager/brain-ai-alerts.yml
+groups:
+- name: brain-ai-critical
+  rules:
+  - alert: ServiceDown
+    expr: up{job="brain-ai"} == 0
+    for: 1m
+    annotations:
+      summary: "Brain AI service is down"
+      
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status=~"5.."}[5m]) &gt; 0.1
+    for: 2m
+    annotations:
+      summary: "High error rate detected"
+      
+  - alert: DatabaseConnectionFailed
+    expr: brain_ai_database_connections_failed_total &gt; 10
+    for: 1m
+    annotations:
+      summary: "Database connection failures"
+</code></pre>
+<h3 id="monitoring-dashboard"><a class="header" href="#monitoring-dashboard">Monitoring Dashboard</a></h3>
+<pre><code class="language-bash"># Start monitoring dashboard
+./scripts/start-monitoring-dashboard.sh
+
+# Access at: http://localhost:3000
+# Default credentials: admin/admin
+</code></pre>
+<h2 id="emergency-procedures"><a class="header" href="#emergency-procedures">Emergency Procedures</a></h2>
+<h3 id="service-recovery"><a class="header" href="#service-recovery">Service Recovery</a></h3>
+<pre><code class="language-bash"># Emergency service restart
+sudo systemctl stop brain-ai
+sudo systemctl reset-failed brain-ai
+sudo systemctl start brain-ai
+
+# If restart fails, restore from backup
+./scripts/emergency-restore.sh latest
+</code></pre>
+<h3 id="data-recovery"><a class="header" href="#data-recovery">Data Recovery</a></h3>
+<pre><code class="language-bash"># Emergency data recovery
+./scripts/emergency-data-recovery.sh
+
+# Steps:
+# 1. Stop all services
+# 2. Restore from latest backup
+# 3. Verify data integrity
+# 4. Restart services
+# 5. Run health checks
+</code></pre>
+<h3 id="escalation-procedures"><a class="header" href="#escalation-procedures">Escalation Procedures</a></h3>
+<ol>
+<li><strong>Level 1</strong>: Automated recovery attempts</li>
+<li><strong>Level 2</strong>: On-call engineer notification</li>
+<li><strong>Level 3</strong>: Senior engineer escalation</li>
+<li><strong>Level 4</strong>: Management and vendor escalation</li>
+</ol>
+<h2 id="preventive-measures"><a class="header" href="#preventive-measures">Preventive Measures</a></h2>
+<h3 id="regular-maintenance"><a class="header" href="#regular-maintenance">Regular Maintenance</a></h3>
+<pre><code class="language-bash"># Weekly maintenance script
+./scripts/weekly-maintenance.sh
+
+# Includes:
+# - Log rotation
+# - Database optimization
+# - Memory cleanup
+# - Health checks
+# - Backup verification
+</code></pre>
+<h3 id="monitoring-best-practices"><a class="header" href="#monitoring-best-practices">Monitoring Best Practices</a></h3>
+<ol>
+<li><strong>Set up comprehensive monitoring</strong></li>
+<li><strong>Configure appropriate alerting thresholds</strong></li>
+<li><strong>Regular backup testing</strong></li>
+<li><strong>Performance baseline establishment</strong></li>
+<li><strong>Incident response documentation</strong></li>
+</ol>
+<p>This troubleshooting guide provides systematic approaches to identify and resolve issues quickly, minimizing downtime and ensuring reliable Brain AI operations.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../deployment/scaling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../development/setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../deployment/scaling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../development/setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

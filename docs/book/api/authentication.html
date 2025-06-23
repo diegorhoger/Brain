@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Authentication - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,600 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/api/authentication.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="authentication"><a class="header" href="#authentication">Authentication</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../api/overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../api/core-endpoints.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../api/overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../api/core-endpoints.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="authentication"><a class="header" href="#authentication">Authentication</a></h1>
+<p>Brain AI uses JWT (JSON Web Token) based authentication for secure API access. This document covers authentication methods, token management, and security best practices.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>All API endpoints (except public health checks) require authentication using Bearer tokens. The authentication system supports:</p>
+<ul>
+<li>JWT-based authentication with configurable expiration</li>
+<li>Role-based access control (RBAC)</li>
+<li>Rate limiting per authenticated user</li>
+<li>Token refresh capabilities</li>
+<li>Secure token storage recommendations</li>
+</ul>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
+<h3 id="1-user-registration"><a class="header" href="#1-user-registration">1. User Registration</a></h3>
+<p>Create a new user account (if registration is enabled):</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/auth/register</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "secure_password_123",
+  "full_name": "John Doe",
+  "organization": "Example Corp"
+}
+</code></pre>
+<p><strong>Response (201 Created):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "message": "User registered successfully",
+  "user_id": "user_550e8400-e29b-41d4-a716-446655440000",
+  "requires_verification": true
+}
+</code></pre>
+<h3 id="2-user-login"><a class="header" href="#2-user-login">2. User Login</a></h3>
+<p>Authenticate and receive access tokens:</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/auth/login</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "username": "john_doe",
+  "password": "secure_password_123",
+  "remember_me": true
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IlJlZnJlc2gifQ...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_expires_in": 604800,
+  "user": {
+    "id": "user_550e8400-e29b-41d4-a716-446655440000",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "roles": ["user"],
+    "permissions": ["read", "write"]
+  }
+}
+</code></pre>
+<h3 id="3-using-access-tokens"><a class="header" href="#3-using-access-tokens">3. Using Access Tokens</a></h3>
+<p>Include the access token in the Authorization header for all API requests:</p>
+<pre><code class="language-http">Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+</code></pre>
+<p><strong>Example Request:</strong></p>
+<pre><code class="language-bash">curl -X GET "http://localhost:8080/api/v1/memory/search?query=test" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+</code></pre>
+<h2 id="token-management"><a class="header" href="#token-management">Token Management</a></h2>
+<h3 id="token-refresh"><a class="header" href="#token-refresh">Token Refresh</a></h3>
+<p>Refresh expired access tokens using the refresh token:</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/auth/refresh</code></p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IlJlZnJlc2gifQ..."
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+</code></pre>
+<h3 id="token-validation"><a class="header" href="#token-validation">Token Validation</a></h3>
+<p>Validate token status and get user information:</p>
+<p><strong>Endpoint:</strong> <code>GET /api/v1/auth/validate</code></p>
+<p><strong>Headers:</strong></p>
+<pre><code class="language-http">Authorization: Bearer YOUR_ACCESS_TOKEN
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "valid": true,
+  "user": {
+    "id": "user_550e8400-e29b-41d4-a716-446655440000",
+    "username": "john_doe",
+    "roles": ["user"],
+    "permissions": ["read", "write"]
+  },
+  "token_info": {
+    "issued_at": "2024-01-02T10:00:00Z",
+    "expires_at": "2024-01-02T11:00:00Z",
+    "remaining_seconds": 2847
+  }
+}
+</code></pre>
+<h3 id="logout"><a class="header" href="#logout">Logout</a></h3>
+<p>Invalidate tokens and end the session:</p>
+<p><strong>Endpoint:</strong> <code>POST /api/v1/auth/logout</code></p>
+<p><strong>Headers:</strong></p>
+<pre><code class="language-http">Authorization: Bearer YOUR_ACCESS_TOKEN
+</code></pre>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-json">{
+  "invalidate_refresh_token": true
+}
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  "success": true,
+  "message": "Logged out successfully"
+}
+</code></pre>
+<h2 id="role-based-access-control"><a class="header" href="#role-based-access-control">Role-Based Access Control</a></h2>
+<p>Brain AI implements role-based access control with the following default roles:</p>
+<h3 id="user-roles"><a class="header" href="#user-roles">User Roles</a></h3>
+<ol>
+<li>
+<p><strong>Guest</strong> (read-only access)</p>
+<ul>
+<li>View public content</li>
+<li>Basic health checks</li>
+<li>Limited API access</li>
+</ul>
+</li>
+<li>
+<p><strong>User</strong> (standard access)</p>
+<ul>
+<li>Learn from text</li>
+<li>Query memory and concepts</li>
+<li>Access personal data</li>
+<li>Generate insights</li>
+</ul>
+</li>
+<li>
+<p><strong>Power User</strong> (advanced features)</p>
+<ul>
+<li>Batch operations</li>
+<li>Advanced analytics</li>
+<li>System monitoring</li>
+<li>Export capabilities</li>
+</ul>
+</li>
+<li>
+<p><strong>Admin</strong> (full system access)</p>
+<ul>
+<li>User management</li>
+<li>System configuration</li>
+<li>Performance monitoring</li>
+<li>All API endpoints</li>
+</ul>
+</li>
+</ol>
+<h3 id="permission-matrix"><a class="header" href="#permission-matrix">Permission Matrix</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Endpoint Category</th><th>Guest</th><th>User</th><th>Power User</th><th>Admin</th></tr></thead><tbody>
+<tr><td>Health Check</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Learning</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Memory Query</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Batch Operations</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>System Metrics</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>User Management</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+</tbody></table>
+</div>
+<h2 id="security-best-practices"><a class="header" href="#security-best-practices">Security Best Practices</a></h2>
+<h3 id="token-security"><a class="header" href="#token-security">Token Security</a></h3>
+<ol>
+<li>
+<p><strong>Secure Storage:</strong></p>
+<pre><code class="language-javascript">// Store tokens securely (avoid localStorage for sensitive apps)
+// Use httpOnly cookies or secure storage mechanisms
+const secureStorage = {
+  setToken: (token) =&gt; {
+    // Use secure storage implementation
+    sessionStorage.setItem('brain_ai_token', token);
+  },
+  getToken: () =&gt; {
+    return sessionStorage.getItem('brain_ai_token');
+  }
+};
+</code></pre>
+</li>
+<li>
+<p><strong>Token Expiration Handling:</strong></p>
+<pre><code class="language-javascript">// Implement automatic token refresh
+const apiCall = async (endpoint, options) =&gt; {
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        ...options.headers
+      }
+    });
+    
+    if (response.status === 401) {
+      // Token expired, refresh it
+      await refreshToken();
+      // Retry the original request
+      return fetch(endpoint, options);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('API call failed:', error);
+    throw error;
+  }
+};
+</code></pre>
+</li>
+</ol>
+<h3 id="https-requirements"><a class="header" href="#https-requirements">HTTPS Requirements</a></h3>
+<ul>
+<li><strong>Production:</strong> Always use HTTPS for token transmission</li>
+<li><strong>Development:</strong> HTTPS recommended even in development</li>
+<li><strong>Token Headers:</strong> Never include tokens in URL parameters</li>
+</ul>
+<h3 id="rate-limiting"><a class="header" href="#rate-limiting">Rate Limiting</a></h3>
+<p>Authentication includes rate limiting protection:</p>
+<pre><code class="language-http">X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640995200
+X-RateLimit-Category: auth
+</code></pre>
+<p><strong>Rate Limits by Role:</strong></p>
+<ul>
+<li>Guest: 10 requests/minute</li>
+<li>User: 100 requests/minute</li>
+<li>Power User: 500 requests/minute</li>
+<li>Admin: 1000 requests/minute</li>
+</ul>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="authentication-errors"><a class="header" href="#authentication-errors">Authentication Errors</a></h3>
+<p><strong>401 Unauthorized - Invalid Token:</strong></p>
+<pre><code class="language-json">{
+  "error": "invalid_token",
+  "message": "The provided token is invalid or expired",
+  "details": {
+    "code": "TOKEN_INVALID",
+    "suggestions": ["Refresh your token", "Re-authenticate"]
+  }
+}
+</code></pre>
+<p><strong>403 Forbidden - Insufficient Permissions:</strong></p>
+<pre><code class="language-json">{
+  "error": "insufficient_permissions",
+  "message": "Your role does not have permission to access this resource",
+  "details": {
+    "required_permission": "admin",
+    "user_permissions": ["read", "write"],
+    "code": "PERMISSION_DENIED"
+  }
+}
+</code></pre>
+<p><strong>429 Too Many Requests:</strong></p>
+<pre><code class="language-json">{
+  "error": "rate_limit_exceeded",
+  "message": "Too many authentication attempts",
+  "details": {
+    "retry_after": 300,
+    "limit": 5,
+    "window": "5 minutes"
+  }
+}
+</code></pre>
+<h2 id="integration-examples"><a class="header" href="#integration-examples">Integration Examples</a></h2>
+<h3 id="javascriptnodejs"><a class="header" href="#javascriptnodejs">JavaScript/Node.js</a></h3>
+<pre><code class="language-javascript">class BrainAIAuth {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+    this.accessToken = null;
+    this.refreshToken = null;
+  }
+
+  async login(username, password) {
+    const response = await fetch(`${this.baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      this.accessToken = data.access_token;
+      this.refreshToken = data.refresh_token;
+      return data;
+    }
+    
+    throw new Error('Login failed');
+  }
+
+  async makeAuthenticatedRequest(endpoint, options = {}) {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+
+    if (response.status === 401) {
+      await this.refreshAccessToken();
+      return this.makeAuthenticatedRequest(endpoint, options);
+    }
+
+    return response;
+  }
+
+  async refreshAccessToken() {
+    const response = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: this.refreshToken })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      this.accessToken = data.access_token;
+    } else {
+      throw new Error('Token refresh failed');
+    }
+  }
+}
+</code></pre>
+<h3 id="python"><a class="header" href="#python">Python</a></h3>
+<pre><code class="language-python">import requests
+import time
+from typing import Optional, Dict, Any
+
+class BrainAIAuth:
+    def __init__(self, base_url: str):
+        self.base_url = base_url
+        self.access_token: Optional[str] = None
+        self.refresh_token: Optional[str] = None
+        self.token_expires_at: Optional[float] = None
+
+    def login(self, username: str, password: str) -&gt; Dict[str, Any]:
+        response = requests.post(
+            f"{self.base_url}/api/v1/auth/login",
+            json={"username": username, "password": password}
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        self.access_token = data["access_token"]
+        self.refresh_token = data["refresh_token"]
+        self.token_expires_at = time.time() + data["expires_in"]
+        
+        return data
+
+    def make_authenticated_request(self, method: str, endpoint: str, **kwargs) -&gt; requests.Response:
+        if self._token_needs_refresh():
+            self.refresh_access_token()
+        
+        headers = kwargs.get('headers', {})
+        headers['Authorization'] = f'Bearer {self.access_token}'
+        kwargs['headers'] = headers
+        
+        response = requests.request(method, f"{self.base_url}{endpoint}", **kwargs)
+        
+        if response.status_code == 401:
+            self.refresh_access_token()
+            headers['Authorization'] = f'Bearer {self.access_token}'
+            response = requests.request(method, f"{self.base_url}{endpoint}", **kwargs)
+        
+        return response
+
+    def _token_needs_refresh(self) -&gt; bool:
+        if not self.token_expires_at:
+            return False
+        return time.time() &gt;= (self.token_expires_at - 300)  # Refresh 5 minutes early
+
+    def refresh_access_token(self):
+        response = requests.post(
+            f"{self.base_url}/api/v1/auth/refresh",
+            json={"refresh_token": self.refresh_token}
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        self.access_token = data["access_token"]
+        self.token_expires_at = time.time() + data["expires_in"]
+</code></pre>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<h3 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h3>
+<p>Configure authentication behavior using environment variables:</p>
+<pre><code class="language-bash"># JWT Configuration
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRES_IN=3600
+JWT_REFRESH_EXPIRES_IN=604800
+
+# Security Settings
+BCRYPT_ROUNDS=12
+ENABLE_REGISTRATION=false
+REQUIRE_EMAIL_VERIFICATION=true
+
+# Rate Limiting
+AUTH_RATE_LIMIT=5
+AUTH_RATE_WINDOW=300
+
+# CORS Settings
+CORS_ORIGIN=https://your-frontend-domain.com
+CORS_CREDENTIALS=true
+</code></pre>
+<h3 id="database-schema"><a class="header" href="#database-schema">Database Schema</a></h3>
+<p>User authentication data is stored with the following structure:</p>
+<pre><code class="language-sql">-- Users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255),
+    organization VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'user',
+    is_active BOOLEAN DEFAULT true,
+    email_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Refresh tokens table
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+</code></pre>
+<p>This comprehensive authentication system ensures secure access to Brain AI’s cognitive capabilities while providing flexibility for different integration scenarios.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../api/overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../api/core-endpoints.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../api/overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../api/core-endpoints.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

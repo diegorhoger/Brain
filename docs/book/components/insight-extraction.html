@@ -1,16 +1,14 @@
 <!DOCTYPE HTML>
-<html lang="en" class="navy sidebar-visible" dir="ltr">
+<html lang="en" class="navy" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Insight Extraction Engine - Brain AI Documentation</title>
-
-
-        <!-- Custom HTML head -->
-
         <meta name="description" content="Complete documentation for the Brain AI cognitive architecture system">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff">
+        
+        <!-- Removed theme-color meta tag for better browser compatibility -->
+        <!-- <meta name="theme-color" content="#ffffff"> -->
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -44,196 +42,864 @@
         <script src="../toc.js"></script>
     </head>
     <body>
-    <div id="mdbook-help-container">
-        <div id="mdbook-help-popup">
-            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
-            <div>
-                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
-                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
-                <p>Press <kbd>?</kbd> to show this help</p>
-                <p>Press <kbd>Esc</kbd> to hide this help</p>
+        <div id="mdbook-help-container">
+            <div id="mdbook-help-popup">
+                <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+                <div>
+                    <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                    <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                    <p>Press <kbd>?</kbd> to show this help</p>
+                    <p>Press <kbd>Esc</kbd> to hide this help</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="body-container">
-        <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script>
-            try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+        <div id="body-container">
+            <!-- Work around some values being stored in localStorage wrapped in quotes -->
+            <script>
+                try {
+                    let theme = localStorage.getItem('mdbook-theme');
+                    let sidebar = localStorage.getItem('mdbook-sidebar');
 
-                if (theme.startsWith('"') && theme.endsWith('"')) {
-                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    if (theme.startsWith('"') && theme.endsWith('"')) {
+                        localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                    }
+
+                    if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                        localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                    }
+                } catch (e) { }
+            </script>
+
+            <!-- Set the theme before any content is loaded, prevents flash -->
+            <script>
+                const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+                let theme;
+                try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+                if (theme === null || theme === undefined) { theme = default_theme; }
+                const html = document.documentElement;
+                html.classList.remove('navy')
+                html.classList.add(theme);
+                html.classList.add("js");
+            </script>
+
+            <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+            <!-- Hide / unhide sidebar before it is displayed -->
+            <script>
+                let sidebar = null;
+                const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+                if (document.body.clientWidth >= 1080) {
+                    try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                    sidebar = sidebar || 'visible';
+                } else {
+                    sidebar = 'hidden';
                 }
+                sidebar_toggle.checked = sidebar === 'visible';
+                html.classList.remove('sidebar-visible');
+                html.classList.add("sidebar-" + sidebar);
+            </script>
 
-                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
-                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
-                }
-            } catch (e) { }
-        </script>
-
-        <!-- Set the theme before any content is loaded, prevents flash -->
-        <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            const html = document.documentElement;
-            html.classList.remove('navy')
-            html.classList.add(theme);
-            html.classList.add("js");
-        </script>
-
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
-
-        <!-- Hide / unhide sidebar before it is displayed -->
-        <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-            if (document.body.clientWidth >= 1080) {
-                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
-                sidebar = sidebar || 'visible';
-            } else {
-                sidebar = 'hidden';
-            }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
-        </script>
-
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <!-- populated by js -->
-            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
-            </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
-                <div class="sidebar-resize-indicator"></div>
-            </div>
-        </nav>
-
-        <div id="page-wrapper" class="page-wrapper">
-
-            <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
-                    <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                        </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-
-                    <h1 class="menu-title">Brain AI Documentation</h1>
-
-                    <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa fa-github"></i>
-                        </a>
-                        <a href="https://github.com/your-org/brain-ai/edit/main/docs/src/components/insight-extraction.md" title="Suggest an edit" aria-label="Suggest an edit">
-                            <i id="git-edit-button" class="fa fa-edit"></i>
-                        </a>
-
-                    </div>
+            <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+                <!-- populated by js -->
+                <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+                <noscript>
+                    <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                </noscript>
+                <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                    <div class="sidebar-resize-indicator"></div>
                 </div>
-
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
-                    </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
-                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
-                    });
-                </script>
-
-                <div id="content" class="content">
-                    <main>
-                        <h1 id="insight-extraction-engine"><a class="header" href="#insight-extraction-engine">Insight Extraction Engine</a></h1>
-
-                    </main>
-
-                    <nav class="nav-wrapper" aria-label="Page navigation">
-                        <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../components/concept-graph.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
-
-                            <a rel="next prefetch" href="../components/simulation-engine.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-
-                        <div style="clear: both"></div>
-                    </nav>
-                </div>
-            </div>
-
-            <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../components/concept-graph.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
-
-                    <a rel="next prefetch" href="../components/simulation-engine.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
+            <div id="page-wrapper" class="page-wrapper">
+
+                <div class="page">
+
+                    <div id="search-wrapper" class="hidden">
+                        <form id="searchbar-outer" class="searchbar-outer">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        </form>
+                        <div id="searchresults-outer" class="searchresults-outer hidden">
+                            <div id="searchresults-header" class="searchresults-header"></div>
+                            <ul id="searchresults">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                    <script>
+                        document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                        document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                        Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                            link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+                    </script>
+
+                    <div id="content" class="content">
+                        <main>
+                            <h1 id="insight-extraction-engine"><a class="header" href="#insight-extraction-engine">Insight Extraction Engine</a></h1>
+<p>The Insight Extraction Engine represents the analytical intelligence layer of Brain AI, automatically discovering patterns, generating insights, and extracting meaningful knowledge from processed information. This component transforms raw data and learned patterns into actionable understanding that drives intelligent decision-making and knowledge discovery.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The Insight Extraction Engine operates on the principle that intelligence emerges from the ability to recognize patterns, make connections, and generate novel insights from existing knowledge. Unlike simple pattern matching systems, this engine employs sophisticated analytical algorithms to discover hidden relationships, predict trends, and generate creative solutions.</p>
+<pre class="mermaid">graph TD
+    A[Processed Data] --&gt; B[Pattern Analysis]
+    B --&gt; C[Insight Generation]
+    C --&gt; D[Knowledge Synthesis]
+    D --&gt; E[Actionable Insights]
+    
+    subgraph &quot;Pattern Recognition&quot;
+        F[Statistical Patterns]
+        G[Temporal Patterns]
+        H[Structural Patterns]
+        I[Semantic Patterns]
+    end
+    
+    subgraph &quot;Insight Types&quot;
+        J[Predictive Insights]
+        K[Explanatory Insights]
+        L[Prescriptive Insights]
+        M[Creative Insights]
+    end
+    
+    subgraph &quot;Validation&quot;
+        N[Confidence Scoring]
+        O[Evidence Assessment]
+        P[Contradiction Detection]
+    end
+    
+    B --&gt; F
+    F --&gt; G
+    G --&gt; H
+    H --&gt; I
+    C --&gt; J
+    J --&gt; K
+    K --&gt; L
+    L --&gt; M
+    D --&gt; N
+    N --&gt; O
+    O --&gt; P
+</pre>
+<h2 id="core-architecture"><a class="header" href="#core-architecture">Core Architecture</a></h2>
+<h3 id="insightextractor"><a class="header" href="#insightextractor">InsightExtractor</a></h3>
+<p>The central system that orchestrates pattern discovery, insight generation, and knowledge synthesis.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InsightExtractor {
+    pattern_analyzers: Vec&lt;Box&lt;dyn PatternAnalyzer&gt;&gt;,
+    insight_generators: Vec&lt;Box&lt;dyn InsightGenerator&gt;&gt;,
+    knowledge_synthesizer: KnowledgeSynthesizer,
+    validation_engine: ValidationEngine,
+    confidence_calculator: ConfidenceCalculator,
+    insight_repository: InsightRepository,
+    meta_learner: MetaLearner,
+    config: InsightConfig,
+}
+
+impl InsightExtractor {
+    /// Extract insights from processed data
+    pub fn extract_insights(&amp;mut self, data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Insight&gt;&gt; {
+        let mut all_insights = Vec::new();
+        
+        // Analyze patterns using different analyzers
+        let mut discovered_patterns = Vec::new();
+        for analyzer in &amp;self.pattern_analyzers {
+            let patterns = analyzer.analyze_patterns(data)?;
+            discovered_patterns.extend(patterns);
+        }
+        
+        // Generate insights from patterns
+        for generator in &amp;self.insight_generators {
+            let insights = generator.generate_insights(&amp;discovered_patterns, data)?;
+            all_insights.extend(insights);
+        }
+        
+        // Synthesize knowledge from insights
+        let synthesized_insights = self.knowledge_synthesizer.synthesize_knowledge(&amp;all_insights)?;
+        all_insights.extend(synthesized_insights);
+        
+        // Validate and score insights
+        let mut validated_insights = Vec::new();
+        for mut insight in all_insights {
+            let validation_result = self.validation_engine.validate_insight(&amp;insight)?;
+            if validation_result.is_valid {
+                insight.confidence = self.confidence_calculator.calculate_confidence(&amp;insight)?;
+                insight.validation_score = validation_result.score;
+                validated_insights.push(insight);
+            }
+        }
+        
+        // Filter by minimum confidence threshold
+        validated_insights.retain(|insight| insight.confidence &gt;= self.config.min_confidence);
+        
+        // Store insights for future reference
+        for insight in &amp;validated_insights {
+            self.insight_repository.store_insight(insight.clone())?;
+        }
+        
+        // Update meta-learning models
+        self.meta_learner.learn_from_insights(&amp;validated_insights)?;
+        
+        // Sort by importance and confidence
+        validated_insights.sort_by(|a, b| {
+            (b.importance * b.confidence).partial_cmp(&amp;(a.importance * a.confidence)).unwrap()
+        });
+        
+        Ok(validated_insights)
+    }
+    
+    /// Generate predictive insights based on historical patterns
+    pub fn generate_predictions(&amp;self, context: &amp;PredictionContext) -&gt; Result&lt;Vec&lt;PredictiveInsight&gt;&gt; {
+        let historical_patterns = self.insight_repository.get_historical_patterns(&amp;context)?;
+        let mut predictions = Vec::new();
+        
+        for pattern in historical_patterns {
+            if pattern.confidence &gt; 0.7 &amp;&amp; pattern.occurrences &gt; 5 {
+                let prediction = self.extrapolate_pattern(&amp;pattern, context)?;
+                if prediction.confidence &gt; self.config.min_prediction_confidence {
+                    predictions.push(prediction);
+                }
+            }
+        }
+        
+        // Apply ensemble methods for better predictions
+        predictions = self.apply_ensemble_predictions(predictions)?;
+        
+        Ok(predictions)
+    }
+    
+    /// Discover causal relationships in data
+    pub fn discover_causality(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;CausalInsight&gt;&gt; {
+        let causal_analyzer = CausalAnalyzer::new(&amp;self.config.causality_config)?;
+        
+        // Identify potential causal relationships
+        let causal_candidates = causal_analyzer.identify_causal_candidates(data)?;
+        
+        // Test causal hypotheses
+        let mut causal_insights = Vec::new();
+        for candidate in causal_candidates {
+            let causal_strength = causal_analyzer.test_causality(&amp;candidate, data)?;
+            if causal_strength.significance &gt; 0.05 { // p-value threshold
+                causal_insights.push(CausalInsight {
+                    cause: candidate.cause,
+                    effect: candidate.effect,
+                    strength: causal_strength.strength,
+                    confidence: causal_strength.confidence,
+                    evidence: causal_strength.evidence,
+                    mechanism: causal_analyzer.infer_mechanism(&amp;candidate)?,
+                });
+            }
+        }
+        
+        Ok(causal_insights)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="patternanalyzer"><a class="header" href="#patternanalyzer">PatternAnalyzer</a></h3>
+<p>Sophisticated pattern recognition system that identifies various types of patterns in data.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait PatternAnalyzer: Send + Sync {
+    fn analyze_patterns(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Pattern&gt;&gt;;
+    fn get_pattern_types(&amp;self) -&gt; Vec&lt;PatternType&gt;;
+}
+
+pub struct StatisticalPatternAnalyzer {
+    statistical_tests: Vec&lt;StatisticalTest&gt;,
+    correlation_analyzer: CorrelationAnalyzer,
+    distribution_analyzer: DistributionAnalyzer,
+    anomaly_detector: AnomalyDetector,
+}
+
+impl PatternAnalyzer for StatisticalPatternAnalyzer {
+    fn analyze_patterns(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Pattern&gt;&gt; {
+        let mut patterns = Vec::new();
+        
+        // Correlation analysis
+        let correlations = self.correlation_analyzer.find_correlations(data)?;
+        for correlation in correlations {
+            if correlation.strength.abs() &gt; 0.5 {
+                patterns.push(Pattern {
+                    pattern_type: PatternType::Correlation,
+                    description: format!("Strong correlation ({:.2}) between {} and {}", 
+                                       correlation.strength, correlation.var1, correlation.var2),
+                    confidence: correlation.p_value.map(|p| 1.0 - p).unwrap_or(0.5),
+                    evidence: correlation.evidence,
+                    metadata: correlation.metadata,
+                });
+            }
+        }
+        
+        // Distribution analysis
+        let distributions = self.distribution_analyzer.analyze_distributions(data)?;
+        for dist in distributions {
+            if dist.goodness_of_fit &gt; 0.8 {
+                patterns.push(Pattern {
+                    pattern_type: PatternType::Distribution,
+                    description: format!("Data follows {} distribution (fit: {:.2})", 
+                                       dist.distribution_type, dist.goodness_of_fit),
+                    confidence: dist.goodness_of_fit,
+                    evidence: dist.evidence,
+                    metadata: dist.parameters,
+                });
+            }
+        }
+        
+        // Anomaly detection
+        let anomalies = self.anomaly_detector.detect_anomalies(data)?;
+        for anomaly in anomalies {
+            if anomaly.anomaly_score &gt; 0.8 {
+                patterns.push(Pattern {
+                    pattern_type: PatternType::Anomaly,
+                    description: format!("Anomaly detected: {} (score: {:.2})", 
+                                       anomaly.description, anomaly.anomaly_score),
+                    confidence: anomaly.anomaly_score,
+                    evidence: anomaly.evidence,
+                    metadata: anomaly.context,
+                });
+            }
+        }
+        
+        Ok(patterns)
+    }
+}
+
+pub struct TemporalPatternAnalyzer {
+    trend_detector: TrendDetector,
+    seasonality_detector: SeasonalityDetector,
+    cycle_detector: CycleDetector,
+    change_point_detector: ChangePointDetector,
+}
+
+impl PatternAnalyzer for TemporalPatternAnalyzer {
+    fn analyze_patterns(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Pattern&gt;&gt; {
+        let mut patterns = Vec::new();
+        
+        // Trend analysis
+        let trends = self.trend_detector.detect_trends(data)?;
+        for trend in trends {
+            patterns.push(Pattern {
+                pattern_type: PatternType::Trend,
+                description: format!("{} trend detected (slope: {:.3}, R²: {:.3})", 
+                                   trend.direction, trend.slope, trend.r_squared),
+                confidence: trend.significance,
+                evidence: trend.evidence,
+                metadata: trend.metadata,
+            });
+        }
+        
+        // Seasonality detection
+        let seasonal_patterns = self.seasonality_detector.detect_seasonality(data)?;
+        for seasonal in seasonal_patterns {
+            patterns.push(Pattern {
+                pattern_type: PatternType::Seasonality,
+                description: format!("Seasonal pattern with period {} (strength: {:.2})", 
+                                   seasonal.period, seasonal.strength),
+                confidence: seasonal.significance,
+                evidence: seasonal.evidence,
+                metadata: seasonal.metadata,
+            });
+        }
+        
+        // Change point detection
+        let change_points = self.change_point_detector.detect_change_points(data)?;
+        for change_point in change_points {
+            patterns.push(Pattern {
+                pattern_type: PatternType::ChangePoint,
+                description: format!("Significant change detected at {} (magnitude: {:.2})", 
+                                   change_point.timestamp, change_point.magnitude),
+                confidence: change_point.confidence,
+                evidence: change_point.evidence,
+                metadata: change_point.metadata,
+            });
+        }
+        
+        Ok(patterns)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="insightgenerator"><a class="header" href="#insightgenerator">InsightGenerator</a></h3>
+<p>Generates actionable insights from discovered patterns using various analytical approaches.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait InsightGenerator: Send + Sync {
+    fn generate_insights(&amp;self, patterns: &amp;[Pattern], data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Insight&gt;&gt;;
+    fn get_insight_types(&amp;self) -&gt; Vec&lt;InsightType&gt;;
+}
+
+pub struct PredictiveInsightGenerator {
+    forecasting_models: Vec&lt;Box&lt;dyn ForecastingModel&gt;&gt;,
+    trend_extrapolator: TrendExtrapolator,
+    pattern_matcher: PatternMatcher,
+}
+
+impl InsightGenerator for PredictiveInsightGenerator {
+    fn generate_insights(&amp;self, patterns: &amp;[Pattern], data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Insight&gt;&gt; {
+        let mut insights = Vec::new();
+        
+        // Generate trend-based predictions
+        for pattern in patterns {
+            if pattern.pattern_type == PatternType::Trend {
+                let prediction = self.trend_extrapolator.extrapolate_trend(pattern, data)?;
+                insights.push(Insight {
+                    insight_type: InsightType::Predictive,
+                    title: format!("Trend Prediction: {}", pattern.description),
+                    description: prediction.description,
+                    confidence: prediction.confidence,
+                    importance: self.calculate_trend_importance(pattern)?,
+                    evidence: prediction.evidence,
+                    actionable_recommendations: prediction.recommendations,
+                    metadata: prediction.metadata,
+                });
+            }
+        }
+        
+        // Generate forecasts using multiple models
+        for model in &amp;self.forecasting_models {
+            let forecast = model.generate_forecast(data)?;
+            if forecast.confidence &gt; 0.6 {
+                insights.push(Insight {
+                    insight_type: InsightType::Predictive,
+                    title: format!("Forecast: {}", forecast.title),
+                    description: forecast.description,
+                    confidence: forecast.confidence,
+                    importance: forecast.importance,
+                    evidence: forecast.evidence,
+                    actionable_recommendations: forecast.recommendations,
+                    metadata: forecast.metadata,
+                });
+            }
+        }
+        
+        Ok(insights)
+    }
+}
+
+pub struct ExplanatoryInsightGenerator {
+    causal_analyzer: CausalAnalyzer,
+    correlation_explainer: CorrelationExplainer,
+    anomaly_explainer: AnomalyExplainer,
+}
+
+impl InsightGenerator for ExplanatoryInsightGenerator {
+    fn generate_insights(&amp;self, patterns: &amp;[Pattern], data: &amp;ProcessedData) -&gt; Result&lt;Vec&lt;Insight&gt;&gt; {
+        let mut insights = Vec::new();
+        
+        // Explain correlations
+        for pattern in patterns {
+            if pattern.pattern_type == PatternType::Correlation {
+                let explanation = self.correlation_explainer.explain_correlation(pattern, data)?;
+                insights.push(Insight {
+                    insight_type: InsightType::Explanatory,
+                    title: format!("Correlation Explanation: {}", pattern.description),
+                    description: explanation.description,
+                    confidence: explanation.confidence,
+                    importance: explanation.importance,
+                    evidence: explanation.evidence,
+                    actionable_recommendations: explanation.implications,
+                    metadata: explanation.metadata,
+                });
+            }
+        }
+        
+        // Explain anomalies
+        for pattern in patterns {
+            if pattern.pattern_type == PatternType::Anomaly {
+                let explanation = self.anomaly_explainer.explain_anomaly(pattern, data)?;
+                insights.push(Insight {
+                    insight_type: InsightType::Explanatory,
+                    title: format!("Anomaly Explanation: {}", pattern.description),
+                    description: explanation.description,
+                    confidence: explanation.confidence,
+                    importance: explanation.importance,
+                    evidence: explanation.evidence,
+                    actionable_recommendations: explanation.recommendations,
+                    metadata: explanation.metadata,
+                });
+            }
+        }
+        
+        Ok(insights)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="key-algorithms"><a class="header" href="#key-algorithms">Key Algorithms</a></h2>
+<h3 id="1-causal-discovery-algorithm"><a class="header" href="#1-causal-discovery-algorithm">1. Causal Discovery Algorithm</a></h3>
+<p>Advanced algorithm for discovering causal relationships in observational data:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CausalDiscovery {
+    independence_tester: IndependenceTester,
+    constraint_solver: ConstraintSolver,
+    score_function: ScoreFunction,
+    intervention_analyzer: InterventionAnalyzer,
+}
+
+impl CausalDiscovery {
+    /// Discover causal structure using constraint-based approach
+    pub fn discover_causal_structure(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;CausalGraph&gt; {
+        // Step 1: Learn skeleton using conditional independence tests
+        let skeleton = self.learn_skeleton(data)?;
+        
+        // Step 2: Orient edges using v-structures
+        let partially_oriented = self.orient_v_structures(&amp;skeleton, data)?;
+        
+        // Step 3: Apply orientation rules
+        let oriented_graph = self.apply_orientation_rules(&amp;partially_oriented)?;
+        
+        // Step 4: Validate using score-based approach
+        let validated_graph = self.validate_with_scoring(&amp;oriented_graph, data)?;
+        
+        Ok(validated_graph)
+    }
+    
+    /// Learn skeleton of causal graph
+    fn learn_skeleton(&amp;self, data: &amp;ProcessedData) -&gt; Result&lt;UndirectedGraph&gt; {
+        let variables = data.get_variables();
+        let mut graph = UndirectedGraph::complete(&amp;variables);
+        
+        // Test conditional independence for each pair of variables
+        for i in 0..variables.len() {
+            for j in i+1..variables.len() {
+                let var_i = &amp;variables[i];
+                let var_j = &amp;variables[j];
+                
+                // Test independence conditioning on increasing sets
+                for conditioning_set_size in 0..variables.len()-2 {
+                    let conditioning_sets = self.generate_conditioning_sets(
+                        &amp;variables, var_i, var_j, conditioning_set_size
+                    );
+                    
+                    for conditioning_set in conditioning_sets {
+                        let independence_result = self.independence_tester.test_independence(
+                            var_i, var_j, &amp;conditioning_set, data
+                        )?;
+                        
+                        if independence_result.is_independent() {
+                            graph.remove_edge(var_i, var_j);
+                            break;
+                        }
+                    }
+                    
+                    if !graph.has_edge(var_i, var_j) {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        Ok(graph)
+    }
+    
+    /// Orient v-structures (X -&gt; Z &lt;- Y where X and Y are not adjacent)
+    fn orient_v_structures(&amp;self, skeleton: &amp;UndirectedGraph, data: &amp;ProcessedData) -&gt; Result&lt;PartiallyOrientedGraph&gt; {
+        let mut oriented_graph = PartiallyOrientedGraph::from_skeleton(skeleton);
+        
+        for triple in skeleton.get_all_triples() {
+            let (x, z, y) = triple;
+            
+            // Check if X and Y are not adjacent (v-structure candidate)
+            if !skeleton.has_edge(&amp;x, &amp;y) {
+                // Test if Z is in the conditioning set that made X and Y independent
+                let conditioning_sets = self.get_conditioning_sets_for_pair(&amp;x, &amp;y);
+                
+                let mut z_in_conditioning_set = false;
+                for conditioning_set in conditioning_sets {
+                    if conditioning_set.contains(&amp;z) {
+                        z_in_conditioning_set = true;
+                        break;
+                    }
+                }
+                
+                // If Z was not in any conditioning set, orient as X -&gt; Z &lt;- Y
+                if !z_in_conditioning_set {
+                    oriented_graph.orient_edge(&amp;x, &amp;z, EdgeDirection::Forward);
+                    oriented_graph.orient_edge(&amp;y, &amp;z, EdgeDirection::Forward);
+                }
+            }
+        }
+        
+        Ok(oriented_graph)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-insight-synthesis-algorithm"><a class="header" href="#2-insight-synthesis-algorithm">2. Insight Synthesis Algorithm</a></h3>
+<p>Combines multiple insights to generate higher-level understanding:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InsightSynthesis {
+    synthesis_strategies: Vec&lt;Box&lt;dyn SynthesisStrategy&gt;&gt;,
+    conflict_resolver: ConflictResolver,
+    importance_calculator: ImportanceCalculator,
+    novelty_detector: NoveltyDetector,
+}
+
+impl InsightSynthesis {
+    /// Synthesize insights to generate meta-insights
+    pub fn synthesize_insights(&amp;self, insights: &amp;[Insight]) -&gt; Result&lt;Vec&lt;MetaInsight&gt;&gt; {
+        let mut meta_insights = Vec::new();
+        
+        // Apply different synthesis strategies
+        for strategy in &amp;self.synthesis_strategies {
+            let synthesized = strategy.synthesize(insights)?;
+            meta_insights.extend(synthesized);
+        }
+        
+        // Resolve conflicts between insights
+        meta_insights = self.conflict_resolver.resolve_conflicts(meta_insights)?;
+        
+        // Calculate importance and novelty
+        for meta_insight in &amp;mut meta_insights {
+            meta_insight.importance = self.importance_calculator.calculate_importance(meta_insight)?;
+            meta_insight.novelty = self.novelty_detector.calculate_novelty(meta_insight)?;
+        }
+        
+        // Filter by minimum importance threshold
+        meta_insights.retain(|insight| insight.importance &gt; 0.5);
+        
+        Ok(meta_insights)
+    }
+}
+
+pub struct PatternCombinationStrategy {
+    combination_rules: Vec&lt;CombinationRule&gt;,
+    pattern_matcher: PatternMatcher,
+}
+
+impl SynthesisStrategy for PatternCombinationStrategy {
+    fn synthesize(&amp;self, insights: &amp;[Insight]) -&gt; Result&lt;Vec&lt;MetaInsight&gt;&gt; {
+        let mut meta_insights = Vec::new();
+        
+        // Find patterns that can be combined
+        for rule in &amp;self.combination_rules {
+            let matching_insights = self.pattern_matcher.find_matching_insights(insights, &amp;rule.pattern)?;
+            
+            if matching_insights.len() &gt;= rule.min_instances {
+                let combined_insight = self.combine_insights(&amp;matching_insights, rule)?;
+                meta_insights.push(combined_insight);
+            }
+        }
+        
+        Ok(meta_insights)
+    }
+    
+    fn combine_insights(&amp;self, insights: &amp;[&amp;Insight], rule: &amp;CombinationRule) -&gt; Result&lt;MetaInsight&gt; {
+        let combined_confidence = self.calculate_combined_confidence(insights)?;
+        let combined_evidence = self.merge_evidence(insights)?;
+        let emergent_properties = self.identify_emergent_properties(insights, rule)?;
+        
+        Ok(MetaInsight {
+            insight_type: InsightType::Synthetic,
+            title: rule.generate_title(insights)?,
+            description: rule.generate_description(insights, &amp;emergent_properties)?,
+            confidence: combined_confidence,
+            importance: 0.0, // Will be calculated later
+            novelty: 0.0, // Will be calculated later
+            component_insights: insights.iter().map(|i| i.id).collect(),
+            emergent_properties,
+            evidence: combined_evidence,
+            synthesis_method: rule.name.clone(),
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-insight-validation-algorithm"><a class="header" href="#3-insight-validation-algorithm">3. Insight Validation Algorithm</a></h3>
+<p>Validates insights for accuracy, consistency, and actionability:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InsightValidation {
+    consistency_checker: ConsistencyChecker,
+    evidence_validator: EvidenceValidator,
+    actionability_assessor: ActionabilityAssessor,
+    bias_detector: BiasDetector,
+}
+
+impl InsightValidation {
+    /// Validate an insight across multiple dimensions
+    pub fn validate_insight(&amp;self, insight: &amp;Insight) -&gt; Result&lt;ValidationResult&gt; {
+        let mut validation_result = ValidationResult::new();
+        
+        // Check logical consistency
+        let consistency_result = self.consistency_checker.check_consistency(insight)?;
+        validation_result.consistency_score = consistency_result.score;
+        validation_result.consistency_issues = consistency_result.issues;
+        
+        // Validate evidence quality
+        let evidence_result = self.evidence_validator.validate_evidence(&amp;insight.evidence)?;
+        validation_result.evidence_score = evidence_result.score;
+        validation_result.evidence_quality = evidence_result.quality_metrics;
+        
+        // Assess actionability
+        let actionability_result = self.actionability_assessor.assess_actionability(insight)?;
+        validation_result.actionability_score = actionability_result.score;
+        validation_result.actionability_barriers = actionability_result.barriers;
+        
+        // Detect potential biases
+        let bias_result = self.bias_detector.detect_biases(insight)?;
+        validation_result.bias_score = bias_result.score;
+        validation_result.detected_biases = bias_result.biases;
+        
+        // Calculate overall validation score
+        validation_result.overall_score = self.calculate_overall_score(&amp;validation_result)?;
+        validation_result.is_valid = validation_result.overall_score &gt; 0.6;
+        
+        Ok(validation_result)
+    }
+    
+    /// Check for logical consistency within an insight
+    fn check_logical_consistency(&amp;self, insight: &amp;Insight) -&gt; Result&lt;ConsistencyResult&gt; {
+        let mut issues = Vec::new();
+        let mut score = 1.0;
+        
+        // Check for internal contradictions
+        if let Some(contradictions) = self.find_internal_contradictions(insight)? {
+            issues.extend(contradictions);
+            score *= 0.5;
+        }
+        
+        // Check consistency with established knowledge
+        if let Some(knowledge_conflicts) = self.check_knowledge_consistency(insight)? {
+            issues.extend(knowledge_conflicts);
+            score *= 0.7;
+        }
+        
+        // Check statistical validity
+        if let Some(statistical_issues) = self.check_statistical_validity(insight)? {
+            issues.extend(statistical_issues);
+            score *= 0.8;
+        }
+        
+        Ok(ConsistencyResult {
+            score,
+            issues,
+            recommendations: self.generate_consistency_recommendations(&amp;issues)?,
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="configuration-options"><a class="header" href="#configuration-options">Configuration Options</a></h2>
+<pre><code class="language-toml">[components.insight_extraction]
+# Pattern Analysis
+enable_statistical_patterns = true    # Enable statistical pattern analysis
+enable_temporal_patterns = true       # Enable temporal pattern analysis
+enable_structural_patterns = true     # Enable structural pattern analysis
+enable_semantic_patterns = true       # Enable semantic pattern analysis
+
+# Insight Generation
+min_confidence = 0.6                  # Minimum confidence for insights
+min_importance = 0.4                  # Minimum importance for insights
+max_insights_per_analysis = 100       # Maximum insights per analysis
+enable_predictive_insights = true     # Enable predictive insight generation
+enable_explanatory_insights = true    # Enable explanatory insight generation
+
+# Validation
+validation_threshold = 0.6            # Minimum validation score
+enable_bias_detection = true          # Enable bias detection
+enable_consistency_checking = true    # Enable consistency checking
+evidence_quality_threshold = 0.5      # Minimum evidence quality
+
+# Synthesis
+enable_insight_synthesis = true       # Enable insight synthesis
+synthesis_threshold = 0.7             # Minimum score for synthesis
+max_synthesis_depth = 3               # Maximum synthesis depth
+novelty_threshold = 0.5               # Minimum novelty for meta-insights
+
+# Performance
+parallel_processing = true            # Enable parallel processing
+cache_size = 1000                     # Cache size for patterns
+batch_size = 50                       # Batch size for analysis
+max_processing_time = 300             # Maximum processing time (seconds)
+</code></pre>
+<h2 id="usage-examples"><a class="header" href="#usage-examples">Usage Examples</a></h2>
+<h3 id="basic-insight-extraction"><a class="header" href="#basic-insight-extraction">Basic Insight Extraction</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use brain::insight_extraction::{InsightExtractor, ProcessedData, InsightType};
+
+// Create insight extractor
+let mut extractor = InsightExtractor::new()?;
+
+// Prepare processed data
+let data = ProcessedData {
+    segments: vec!["Sales increased 20% after marketing campaign".to_string()],
+    concepts: concept_graph.get_all_concepts()?,
+    patterns: discovered_patterns,
+    metadata: HashMap::new(),
+};
+
+// Extract insights
+let insights = extractor.extract_insights(&amp;data)?;
+
+for insight in insights {
+    println!("Insight: {} (confidence: {:.2})", insight.title, insight.confidence);
+    println!("Description: {}", insight.description);
+    
+    if !insight.actionable_recommendations.is_empty() {
+        println!("Recommendations:");
+        for rec in insight.actionable_recommendations {
+            println!("  - {}", rec);
+        }
+    }
+    println!();
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The Insight Extraction Engine provides sophisticated analytical capabilities that enable Brain AI to discover meaningful patterns and generate actionable insights from complex data.</p>
+
+                        </main>
+
+                        <nav class="nav-wrapper" aria-label="Page navigation">
+                            <!-- Mobile navigation buttons -->
+                                <a rel="prev" href="../components/concept-graph.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <i class="fa fa-angle-left"></i>
+                                </a>
+
+                                <a rel="next prefetch" href="../components/simulation-engine.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+
+                            <!-- Clear both without inline styles -->
+                            <div class="clear-both"></div>
+                        </nav>
+                    </div>
+                </div>
+
+                <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../components/concept-graph.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+
+                        <a rel="next prefetch" href="../components/simulation-engine.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                </nav>
+
+            </div>
+
+
+
+            <script>
+                window.playground_line_numbers = true;
+            </script>
+
+            <script>
+                window.playground_copyable = true;
+            </script>
+
+            <script src="../ace.js"></script>
+            <script src="../editor.js"></script>
+            <script src="../mode-rust.js"></script>
+            <script src="../theme-dawn.js"></script>
+            <script src="../theme-tomorrow_night.js"></script>
+
+            <script src="../elasticlunr.min.js"></script>
+            <script src="../mark.min.js"></script>
+            <script src="../searcher.js"></script>
+
+            <script src="../clipboard.min.js"></script>
+            <script src="../highlight.js"></script>
+            <script src="../book.js"></script>
+
+            <!-- Custom JS scripts -->
+            <script src="../theme/custom.js"></script>
+
         </div>
-
-
-
-        <script>
-            window.playground_line_numbers = true;
-        </script>
-
-        <script>
-            window.playground_copyable = true;
-        </script>
-
-        <script src="../ace.js"></script>
-        <script src="../mode-rust.js"></script>
-        <script src="../editor.js"></script>
-        <script src="../theme-dawn.js"></script>
-        <script src="../theme-tomorrow_night.js"></script>
-
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
-
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
-
-        <!-- Custom JS scripts -->
-        <script src="../theme/custom.js"></script>
-
-
-    </div>
     </body>
-</html>
+</html> 

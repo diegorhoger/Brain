@@ -23,6 +23,8 @@ additional-css = ["theme/custom.css"]
 additional-js = ["theme/custom.js"]
 git-repository-url = "https://github.com/your-org/brain-ai"
 edit-url-template = "https://github.com/your-org/brain-ai/edit/main/docs/{path}"
+theme = "theme"
+no-section-label = true
 
 [output.html.search]
 enable = true

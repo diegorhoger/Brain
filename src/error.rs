@@ -32,6 +32,9 @@ pub enum BrainError {
     /// Parse related errors
     ParseError(String),
     
+    /// Network related errors
+    NetworkError(String),
+    
     /// Item not found errors
     NotFound(String),
     
@@ -54,6 +57,7 @@ impl fmt::Display for BrainError {
             BrainError::PredictionError(msg) => write!(f, "Prediction error: {}", msg),
             BrainError::SegmentationError(msg) => write!(f, "Segmentation error: {}", msg),
             BrainError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            BrainError::NetworkError(msg) => write!(f, "Network error: {}", msg),
             BrainError::NotFound(msg) => write!(f, "Not found: {}", msg),
             BrainError::InvalidQuery(msg) => write!(f, "Invalid query: {}", msg),
             BrainError::Other(msg) => write!(f, "Error: {}", msg),

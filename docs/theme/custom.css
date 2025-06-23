@@ -12,6 +12,42 @@
     --brain-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+/* Fix for inline style warnings - Replace inline styles with CSS classes */
+.nav-wrapper {
+    clear: both !important;
+}
+
+.nav-wrapper::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Remove any inline styles that might be applied */
+[style*="clear: both"] {
+    clear: both !important;
+}
+
+/* Additional clearfix utilities */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.clear-both {
+    clear: both !important;
+}
+
+/* Browser compatibility improvements */
+/* Fallback for browsers that don't support theme-color meta tag */
+@supports not (color: color(display-p3 1 1 1)) {
+    /* Provide fallback styling for older browsers */
+    body {
+        background-color: #ffffff;
+    }
+}
+
 /* Custom header styling */
 .chapter-title {
     background: var(--brain-gradient);
@@ -198,47 +234,41 @@ tr:hover {
 
 /* Print styles */
 @media print {
-    .nav-wrapper,
-    .mobile-nav-toggle,
-    .sidebar-toggle,
-    .search-container {
-        display: none !important;
-    }
-    
     .page {
-        margin-left: 0 !important;
+        color: black;
     }
     
     .callout {
         border: 1px solid #ccc;
-        break-inside: avoid;
+        page-break-inside: avoid;
     }
 }
 
-/* Dark mode enhancements */
+/* Navy theme specific overrides */
 .navy .chapter-title {
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    background: linear-gradient(135deg, #64b5f6, #42a5f5);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .navy .api-endpoint {
-    background: linear-gradient(90deg, #1e293b, #334155);
-    border-color: #475569;
-    color: #e2e8f0;
+    background: linear-gradient(90deg, #263238, #37474f);
+    border-color: #546e7a;
+    color: #eceff1;
 }
 
 .navy .callout.info {
-    background: #1e3a8a;
-    color: #93c5fd;
+    background: #1a237e;
+    border-color: #3f51b5;
+    color: #c5cae9;
 }
 
 .navy th {
-    background: linear-gradient(135deg, #1e40af, #7c3aed);
+    background: linear-gradient(135deg, #1565c0, #1976d2);
 }
 
 .navy .mermaid {
-    background: #1e293b;
-    border-color: #475569;
+    background: #263238;
+    border-color: #546e7a;
 } 

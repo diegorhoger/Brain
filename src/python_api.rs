@@ -37,6 +37,7 @@ use crate::integration::SegmentProvider;
 use crate::query_language::{QueryEngine, QueryResult};
 use crate::export_system::{ExportSystem, ExportConfig, JsonGraphExport};
 use crate::specialized_queries::SpecializedQueryEngine;
+use crate::github_integration::{GitHubLearningEngine, GitHubLearningConfig, GitHubLearningResult};
 
 /// Python-compatible segment result
 #[pyclass]
@@ -188,6 +189,46 @@ impl PyExportResult {
             self.format, 
             self.data.len(), 
             self.stats.get("total_items").unwrap_or(&0)
+        )
+    }
+}
+
+/// Python-compatible GitHub learning result
+#[pyclass]
+#[derive(Clone)]
+pub struct PyGitHubLearningResult {
+    /// Repository name that was learned from
+    #[pyo3(get)]
+    pub repository: String,
+    /// Number of files processed
+    #[pyo3(get)]
+    pub files_processed: usize,
+    /// Total size of content processed
+    #[pyo3(get)]
+    pub total_content_size: usize,
+    /// Learning time in milliseconds
+    #[pyo3(get)]
+    pub learning_time_ms: u64,
+    /// Number of concepts discovered
+    #[pyo3(get)]
+    pub concepts_discovered: usize,
+    /// Number of memory entries created
+    #[pyo3(get)]
+    pub memory_entries_created: usize,
+    /// Summary of what was learned
+    #[pyo3(get)]
+    pub summary: String,
+    /// Key insights discovered
+    #[pyo3(get)]
+    pub key_insights: Vec<String>,
+}
+
+#[pymethods]
+impl PyGitHubLearningResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "PyGitHubLearningResult(repository='{}', files={}, concepts={}, time={}ms)",
+            self.repository, self.files_processed, self.concepts_discovered, self.learning_time_ms
         )
     }
 }
@@ -843,6 +884,92 @@ impl BrainEngine {
         }
     }
 
+    /// Learn from a GitHub repository
+    ///
+    /// Args:
+    ///     github_url (str): GitHub repository URL (e.g., "https://github.com/owner/repo" or "owner/repo")
+    ///     github_token (str, optional): GitHub personal access token for private repos and higher rate limits
+    ///     max_files (int, optional): Maximum number of files to process (default: 100)
+    ///     include_code (bool, optional): Whether to include source code files (default: True)
+    ///     include_docs (bool, optional): Whether to include documentation files (default: True)
+    ///
+    /// Returns:
+    ///     PyGitHubLearningResult: Results of the learning process
+    ///
+    /// Raises:
+    ///     ValueError: If GitHub URL is invalid
+    ///     RuntimeError: If learning fails
+    ///
+    /// Example:
+    ///     ```python
+    ///     # Learn from a public repository
+    ///     result = brain.learn_from_github("microsoft/vscode")
+    ///     print(f"Learned from {result.repository}: {result.summary}")
+    ///     
+    ///     # Learn from a repository with custom settings
+    ///     result = brain.learn_from_github(
+    ///         "https://github.com/rust-lang/rust",
+    ///         github_token="your_token_here",
+    ///         max_files=50,
+    ///         include_code=True,
+    ///         include_docs=True
+    ///     )
+    ///     ```
+    fn learn_from_github(
+        &mut self,
+        github_url: &str,
+        github_token: Option<&str>,
+        max_files: Option<usize>,
+        include_code: Option<bool>,
+        include_docs: Option<bool>,
+    ) -> PyResult<PyGitHubLearningResult> {
+        if github_url.is_empty() {
+            return Err(PyRuntimeError::new_err("GitHub URL cannot be empty"));
+        }
+
+        // Create learning configuration
+        let mut config = GitHubLearningConfig::default();
+        if let Some(max) = max_files {
+            config.max_files = max;
+        }
+        if let Some(include) = include_code {
+            config.include_code = include;
+        }
+        if let Some(include) = include_docs {
+            config.include_docs = include;
+        }
+
+        // Create GitHub learning engine
+        let github_engine = GitHubLearningEngine::new(
+            github_token.map(|s| s.to_string()),
+            Some(config)
+        );
+
+        // Use tokio runtime to run async operation
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| PyRuntimeError::new_err(format!("Failed to create async runtime: {}", e)))?;
+
+        let result = rt.block_on(async {
+            github_engine.learn_from_repository(&mut self.memory_system, github_url).await
+        });
+
+        match result {
+            Ok(learning_result) => {
+                Ok(PyGitHubLearningResult {
+                    repository: learning_result.repository,
+                    files_processed: learning_result.files_processed,
+                    total_content_size: learning_result.total_content_size,
+                    learning_time_ms: learning_result.learning_time_ms,
+                    concepts_discovered: learning_result.concepts_discovered,
+                    memory_entries_created: learning_result.memory_entries_created,
+                    summary: learning_result.summary,
+                    key_insights: learning_result.key_insights,
+                })
+            },
+            Err(e) => Err(PyRuntimeError::new_err(format!("GitHub learning failed: {}", e)))
+        }
+    }
+
     fn __repr__(&self) -> String {
         format!("BrainEngine(config_items={})", self.config.len())
     }
@@ -858,9 +985,9 @@ fn brain(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySegment>()?;
     m.add_class::<PySimulationResult>()?;
     m.add_class::<PyMemoryResult>()?;
-    // Task 7.2 - Add new query and export result classes
     m.add_class::<PyQueryResult>()?;
     m.add_class::<PyExportResult>()?;
+    m.add_class::<PyGitHubLearningResult>()?;
 
     // Module-level convenience functions
     
@@ -878,14 +1005,14 @@ fn brain(_py: Python, m: &PyModule) -> PyResult<()> {
         engine.query_memory(query, None, None)
     }
 
-    /// Execute advanced query using default engine settings (Task 7.2)
+    /// Execute advanced query using default engine settings
     #[pyfn(m)]
     fn advanced_query(query: &str) -> PyResult<Vec<PyQueryResult>> {
         let engine = BrainEngine::new(None)?;
         engine.advanced_query(query, None)
     }
 
-    /// Export data using default engine settings (Task 7.2)
+    /// Export data using default engine settings
     #[pyfn(m)]
     fn export_graph() -> PyResult<PyExportResult> {
         let engine = BrainEngine::new(None)?;
