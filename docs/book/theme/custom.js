@@ -207,10 +207,55 @@
         // Add role and aria-label to sidebar resize handle
         const resizeHandle = document.getElementById('sidebar-resize-handle');
         if (resizeHandle) {
+            // Set initial ARIA attributes (aria-valuenow is set in template)
             resizeHandle.setAttribute('role', 'separator');
             resizeHandle.setAttribute('aria-label', 'Resize sidebar');
             resizeHandle.setAttribute('aria-orientation', 'vertical');
             resizeHandle.setAttribute('tabindex', '0');
+            
+            // Add keyboard support for resizing
+            resizeHandle.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar) {
+                        const currentWidth = parseInt(getComputedStyle(sidebar).width) || 250;
+                        const step = 10;
+                        const minWidth = 150;
+                        const maxWidth = 500;
+                        
+                        let newWidth = currentWidth;
+                        if (e.key === 'ArrowLeft' && currentWidth > minWidth) {
+                            newWidth = Math.max(minWidth, currentWidth - step);
+                        } else if (e.key === 'ArrowRight' && currentWidth < maxWidth) {
+                            newWidth = Math.min(maxWidth, currentWidth + step);
+                        }
+                        
+                        if (newWidth !== currentWidth) {
+                            sidebar.style.width = newWidth + 'px';
+                            resizeHandle.setAttribute('aria-valuenow', newWidth.toString());
+                        }
+                    }
+                }
+            });
+            
+            // Update aria-valuenow when sidebar is resized via mouse
+            const updateAriaValue = function() {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    const currentWidth = parseInt(getComputedStyle(sidebar).width) || 250;
+                    resizeHandle.setAttribute('aria-valuenow', currentWidth.toString());
+                }
+            };
+            
+            // Watch for sidebar width changes
+            if (window.ResizeObserver) {
+                const resizeObserver = new ResizeObserver(updateAriaValue);
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    resizeObserver.observe(sidebar);
+                }
+            }
         }
 
         // Improve focus management for sidebar links
