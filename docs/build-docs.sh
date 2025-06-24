@@ -29,6 +29,19 @@ fi
 
 echo "✅ Inline styles fixed successfully"
 
+# Validate that no inline styles remain
+echo "🔍 Validating inline styles removal..."
+if node validate-styles.js; then
+    echo "✅ Validation passed - no inline styles found"
+else
+    echo "❌ Validation failed - inline styles still present"
+    exit 1
+fi
+
+# Add cache busters to prevent browser caching issues
+echo "🔄 Adding cache busters..."
+node add-cache-buster.js
+
 # Optional: Open the documentation
 if command -v open &> /dev/null; then
     echo "🌐 Opening documentation in browser..."
@@ -46,4 +59,6 @@ echo "📍 Location: $(pwd)/book/"
 echo "🌐 Open book/index.html in your browser to view"
 echo "🖨️  Print version: book/print.html"
 echo ""
-echo "✨ All inline style warnings have been resolved!" 
+echo "✨ All inline style warnings have been resolved!"
+echo "🔄 Cache busters added to prevent browser caching issues"
+echo "🔍 Validation confirms no inline styles present" 
