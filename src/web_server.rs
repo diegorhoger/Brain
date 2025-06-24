@@ -1,6 +1,6 @@
 use crate::error::BrainError;
 use crate::github_integration::{GitHubLearningEngine, GitHubClient};
-use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery};
+use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery, EpisodicQuery};
 use crate::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType};
 use crate::insight_extraction::PatternDetector;
 use crate::segment_discovery::{BpeSegmenter, BpeConfig};
@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{Filter, Reply};
+use chrono::Utc;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProcessRequest {
@@ -152,12 +153,14 @@ impl WebServer {
             .and_then(Self::handle_learn);
 
         // Memory query endpoint
+        let memory_system_query = self.memory_system.clone();
         let memory_query = api
             .and(warp::path("memory"))
             .and(warp::path("query"))
             .and(warp::path::end())
             .and(warp::post())
             .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_query.clone()))
             .and_then(Self::handle_memory_query);
 
         // Segment endpoint
@@ -445,18 +448,76 @@ impl WebServer {
         Ok(warp::reply::json(&chat_response))
     }
 
-    async fn handle_memory_query(request: QueryRequest) -> Result<impl Reply, warp::Rejection> {
+    async fn handle_memory_query(
+        request: QueryRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+    ) -> Result<impl Reply, warp::Rejection> {
         let start_time = std::time::Instant::now();
         
-        // Simulate processing
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        let (memories_found, relevance_score) = {
+            let memory = memory_system.lock().await;
+            
+            // Query episodic memory for the search term
+            let episodic_query = EpisodicQuery {
+                content_pattern: Some(request.query.clone()),
+                time_range: Some((
+                    Utc::now() - chrono::Duration::days(365),
+                    Utc::now()
+                )),
+                limit: Some(50),
+                ..Default::default()
+            };
+            
+            let mut total_memories = 0;
+            let mut max_relevance: f64 = 0.0;
+            
+            if let Ok(episodes) = memory.query_episodic(&episodic_query) {
+                total_memories += episodes.len();
+                for episode in episodes {
+                    let relevance = Self::calculate_text_similarity(&episode.content, &request.query);
+                    max_relevance = max_relevance.max(relevance);
+                }
+            }
+            
+            // Also query working memory
+            let working_query = WorkingMemoryQuery {
+                content_pattern: Some(request.query.clone()),
+                limit: Some(20),
+                ..Default::default()
+            };
+            
+            if let Ok(working_items) = memory.query_working(&working_query) {
+                total_memories += working_items.len();
+                for item in working_items {
+                    let relevance = Self::calculate_text_similarity(&item.content, &request.query);
+                    max_relevance = max_relevance.max(relevance);
+                }
+            }
+            
+            // Query semantic memory
+            let semantic_query = SemanticQuery {
+                name_pattern: Some(request.query.clone()),
+                limit: Some(20),
+                ..Default::default()
+            };
+            
+            if let Ok(semantic_concepts) = memory.query_semantic(&semantic_query) {
+                total_memories += semantic_concepts.len();
+                for concept in semantic_concepts {
+                    let relevance = Self::calculate_text_similarity(&concept.name, &request.query);
+                    max_relevance = max_relevance.max(relevance);
+                }
+            }
+            
+            (total_memories, max_relevance)
+        };
         
         let processing_time = start_time.elapsed().as_millis() as u64;
         
         let mut data = HashMap::new();
-        data.insert("memories_found".to_string(), serde_json::Value::Number(8.into()));
+        data.insert("memories_found".to_string(), serde_json::Value::Number(memories_found.into()));
         data.insert("query".to_string(), serde_json::Value::String(request.query.clone()));
-        data.insert("relevance_score".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(0.87).unwrap()));
+        data.insert("relevance_score".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(relevance_score).unwrap_or_else(|| serde_json::Number::from(0))));
         
         let response = ProcessResponse {
             success: true,
@@ -1030,6 +1091,20 @@ impl WebServer {
 
     fn generate_fallback_response(message: &str) -> String {
         format!("🤖 **Brain AI Processing**: I received your message: \"{}\"\n\nI'm currently initializing my cognitive systems. While my full Brain AI capabilities are starting up, I can still help you with:\n\n• Programming questions and examples\n• Architecture and design patterns\n• Code analysis and best practices\n• Technology comparisons\n\nPlease try your question again, and I'll process it through my complete neural architecture!", message)
+    }
+
+    fn calculate_text_similarity(text1: &str, text2: &str) -> f64 {
+        let words1: std::collections::HashSet<&str> = text1.split_whitespace().collect();
+        let words2: std::collections::HashSet<&str> = text2.split_whitespace().collect();
+        
+        let intersection = words1.intersection(&words2).count();
+        let union = words1.union(&words2).count();
+        
+        if union == 0 {
+            0.0
+        } else {
+            intersection as f64 / union as f64
+        }
     }
 }
 
