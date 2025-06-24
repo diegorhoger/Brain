@@ -171,8 +171,9 @@ pub mod conversation;
 // Task 13.4 - Training Data Collection (NEW)
 pub mod training_data;
 
-/// Current version of the Brain architecture
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+// Task 13.5 - Specialized Model Training (NEW)
+pub mod conversational_model;
+pub mod training_pipeline;
 
 // Task 13.1 exports - Conversational Intelligence Layer
 pub use conversation::{
@@ -185,5 +186,21 @@ pub use conversation::{
 pub use training_data::{
     TrainingDataCollector, TrainingDataConfig, ConversationRecord, MessageRecord,
     ConversationMetadata, ConversationQualityMetrics, QualityAssessor, DataAnonymizer,
-    ConversationAnalytics, TrainingDataset, DatasetFilter, ExportFormat
-}; 
+    ConversationAnalytics, TrainingDataset, DatasetFilter, ExportFormat,
+    ConversationType, ComplexityLevel
+};
+
+// Task 13.5 exports - Specialized Model Training
+pub use conversational_model::{
+    BrainConversationalModel, ConversationalModelConfig, ModelArchitecture, KnowledgeIntegrationMode,
+    CognitiveIntegrationConfig, TrainingConfig, TrainingMetrics, EvaluationMetrics
+};
+pub use training_pipeline::{
+    BrainTrainingPipeline, TrainingPipelineConfig, DataPreparationConfig, TrainingSchedule,
+    TrainingPhase, EvaluationConfig, BenchmarkConfig, ExperimentConfig, CheckpointConfig,
+    ExternalModelConfig, TrainingPipelineResult, PipelineTrainingState, EvaluationResult,
+    ExperimentTracker, MetricEntry
+};
+
+/// Current version of the Brain architecture
+pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 

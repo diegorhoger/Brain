@@ -92,6 +92,9 @@ flamegraph = "0.6"
 # GitHub integration dependencies
 reqwest = { version = "0.11", features = ["json"] }
 
+# Regex for text processing and validation (Task 13.3)
+regex = "1.10"
+
 # Web server dependencies (Task 12)
 warp = "0.3"
 

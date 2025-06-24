@@ -41,6 +41,9 @@ pub enum BrainError {
     /// Invalid query errors
     InvalidQuery(String),
     
+    /// Processing related errors
+    ProcessingError(String),
+    
     /// Generic error with custom message
     Other(String),
 }
@@ -60,6 +63,7 @@ impl fmt::Display for BrainError {
             BrainError::NetworkError(msg) => write!(f, "Network error: {}", msg),
             BrainError::NotFound(msg) => write!(f, "Not found: {}", msg),
             BrainError::InvalidQuery(msg) => write!(f, "Invalid query: {}", msg),
+            BrainError::ProcessingError(msg) => write!(f, "Processing error: {}", msg),
             BrainError::Other(msg) => write!(f, "Error: {}", msg),
         }
     }

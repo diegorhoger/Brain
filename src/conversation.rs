@@ -492,7 +492,7 @@ impl RagOrchestrator {
         context.messages.push(assistant_message);
 
         // Step 7: Update conversation context
-        self.conversations.insert(conversation_id.clone(), context);
+        self.conversations.insert(conversation_id.clone(), context.clone());
 
         // Step 8: Store the interaction in Brain's memory for future learning
         self.store_interaction_in_memory(

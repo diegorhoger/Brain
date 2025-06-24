@@ -1,5 +1,5 @@
 use crate::error::BrainError;
-use crate::conversation::{ConversationContext, ChatMessage, RagResponse, ResponseQuality, RetrievedKnowledge};
+use crate::conversation::{ConversationContext, RagResponse, ResponseQuality, RetrievedKnowledge};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -72,7 +72,7 @@ pub struct ConversationMetadata {
     pub topics: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ComplexityLevel {
     Simple,
     Moderate,
@@ -80,7 +80,7 @@ pub enum ComplexityLevel {
     Expert,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ConversationType {
     QuestionsAndAnswers,
     Tutorial,
@@ -267,7 +267,7 @@ impl TrainingDataCollector {
         // Create storage directory if it doesn't exist
         if !Path::new(&config.storage_path).exists() {
             fs::create_dir_all(&config.storage_path)
-                .map_err(|e| BrainError::Io(format!("Failed to create storage directory: {}", e)))?;
+                .map_err(|e| BrainError::Io { source: e })?;
         }
 
         let quality_assessor = QualityAssessor::new()?;
@@ -291,11 +291,6 @@ impl TrainingDataCollector {
         context: &ConversationContext,
         knowledge_sources: &[RetrievedKnowledge],
     ) -> Result<(), BrainError> {
-        // Create or get existing conversation record
-        let conversation = self.conversation_storage
-            .entry(conversation_id.to_string())
-            .or_insert_with(|| ConversationRecord::new(conversation_id));
-
         // Create message records
         let user_msg = MessageRecord::new_user_message(user_message)?;
         let assistant_msg = MessageRecord::new_assistant_message(
@@ -317,24 +312,33 @@ impl TrainingDataCollector {
             assistant_msg
         };
 
-        // Add messages to conversation
+        // Create or get existing conversation record and add messages
+        let mut conversation = self.conversation_storage
+            .remove(&conversation_id.to_string())
+            .unwrap_or_else(|| ConversationRecord::new(conversation_id));
+
         conversation.messages.push(anonymized_user_msg);
         conversation.messages.push(anonymized_assistant_msg);
 
         // Update conversation metadata
-        self.update_conversation_metadata(conversation, context).await?;
+        self.update_conversation_metadata(&mut conversation, context).await?;
 
         // Assess conversation quality
         let quality_metrics = self.quality_assessor
-            .assess_conversation_quality(conversation).await?;
+            .assess_conversation_quality(&conversation).await?;
         conversation.quality_metrics = quality_metrics;
 
         // Update analytics
-        self.analytics.update_with_conversation(conversation)?;
+        self.analytics.update_with_conversation(&conversation)?;
 
         // Auto-export if configured and quality threshold met
-        if self.config.auto_export && 
-           conversation.quality_metrics.overall_quality >= self.config.quality_threshold {
+        let should_export = self.config.auto_export && 
+           conversation.quality_metrics.overall_quality >= self.config.quality_threshold;
+
+        // Store the conversation back
+        self.conversation_storage.insert(conversation_id.to_string(), conversation);
+
+        if should_export {
             self.export_conversation(conversation_id).await?;
         }
 
@@ -384,7 +388,7 @@ impl TrainingDataCollector {
     async fn update_conversation_metadata(
         &self,
         conversation: &mut ConversationRecord,
-        context: &ConversationContext,
+        _context: &ConversationContext,
     ) -> Result<(), BrainError> {
         // Analyze conversation complexity
         let complexity = self.analyze_conversation_complexity(conversation).await?;
@@ -429,7 +433,7 @@ impl TrainingDataCollector {
 
     async fn detect_conversation_type(&self, conversation: &ConversationRecord) -> Result<ConversationType, BrainError> {
         let content = conversation.messages.iter()
-            .map(|m| &m.content)
+            .map(|m| m.content.as_str())
             .collect::<Vec<_>>()
             .join(" ");
 
@@ -458,7 +462,7 @@ impl TrainingDataCollector {
         
         // Simple keyword extraction - in practice, would use more sophisticated NLP
         let content = conversation.messages.iter()
-            .map(|m| &m.content)
+            .map(|m| m.content.as_str())
             .collect::<Vec<_>>()
             .join(" ");
 
@@ -530,10 +534,10 @@ impl TrainingDataCollector {
             );
             
             let json = serde_json::to_string_pretty(conversation)
-                .map_err(|e| BrainError::Serialization(format!("Failed to serialize conversation: {}", e)))?;
+                .map_err(|e| BrainError::Serialization { source: Box::new(e) })?;
             
             fs::write(export_path, json)
-                .map_err(|e| BrainError::Io(format!("Failed to write conversation file: {}", e)))?;
+                .map_err(|e| BrainError::Io { source: e })?;
         }
 
         Ok(())
@@ -791,19 +795,17 @@ impl QualityAssessor {
     }
 
     async fn assess_educational_value(&self, conversation: &ConversationRecord) -> Result<f64, BrainError> {
-        let mut educational_score = 0.0;
-
         // Count educational indicators
         let content = conversation.messages.iter()
-            .map(|m| &m.content)
+            .map(|m| m.content.as_str())
             .collect::<Vec<_>>()
             .join(" ");
 
         let educational_patterns = Regex::new(r"\blearn\b|\bexplain\b|\bunderstand\b|\bexample\b|\bconcept\b").unwrap();
         let matches = educational_patterns.find_iter(&content).count();
         
-        educational_score = (matches as f64 / content.split_whitespace().count() as f64) * 10.0;
-        educational_score = educational_score.min(1.0);
+        let educational_score = (matches as f64 / content.split_whitespace().count() as f64) * 10.0;
+        let educational_score = educational_score.min(1.0);
 
         Ok(educational_score)
     }
@@ -1072,7 +1074,7 @@ impl TrainingDataset {
     fn new(
         conversations: Vec<&ConversationRecord>,
         format: &ExportFormat,
-        analytics: &ConversationAnalytics,
+        _analytics: &ConversationAnalytics,
     ) -> Result<Self, BrainError> {
         let owned_conversations: Vec<ConversationRecord> = conversations.into_iter().cloned().collect();
         
@@ -1158,7 +1160,7 @@ impl TrainingDataset {
             ExportFormat::JsonL => {
                 self.save_as_jsonl(path).await?;
             },
-            ExportFormat::Json | ExportFormat::HuggingFace => {
+            ExportFormat::HuggingFace => {
                 self.save_as_json(path).await?;
             },
             ExportFormat::Csv => {
@@ -1177,23 +1179,23 @@ impl TrainingDataset {
         
         for conversation in &self.conversations {
             let json_line = serde_json::to_string(conversation)
-                .map_err(|e| BrainError::Serialization(format!("Failed to serialize conversation: {}", e)))?;
+                .map_err(|e| BrainError::Serialization { source: Box::new(e) })?;
             lines.push(json_line);
         }
 
         let content = lines.join("\n");
         fs::write(path, content)
-            .map_err(|e| BrainError::Io(format!("Failed to write JSONL file: {}", e)))?;
+            .map_err(|e| BrainError::Io { source: e })?;
 
         Ok(())
     }
 
     async fn save_as_json(&self, path: &str) -> Result<(), BrainError> {
         let json = serde_json::to_string_pretty(self)
-            .map_err(|e| BrainError::Serialization(format!("Failed to serialize dataset: {}", e)))?;
+            .map_err(|e| BrainError::Serialization { source: Box::new(e) })?;
         
         fs::write(path, json)
-            .map_err(|e| BrainError::Io(format!("Failed to write JSON file: {}", e)))?;
+            .map_err(|e| BrainError::Io { source: e })?;
 
         Ok(())
     }
@@ -1228,7 +1230,7 @@ impl TrainingDataset {
 
         let content = csv_lines.join("\n");
         fs::write(path, content)
-            .map_err(|e| BrainError::Io(format!("Failed to write CSV file: {}", e)))?;
+            .map_err(|e| BrainError::Io { source: e })?;
 
         Ok(())
     }

@@ -1,10 +1,10 @@
 use brain::{
-    BrainError, MemorySystem, ConceptGraphManager, PatternDetector,
+    BrainError, MemorySystem, ConceptGraphManager, ConceptGraphConfig, PatternDetector,
     RagOrchestrator, RagRequest, 
-    TrainingDataCollector, TrainingDataConfig, ExportFormat, DatasetFilter
+    TrainingDataCollector, TrainingDataConfig, ExportFormat, DatasetFilter, 
+    ConversationType, ComplexityLevel
 };
-use chrono::{DateTime, Utc, Duration};
-use std::collections::HashMap;
+use chrono::{Utc, Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), BrainError> {
@@ -12,9 +12,17 @@ async fn main() -> Result<(), BrainError> {
     println!("==================================================");
     
     // Initialize core components
-    let mut memory_system = MemorySystem::new()?;
-    let mut concept_graph = ConceptGraphManager::new()?;
-    let mut pattern_detector = PatternDetector::new()?;
+    let mut memory_system = MemorySystem::new(1000);
+    let concept_config = ConceptGraphConfig {
+        uri: "neo4j://localhost:7687".to_string(),
+        username: "neo4j".to_string(),
+        password: "password".to_string(),
+        database: None,
+        pool_size: 10,
+        timeout_seconds: 30,
+    };
+    let mut concept_graph = ConceptGraphManager::new(concept_config).await?;
+    let mut pattern_detector = PatternDetector::new();
     let mut rag_orchestrator = RagOrchestrator::new()?;
     
     // Configure training data collection
@@ -98,7 +106,7 @@ async fn main() -> Result<(), BrainError> {
     }
     
     println!("\n🔍 Step 4: Export Training Dataset with Filtering");
-    if let Some(mut collector) = rag_orchestrator.get_training_data_collector_mut() {
+    if let Some(collector) = rag_orchestrator.get_training_data_collector_mut() {
         // Create filter for high-quality educational conversations
         let filter = DatasetFilter {
             min_quality: Some(0.7),
@@ -233,8 +241,17 @@ mod tests {
     
     #[tokio::test]
     async fn test_quality_assessment() -> Result<(), BrainError> {
-        // Test quality metrics calculation
-        let metrics = ConversationQualityMetrics::default();
+        // Test quality metrics calculation - create manually since default() is private
+        let metrics = ConversationQualityMetrics {
+            overall_quality: 0.0,
+            coherence_score: 0.0,
+            knowledge_grounding: 0.0,
+            response_relevance: 0.0,
+            safety_score: 1.0,
+            educational_value: 0.0,
+            diversity_score: 0.0,
+            uniqueness_score: 0.0,
+        };
         assert_eq!(metrics.overall_quality, 0.0);
         assert_eq!(metrics.safety_score, 1.0); // Should default to safe
         

@@ -4,6 +4,7 @@ use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery};
 use crate::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType};
 use crate::insight_extraction::PatternDetector;
 use crate::segment_discovery::{BpeSegmenter, BpeConfig};
+use crate::conversation::{RagOrchestrator, RagRequest};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -85,6 +86,7 @@ pub struct WebServer {
     memory_system: Arc<Mutex<MemorySystem>>,
     concept_graph: Arc<Mutex<ConceptGraphManager>>,
     pattern_detector: Arc<Mutex<PatternDetector>>,
+    rag_orchestrator: Arc<Mutex<RagOrchestrator>>,
 }
 
 impl WebServer {
@@ -94,12 +96,14 @@ impl WebServer {
             ConceptGraphManager::new(ConceptGraphConfig::default()).await?
         ));
         let pattern_detector = Arc::new(Mutex::new(PatternDetector::new()));
+        let rag_orchestrator = Arc::new(Mutex::new(RagOrchestrator::new()?));
         
         Ok(Self { 
             port,
             memory_system,
             concept_graph,
             pattern_detector,
+            rag_orchestrator,
         })
     }
 
@@ -185,6 +189,7 @@ impl WebServer {
         let memory_system = self.memory_system.clone();
         let concept_graph = self.concept_graph.clone();
         let pattern_detector = self.pattern_detector.clone();
+        let rag_orchestrator = self.rag_orchestrator.clone();
         let chat = api
             .and(warp::path("chat"))
             .and(warp::path::end())
@@ -193,7 +198,35 @@ impl WebServer {
             .and(warp::any().map(move || memory_system.clone()))
             .and(warp::any().map(move || concept_graph.clone()))
             .and(warp::any().map(move || pattern_detector.clone()))
+            .and(warp::any().map(move || rag_orchestrator.clone()))
             .and_then(Self::handle_chat);
+
+        // RAG Chat endpoint (new)
+        let memory_system_rag = self.memory_system.clone();
+        let concept_graph_rag = self.concept_graph.clone();
+        let pattern_detector_rag = self.pattern_detector.clone();
+        let rag_orchestrator_rag = self.rag_orchestrator.clone();
+        let rag_chat = api
+            .and(warp::path("rag"))
+            .and(warp::path("chat"))
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_rag.clone()))
+            .and(warp::any().map(move || concept_graph_rag.clone()))
+            .and(warp::any().map(move || pattern_detector_rag.clone()))
+            .and(warp::any().map(move || rag_orchestrator_rag.clone()))
+            .and_then(Self::handle_rag_chat);
+
+        // RAG Stats endpoint
+        let rag_orchestrator_stats = self.rag_orchestrator.clone();
+        let rag_stats = api
+            .and(warp::path("rag"))
+            .and(warp::path("stats"))
+            .and(warp::path::end())
+            .and(warp::get())
+            .and(warp::any().map(move || rag_orchestrator_stats.clone()))
+            .and_then(Self::handle_rag_stats);
 
         // Export endpoint
         let export = api
@@ -214,6 +247,8 @@ impl WebServer {
             .or(simulate)
             .or(concepts_analyze)
             .or(chat)
+            .or(rag_chat)
+            .or(rag_stats)
             .or(export)
             .with(cors);
 
@@ -344,20 +379,50 @@ impl WebServer {
         memory_system: Arc<Mutex<MemorySystem>>,
         concept_graph: Arc<Mutex<ConceptGraphManager>>,
         pattern_detector: Arc<Mutex<PatternDetector>>,
+        rag_orchestrator: Arc<Mutex<RagOrchestrator>>,
     ) -> Result<impl Reply, warp::Rejection> {
         let start_time = std::time::Instant::now();
         
-        // Process the user's message through the Brain AI using persistent systems
+        println!("🎯 Received chat request: {}", request.message);
+        
+        // Create RAG request from chat request
+        let rag_request = RagRequest {
+            message: request.message.clone(),
+            conversation_id: None, // Let the orchestrator create a new one
+            context_limit: Some(15),
+            retrieval_threshold: Some(0.2),
+        };
+        
+        // Process through RAG orchestrator
         let response = {
             let mut memory = memory_system.lock().await;
             let mut graph = concept_graph.lock().await;
             let mut detector = pattern_detector.lock().await;
+            let mut orchestrator = rag_orchestrator.lock().await;
             
-            match Self::process_with_brain_ai(&request.message, &request.history, &mut *memory, &mut *graph, &mut *detector).await {
-                Ok(ai_response) => ai_response,
-                Err(_) => {
-                    // Fallback to basic response if Brain AI processing fails
-                    Self::generate_fallback_response(&request.message)
+            match orchestrator.process_conversation(
+                rag_request,
+                &mut *memory,
+                &mut *graph,
+                &mut *detector,
+            ).await {
+                Ok(rag_response) => {
+                    println!("✅ RAG Orchestrator generated response");
+                    rag_response.response
+                },
+                Err(e) => {
+                    eprintln!("❌ RAG Orchestrator failed: {}", e);
+                    // Fallback to basic Brain AI processing
+                    match Self::process_with_brain_ai(&request.message, &request.history, &mut *memory, &mut *graph, &mut *detector).await {
+                        Ok(ai_response) => {
+                            println!("✅ Fallback Brain AI response generated");
+                            ai_response
+                        },
+                        Err(_) => {
+                            println!("⚠️ Using fallback response");
+                            Self::generate_fallback_response(&request.message)
+                        }
+                    }
                 }
             }
         };
@@ -376,662 +441,9 @@ impl WebServer {
             suggestions,
         };
         
+        println!("📤 Sending chat response with {} suggestions", chat_response.suggestions.len());
         Ok(warp::reply::json(&chat_response))
     }
-
-    #[allow(dead_code)]
-    fn generate_chat_response(message: &str, history: &[ChatMessage]) -> String {
-        let lower_message = message.to_lowercase();
-        
-        // Check for greetings first
-        if lower_message.contains("hello") || lower_message.contains("hi") || lower_message.contains("hey") {
-            return format!(r#"Hello! 👋 I'm excited to chat with you! 
-
-I'm your Brain AI assistant with extensive knowledge from analyzing repositories and codebases. I can help you with:
-
-💻 **Programming**: React, TypeScript, Python, Rust, APIs
-🏗️ **Architecture**: Microservices, design patterns, project structure
-🔧 **DevOps**: Docker, CI/CD, deployment strategies
-📚 **Best Practices**: Code organization, testing, documentation
-
-Try asking me:
-• "Show me a React component example"
-• "Explain microservices architecture"
-• "How do you structure a Python project?"
-• "What are Docker best practices?"
-
-What interests you most?"#);
-        }
-
-        // Check for code example requests
-        if lower_message.contains("example") || lower_message.contains("show me") || lower_message.contains("code") {
-            if lower_message.contains("react") {
-                return format!(r#"Here's a React component example based on patterns I've learned:
-
-```jsx
-import React, {{ useState, useEffect }} from 'react';
-
-const UserProfile = ({{ userId }}) => {{
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {{
-    const fetchUser = async () => {{
-      try {{
-        const response = await fetch(`/api/users/${{userId}}`);
-        const userData = await response.json();
-        setUser(userData);
-      }} catch (error) {{
-        console.error('Failed to fetch user:', error);
-      }} finally {{
-        setLoading(false);
-      }}
-    }};
-
-    fetchUser();
-  }}, [userId]);
-
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>User not found</div>;
-
-  return (
-    <div className="user-profile">
-      <img src={{user.avatar}} alt={{user.name}} />
-      <h2>{{user.name}}</h2>
-      <p>{{user.email}}</p>
-    </div>
-  );
-}};
-
-export default UserProfile;
-```
-
-This follows modern React patterns with hooks, error handling, and proper component structure that I've observed in many repositories!"#);
-            }
-
-            if lower_message.contains("api") || lower_message.contains("rest") || lower_message.contains("endpoint") {
-                return format!(r#"Here's a REST API structure example based on patterns I've analyzed:
-
-```typescript
-// routes/users.ts
-import {{ Router }} from 'express';
-import {{ UserController }} from '../controllers/UserController';
-import {{ authMiddleware }} from '../middleware/auth';
-
-const router = Router();
-const userController = new UserController();
-
-// GET /api/users
-router.get('/', authMiddleware, userController.getUsers);
-
-// GET /api/users/:id
-router.get('/:id', authMiddleware, userController.getUserById);
-
-// POST /api/users
-router.post('/', authMiddleware, userController.createUser);
-
-// PUT /api/users/:id
-router.put('/:id', authMiddleware, userController.updateUser);
-
-// DELETE /api/users/:id
-router.delete('/:id', authMiddleware, userController.deleteUser);
-
-export default router;
-```
-
-```typescript
-// controllers/UserController.ts
-export class UserController {{
-  async getUsers(req: Request, res: Response) {{
-    try {{
-      const users = await UserService.getAllUsers();
-      res.json({{ success: true, data: users }});
-    }} catch (error) {{
-      res.status(500).json({{ success: false, error: error.message }});
-    }}
-  }}
-
-  async getUserById(req: Request, res: Response) {{
-    try {{
-      const {{ id }} = req.params;
-      const user = await UserService.getUserById(id);
-      
-      if (!user) {{
-        return res.status(404).json({{ success: false, error: 'User not found' }});
-      }}
-      
-      res.json({{ success: true, data: user }});
-    }} catch (error) {{
-      res.status(500).json({{ success: false, error: error.message }});
-    }}
-  }}
-}}
-```
-
-This follows RESTful conventions and error handling patterns I've seen across many well-structured APIs!"#);
-            }
-
-            if lower_message.contains("python") {
-                return format!(r#"Here's a Python class example with modern patterns I've learned:
-
-```python
-from typing import List, Optional
-from dataclasses import dataclass
-import asyncio
-import aiohttp
-
-@dataclass
-class User:
-    id: int
-    name: str
-    email: str
-    active: bool = True
-
-class UserRepository:
-    def __init__(self, base_url: str):
-        self.base_url = base_url
-        self.session: Optional[aiohttp.ClientSession] = None
-    
-    async def __aenter__(self):
-        self.session = aiohttp.ClientSession()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
-    
-    async def get_users(self) -> List[User]:
-        async with self.session.get(f"{{self.base_url}}/users") as response:
-            data = await response.json()
-            return [User(**user_data) for user_data in data]
-    
-    async def create_user(self, user: User) -> User:
-        async with self.session.post(
-            f"{{self.base_url}}/users", 
-            json=user.__dict__
-        ) as response:
-            data = await response.json()
-            return User(**data)
-
-# Usage
-async def main():
-    async with UserRepository("https://api.example.com") as repo:
-        users = await repo.get_users()
-        print(f"Found {{len(users)}} users")
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-This demonstrates modern Python with type hints, dataclasses, async/await, and context managers!"#);
-            }
-
-            // General code examples fallback
-            return format!(r#"I'd love to show you code examples! Based on what I've learned from repositories, I can create examples for:
-
-🔧 **Frontend**: React, Vue, TypeScript, HTML/CSS
-🔙 **Backend**: Node.js, Python, Rust, APIs
-📦 **Full-Stack**: Complete application examples
-🏗️ **Architecture**: Project structure, design patterns
-
-Try asking more specifically like:
-• "Show me a Vue component"
-• "Create a Python API example"  
-• "How to structure a TypeScript project?"
-• "Build a REST API with authentication"
-
-What technology are you interested in?"#);
-        }
-
-        // Check for architecture questions
-        if lower_message.contains("architecture") || lower_message.contains("structure") || lower_message.contains("organize") {
-            return format!(r#"Based on my analysis of repositories, here's a modern project architecture I recommend:
-
-```
-project-root/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── common/         # Shared components
-│   │   └── specific/       # Feature-specific components
-│   ├── services/           # API calls and external services
-│   ├── hooks/              # Custom React hooks (if React)
-│   ├── utils/              # Helper functions
-│   ├── types/              # TypeScript type definitions
-│   ├── stores/             # State management
-│   └── assets/             # Static assets
-├── tests/
-│   ├── unit/              # Unit tests
-│   ├── integration/       # Integration tests
-│   └── e2e/              # End-to-end tests
-├── docs/                  # Documentation
-├── config/               # Configuration files
-└── scripts/              # Build and deployment scripts
-```
-
-**Key Principles I've observed:**
-🏗️ **Separation of Concerns**: Each directory has a specific purpose
-📦 **Modular Design**: Components and services are self-contained
-🧪 **Testing Strategy**: Comprehensive test coverage at multiple levels
-📚 **Documentation**: Clear docs for onboarding and maintenance
-⚙️ **Configuration**: Environment-specific settings isolated
-
-This structure scales well from small projects to enterprise applications!"#);
-        }
-
-        // Check for specific technology questions first
-        if lower_message.contains("typescript") || lower_message.contains("ts") {
-            return format!(r#"TypeScript is amazing! Here's what I've learned from analyzing TypeScript projects:
-
-🔷 **TypeScript Benefits & Patterns**
-
-**Core Advantages:**
-• **Type Safety**: Catch errors at compile time
-• **Better IDE Support**: Autocomplete, refactoring
-• **Self-Documenting**: Types serve as documentation
-• **Gradual Adoption**: Can adopt incrementally
-
-**Common Patterns I've Seen:**
-
-```typescript
-// Generic utility types
-interface ApiResponse<T> {{
-  success: boolean;
-  data?: T;
-  error?: string;
-}}
-
-// Union types for better modeling
-type Status = 'loading' | 'success' | 'error';
-
-// Interface composition
-interface BaseEntity {{
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-}}
-
-interface User extends BaseEntity {{
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-}}
-
-// Advanced type utilities
-type CreateUserRequest = Omit<User, 'id' | 'createdAt' | 'updatedAt'>;
-type UpdateUserRequest = Partial<CreateUserRequest>;
-
-// Generic service class
-class ApiService<T> {{
-  constructor(private baseUrl: string) {{}}
-  
-  async get(id: string): Promise<ApiResponse<T>> {{
-    const response = await fetch(`${{this.baseUrl}}/${{id}}`);
-    return response.json();
-  }}
-  
-  async create(data: Omit<T, 'id'>): Promise<ApiResponse<T>> {{
-    const response = await fetch(this.baseUrl, {{
-      method: 'POST',
-      headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify(data)
-    }});
-    return response.json();
-  }}
-}}
-
-// Usage with type inference
-const userService = new ApiService<User>('/api/users');
-const result = await userService.get('123'); // result is typed as ApiResponse<User>
-```
-
-**Configuration (tsconfig.json):**
-```json
-{{
-  "compilerOptions": {{
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
-  }}
-}}
-```
-
-Would you like to explore any specific TypeScript features?"#);
-        }
-
-        // Check for React questions
-        if lower_message.contains("react") && !lower_message.contains("example") {
-            return format!(r#"React is fantastic! Here's what I've learned about modern React development:
-
-⚛️ **Modern React Patterns**
-
-**Key Concepts:**
-• **Hooks**: useState, useEffect, useContext, custom hooks
-• **Component Composition**: Building reusable components
-• **State Management**: Context API, Redux Toolkit, Zustand
-• **Performance**: React.memo, useMemo, useCallback
-
-**Best Practices I've Observed:**
-🏗️ Component composition over inheritance
-🎣 Custom hooks for reusable logic
-📦 Proper state management patterns
-⚡ Performance optimization techniques
-🧪 Testing with React Testing Library
-
-**Common Project Structure:**
-```
-src/
-├── components/
-│   ├── ui/              # Reusable UI components
-│   ├── features/        # Feature-specific components
-│   └── layout/          # Layout components
-├── hooks/               # Custom hooks
-├── context/             # React Context providers
-├── services/            # API calls
-├── utils/               # Helper functions
-└── types/               # TypeScript types
-```
-
-Would you like to see specific React examples or patterns?"#);
-        }
-
-        // Check for Docker questions
-        if lower_message.contains("docker") || lower_message.contains("container") {
-            return format!(r#"Docker containerization is essential for modern development! Here's what I've learned:
-
-🐳 **Docker Fundamentals**
-
-**Core Benefits:**
-• **Consistency**: Same environment everywhere
-• **Isolation**: Clean separation of dependencies
-• **Scalability**: Easy horizontal scaling
-• **Portability**: Run anywhere Docker runs
-
-**Best Practices I've Observed:**
-
-```dockerfile
-# Multi-stage build for efficiency
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-FROM node:18-alpine AS runtime
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
-EXPOSE 3000
-USER node
-CMD ["npm", "start"]
-```
-
-**Docker Compose for Development:**
-```yaml
-version: '3.8'
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
-
-**Key Optimization Tips:**
-🚀 Use multi-stage builds
-📦 Leverage .dockerignore
-🏷️ Use specific image tags
-🔒 Run as non-root user
-💾 Use volumes for persistent data
-
-Need help with a specific Docker use case?"#);
-        }
-
-        // Check for explanation requests
-        if lower_message.contains("explain") || lower_message.contains("how") || lower_message.contains("what") {
-            if lower_message.contains("microservices") {
-                return format!(r#"Great question! Let me explain microservices architecture based on patterns I've studied:
-
-🏗️ **Microservices Architecture**
-
-**Core Concept:**
-Break down a monolithic application into small, independent services that communicate over well-defined APIs.
-
-**Key Characteristics:**
-• **Single Responsibility**: Each service handles one business capability
-• **Independent Deployment**: Services can be deployed separately
-• **Technology Agnostic**: Different services can use different tech stacks
-• **Decentralized**: No central coordination required
-
-**Common Patterns I've Seen:**
-
-```yaml
-# docker-compose.yml example
-version: '3.8'
-services:
-  user-service:
-    build: ./services/user-service
-    ports:
-      - "3001:3000"
-    environment:
-      - DB_URL=postgres://user-db:5432/users
-  
-  order-service:
-    build: ./services/order-service
-    ports:
-      - "3002:3000"
-    environment:
-      - DB_URL=postgres://order-db:5432/orders
-  
-  api-gateway:
-    build: ./api-gateway
-    ports:
-      - "3000:3000"
-    depends_on:
-      - user-service
-      - order-service
-```
-
-**Benefits:**
-✅ Scalability - Scale services independently
-✅ Technology Diversity - Use best tool for each job
-✅ Team Independence - Teams can work autonomously
-✅ Fault Isolation - One service failure doesn't bring down everything
-
-**Challenges:**
-⚠️ Complexity - Network calls, distributed transactions
-⚠️ Monitoring - Need comprehensive observability
-⚠️ Data Consistency - Eventual consistency patterns
-⚠️ Testing - Integration testing becomes complex
-
-Would you like me to dive deeper into any specific aspect?"#);
-            }
-
-            if lower_message.contains("docker") || lower_message.contains("container") {
-                return format!(r#"Docker containerization explained! Here's what I've learned from analyzing containerized projects:
-
-🐳 **Docker Fundamentals**
-
-**What is Docker?**
-Docker packages applications with all dependencies into lightweight, portable containers.
-
-**Key Concepts:**
-• **Image**: Template for creating containers
-• **Container**: Running instance of an image  
-• **Dockerfile**: Instructions to build an image
-• **Registry**: Storage for images (like Docker Hub)
-
-**Example Dockerfile Pattern:**
-```dockerfile
-# Multi-stage build for efficiency
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-FROM node:18-alpine AS runtime
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
-EXPOSE 3000
-USER node
-CMD ["npm", "start"]
-```
-
-**Docker Compose for Multi-Service Apps:**
-```yaml
-version: '3.8'
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgres://postgres:password@db:5432/app
-    depends_on:
-      - db
-      - redis
-  
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-  
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-volumes:
-  postgres_data:
-```
-
-**Best Practices I've Observed:**
-🚀 Use multi-stage builds for smaller images
-🔒 Run as non-root user for security
-📦 Leverage .dockerignore to exclude unnecessary files
-🏷️ Use specific image tags, not 'latest'
-💾 Use volumes for persistent data
-
-Need help with a specific Docker use case?"#);
-            }
-        }
-
-
-
-        // Check for question words to provide helpful responses
-        if lower_message.contains("help") || lower_message.contains("what can you") {
-            return format!(r#"I'm here to help! 🤗 I have extensive knowledge from analyzing repositories and codebases. Here's what I can assist you with:
-
-💻 **Programming Languages**: 
-• JavaScript/TypeScript, Python, Rust, Go
-• React, Vue, Node.js, Django, FastAPI
-
-🏗️ **Architecture & Design**:
-• Microservices vs Monoliths
-• Design patterns and best practices
-• Project structure and organization
-
-🔧 **DevOps & Deployment**:
-• Docker containerization
-• CI/CD pipelines
-• Cloud deployment strategies
-
-📚 **Development Practices**:
-• Code organization
-• Testing strategies  
-• Performance optimization
-
-🎯 **Specific Help**:
-• Code examples and templates
-• Architecture explanations
-• Technology comparisons
-• Best practice recommendations
-
-Try asking me something specific like:
-• "Show me a Python FastAPI example"
-• "How do you structure a microservices project?"
-• "What are the best practices for React state management?"
-
-What would you like to explore?"#);
-        }
-
-        // Default responses based on context
-        if !history.is_empty() {
-            let context_summary = if history.len() > 2 {
-                "continuing our conversation"
-            } else {
-                "building on what we discussed"
-            };
-            
-            return format!(r#"I understand you're asking about "{}", and I'm {} about programming and technology.
-
-From my analysis of repositories and codebases, I can help you with:
-
-💻 **Code Examples**: React, TypeScript, Python, Rust, APIs
-🏗️ **Architecture**: Microservices, monoliths, design patterns  
-🔧 **DevOps**: Docker, CI/CD, deployment strategies
-📚 **Best Practices**: Code organization, testing, documentation
-🎯 **Specific Technologies**: Any framework or tool I've studied
-
-What specific aspect would you like to explore? I can provide detailed examples and explanations based on real-world patterns I've learned!"#, message, context_summary);
-        }
-
-        // First-time interaction - make it more dynamic
-        let tech_suggestions = vec![
-            "Show me a React component with hooks",
-            "Create a Python FastAPI example", 
-            "Explain Docker best practices",
-            "How to structure a TypeScript project?",
-            "Build a REST API with authentication",
-            "What's the difference between microservices and monoliths?"
-        ];
-        
-        let random_suggestions: Vec<_> = tech_suggestions.iter().take(3).collect();
-        
-        format!(r#"Thanks for asking about "{}"! 🤔
-
-I'm your Brain AI assistant with knowledge from analyzing numerous repositories and codebases. I can help you understand:
-
-🎯 **Programming Concepts**: Languages, frameworks, patterns
-💡 **Code Examples**: Real-world implementations and templates
-🏗️ **System Architecture**: How to structure and scale applications  
-🔍 **Technology Deep-dives**: Understanding how things work
-📝 **Best Practices**: Proven patterns from quality codebases
-
-Here are some things you could ask me:
-• {}
-• {}  
-• {}
-
-What interests you most? I'm here to help with any programming or architecture questions!"#, 
-            message, 
-            random_suggestions[0], 
-            random_suggestions[1], 
-            random_suggestions[2])
-    }
-
-
 
     async fn handle_memory_query(request: QueryRequest) -> Result<impl Reply, warp::Rejection> {
         let start_time = std::time::Instant::now();
@@ -1124,6 +536,87 @@ What interests you most? I'm here to help with any programming or architecture q
             message: "Concept analysis completed".to_string(),
             data: Some(serde_json::Value::Object(data.into_iter().collect())),
             processing_time,
+        };
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_rag_chat(
+        request: ChatRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        pattern_detector: Arc<Mutex<PatternDetector>>,
+        rag_orchestrator: Arc<Mutex<RagOrchestrator>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        
+        println!("🎯 Received chat request: {}", request.message);
+        
+        // Create RAG request from chat request
+        let rag_request = RagRequest {
+            message: request.message.clone(),
+            conversation_id: None, // Let the orchestrator create a new one
+            context_limit: Some(15),
+            retrieval_threshold: Some(0.2),
+        };
+        
+        // Process through RAG orchestrator
+        let response = {
+            let mut memory = memory_system.lock().await;
+            let mut graph = concept_graph.lock().await;
+            let mut detector = pattern_detector.lock().await;
+            let mut orchestrator = rag_orchestrator.lock().await;
+            
+            match orchestrator.process_conversation(
+                rag_request,
+                &mut *memory,
+                &mut *graph,
+                &mut *detector,
+            ).await {
+                Ok(rag_response) => {
+                    println!("✅ RAG Orchestrator generated response");
+                    rag_response.response
+                },
+                Err(e) => {
+                    eprintln!("❌ RAG Orchestrator failed: {}", e);
+                    // Fallback to basic Brain AI processing
+                    match Self::process_with_brain_ai(&request.message, &request.history, &mut *memory, &mut *graph, &mut *detector).await {
+                        Ok(ai_response) => {
+                            println!("✅ Fallback Brain AI response generated");
+                            ai_response
+                        },
+                        Err(_) => {
+                            println!("⚠️ Using fallback response");
+                            Self::generate_fallback_response(&request.message)
+                        }
+                    }
+                }
+            }
+        };
+        
+        let suggestions = {
+            let memory = memory_system.lock().await;
+            Self::generate_brain_suggestions(&request.message, &*memory)
+        };
+        
+        let context_used = !request.history.is_empty();
+        let _processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let chat_response = ChatResponse {
+            response,
+            context_used,
+            suggestions,
+        };
+        
+        println!("📤 Sending chat response with {} suggestions", chat_response.suggestions.len());
+        Ok(warp::reply::json(&chat_response))
+    }
+
+    async fn handle_rag_stats(
+        rag_orchestrator: Arc<Mutex<RagOrchestrator>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        let response = {
+            let mut orchestrator = rag_orchestrator.lock().await;
+            orchestrator.get_stats()
         };
         Ok(warp::reply::json(&response))
     }

@@ -362,6 +362,7 @@ dependencies = [
  "pprof",
  "pyo3",
  "rand",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",
