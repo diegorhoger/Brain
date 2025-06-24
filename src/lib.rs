@@ -175,6 +175,9 @@ pub mod training_data;
 pub mod conversational_model;
 pub mod training_pipeline;
 
+// Task 13.6 - Independent Intelligence Achievement (NEW)
+pub mod independent_intelligence;
+
 // Task 13.1 exports - Conversational Intelligence Layer
 pub use conversation::{
     RagOrchestrator, RagRequest, RagResponse, ChatMessage, ConversationContext,
@@ -200,6 +203,14 @@ pub use training_pipeline::{
     TrainingPhase, EvaluationConfig, BenchmarkConfig, ExperimentConfig, CheckpointConfig,
     ExternalModelConfig, TrainingPipelineResult, PipelineTrainingState, EvaluationResult,
     ExperimentTracker, MetricEntry
+};
+
+// Task 13.6 exports - Independent Intelligence Achievement
+pub use independent_intelligence::{
+    IndependentIntelligenceOrchestrator, IndependentIntelligenceConfig, IndependentResponse,
+    IndependencePerformanceMetrics, ModelPerformanceSnapshot, RoutingStatistics, QualityComparison,
+    ConversationRoute, IndependenceStatus, IndependenceLevel, ExternalFallbackConfig,
+    PerformanceMonitoringConfig, TransitionConfig, ImprovementConfig
 };
 
 /// Current version of the Brain architecture
