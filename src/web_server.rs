@@ -1,6 +1,6 @@
 use crate::error::BrainError;
 use crate::github_integration::{GitHubLearningEngine, GitHubClient};
-use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery, EpisodicQuery, EpisodicEvent, WorkingMemoryItem, SemanticConcept};
+use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery, EpisodicQuery, EpisodicEvent, SemanticConcept};
 use crate::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType};
 use crate::insight_extraction::PatternDetector;
 use crate::segment_discovery::{BpeSegmenter, BpeConfig};
@@ -346,7 +346,7 @@ impl WebServer {
             context.insert("type".to_string(), "github_repository".to_string());
             context.insert("source".to_string(), "simulation".to_string());
             
-            let episode = EpisodicEvent::new(
+            let _episode = EpisodicEvent::new(
                 repo_info.clone(),
                 context,
                 0.8,
@@ -354,7 +354,7 @@ impl WebServer {
             );
             
             // Try to store in episodic memory if available
-            let episodic_id = match memory.query_episodic(&EpisodicQuery::default()) {
+            let _episodic_id = match memory.query_episodic(&EpisodicQuery::default()) {
                 Ok(_) => {
                     // Episodic memory is available, but we can't directly store events
                     // Let's just use working memory for now
@@ -367,7 +367,7 @@ impl WebServer {
             };
             
             // Also store in working memory
-            let working_id = match memory.learn(
+            let _working_id = match memory.learn(
                 format!("Repository {} contains software project files and documentation", repo_name),
                 Priority::Medium
             ) {
