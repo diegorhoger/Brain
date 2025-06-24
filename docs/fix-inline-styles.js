@@ -21,73 +21,72 @@ function removeInlineStyles(content) {
     let processedContent = content;
     let changesCount = 0;
 
-    // Pattern 1: Page break before
-    const pageBreakBeforePattern = /<div\s+style="break-before:\s*page;\s*page-break-before:\s*always;"\s*><\/div>/gi;
-    processedContent = processedContent.replace(pageBreakBeforePattern, '<div class="page-break-before"></div>');
-    changesCount += (content.match(pageBreakBeforePattern) || []).length;
+    // Pattern 1: Exact match for the most common page break pattern
+    const exactPageBreakPattern = /<div\s+style="break-before:\s*page;\s*page-break-before:\s*always;"\s*><\/div>/gi;
+    processedContent = processedContent.replace(exactPageBreakPattern, '<div class="page-break-before"></div>');
+    changesCount += (content.match(exactPageBreakPattern) || []).length;
 
-    // Pattern 2: More flexible page break patterns
-    const flexibleBreakPattern = /<div\s+style="[^"]*break-before:\s*page[^"]*"[^>]*><\/div>/gi;
-    processedContent = processedContent.replace(flexibleBreakPattern, (match) => {
-        changesCount++;
-        // Extract any other attributes
-        const attributeMatch = match.match(/<div\s+([^>]*?)>/);
-        if (attributeMatch) {
-            const attributes = attributeMatch[1].replace(/style="[^"]*"/g, '').trim();
-            return `<div class="page-break-before" ${attributes}></div>`;
-        }
-        return '<div class="page-break-before"></div>';
+    // Pattern 2: Variations with different spacing
+    const spacingVariations = [
+        /<div\s+style="break-before:\s*page;\s*page-break-before:\s*always"\s*><\/div>/gi,
+        /<div\s+style="break-before:page;page-break-before:always;"\s*><\/div>/gi,
+        /<div\s+style="break-before:page;page-break-before:always"\s*><\/div>/gi,
+        /<div\s+style="break-before:\s*page\s*;\s*page-break-before:\s*always\s*;"\s*><\/div>/gi
+    ];
+
+    spacingVariations.forEach(pattern => {
+        const matches = content.match(pattern) || [];
+        processedContent = processedContent.replace(pattern, '<div class="page-break-before"></div>');
+        changesCount += matches.length;
     });
 
-    // Pattern 3: Any remaining inline styles with page breaks
-    const anyPageBreakPattern = /<([^>]+)\s+style="([^"]*(?:break-before|page-break-before|break-after|page-break-after|break-inside|page-break-inside)[^"]*)"([^>]*)>/gi;
-    processedContent = processedContent.replace(anyPageBreakPattern, (match, tag, styleContent, rest) => {
+    // Pattern 3: More flexible pattern for any div with page break styles
+    const flexibleBreakPattern = /<div\s+style="[^"]*(?:break-before:\s*page|page-break-before:\s*always)[^"]*"\s*><\/div>/gi;
+    processedContent = processedContent.replace(flexibleBreakPattern, (match) => {
+        // Only count if not already replaced
+        if (!match.includes('class="page-break-before"')) {
+            changesCount++;
+            return '<div class="page-break-before"></div>';
+        }
+        return match;
+    });
+
+    // Pattern 4: Handle any remaining inline styles with page breaks (not just divs)
+    const anyElementPattern = /<(\w+)([^>]*)\s+style="([^"]*(?:break-before:\s*page|page-break-before:\s*always)[^"]*)"([^>]*)>/gi;
+    processedContent = processedContent.replace(anyElementPattern, (match, tagName, beforeStyle, styleContent, afterStyle) => {
         changesCount++;
         
         // Remove page break styles from the style attribute
         let cleanStyle = styleContent
-            .replace(/break-before:\s*[^;]+;?\s*/gi, '')
-            .replace(/page-break-before:\s*[^;]+;?\s*/gi, '')
-            .replace(/break-after:\s*[^;]+;?\s*/gi, '')
-            .replace(/page-break-after:\s*[^;]+;?\s*/gi, '')
-            .replace(/break-inside:\s*[^;]+;?\s*/gi, '')
-            .replace(/page-break-inside:\s*[^;]+;?\s*/gi, '')
+            .replace(/break-before:\s*page\s*;?\s*/gi, '')
+            .replace(/page-break-before:\s*always\s*;?\s*/gi, '')
             .replace(/^\s*;\s*/, '') // Remove leading semicolon
             .replace(/\s*;\s*$/, '') // Remove trailing semicolon
+            .replace(/;\s*;+/g, ';') // Remove double semicolons
             .trim();
 
-        // Add appropriate CSS class
-        let cssClass = '';
-        if (styleContent.includes('break-before') || styleContent.includes('page-break-before')) {
-            cssClass = 'page-break-before';
-        } else if (styleContent.includes('break-after') || styleContent.includes('page-break-after')) {
-            cssClass = 'page-break-after';
-        } else if (styleContent.includes('break-inside') || styleContent.includes('page-break-inside')) {
-            cssClass = 'page-break-avoid';
-        }
-
-        // Reconstruct the tag
-        let result = `<${tag}`;
+        // Build the replacement tag
+        let result = `<${tagName}${beforeStyle}`;
         
-        if (cssClass) {
-            // Check if class attribute already exists
-            if (rest.includes('class=')) {
-                result += rest.replace(/class="([^"]*)"/, `class="$1 ${cssClass}"`);
-            } else {
-                result += ` class="${cssClass}"${rest}`;
-            }
+        // Add CSS class
+        if (beforeStyle.includes('class=')) {
+            result = result.replace(/class="([^"]*)"/, 'class="$1 page-break-before"');
         } else {
-            result += rest;
+            result += ' class="page-break-before"';
         }
 
-        // Add style attribute only if there are remaining styles
+        // Add cleaned style attribute only if there are remaining styles
         if (cleanStyle) {
             result += ` style="${cleanStyle}"`;
         }
 
-        result += '>';
+        result += afterStyle + '>';
         return result;
     });
+
+    // Pattern 5: Clean up any remaining style attributes that only contain whitespace or empty values
+    const emptyStylePattern = /\s+style="[\s;]*"/gi;
+    processedContent = processedContent.replace(emptyStylePattern, '');
 
     return { content: processedContent, changes: changesCount };
 }
