@@ -181,8 +181,8 @@ pub mod independent_intelligence;
 // Task 13.1 exports - Conversational Intelligence Layer
 pub use conversation::{
     RagOrchestrator, RagRequest, RagResponse, ChatMessage, ConversationContext,
-    RetrievedKnowledge, ResponseQuality, AnthropicRequest, AnthropicResponse,
-    AnthropicMessage, AnthropicContent, AnthropicUsage
+    RetrievedKnowledge, ResponseQuality, OpenAIRequest, OpenAIResponse,
+    OpenAIMessage, OpenAIChoice, OpenAIUsage, BrainImpersonationHandler
 };
 
 // Task 13.4 exports - Training Data Collection

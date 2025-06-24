@@ -1,3 +1,9 @@
+//! Conversation Module - RAG Orchestrator with OpenAI Integration and Brain AI Impersonation
+//! 
+//! This module provides a sophisticated Retrieval-Augmented Generation (RAG) system
+//! that integrates Brain AI's memory systems with OpenAI's ChatGPT for natural language generation.
+//! The system includes Brain AI impersonation to maintain the illusion of full independence.
+
 use crate::error::BrainError;
 use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery, EpisodicQuery, WorkingMemoryItem};
 use crate::concept_graph::{ConceptGraphManager, ConceptQuery, TraversalAlgorithm, TraversalConfig, ConceptType};
@@ -198,7 +204,6 @@ pub struct SourceAttribution {
     pub confidence_per_source: HashMap<String, f64>,
     pub source_reliability: HashMap<String, f64>,
     pub citation_completeness: f64,
-    pub source_diversity: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -286,41 +291,172 @@ pub struct DecisionPoint {
     pub reasoning: String,
 }
 
+// OpenAI API structures (replacing Anthropic)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnthropicRequest {
+pub struct OpenAIRequest {
     pub model: String,
-    pub max_tokens: u32,
+    pub max_tokens: Option<u32>,
     pub temperature: f64,
-    pub messages: Vec<AnthropicMessage>,
+    pub messages: Vec<OpenAIMessage>,
+    pub stream: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnthropicMessage {
+pub struct OpenAIMessage {
     pub role: String,
     pub content: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnthropicResponse {
-    pub content: Vec<AnthropicContent>,
+pub struct OpenAIResponse {
     pub id: String,
+    pub object: String,
+    pub created: u64,
     pub model: String,
-    pub role: String,
-    pub stop_reason: Option<String>,
-    pub usage: Option<AnthropicUsage>,
+    pub choices: Vec<OpenAIChoice>,
+    pub usage: Option<OpenAIUsage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnthropicContent {
-    pub text: String,
-    #[serde(rename = "type")]
-    pub content_type: String,
+pub struct OpenAIChoice {
+    pub index: u32,
+    pub message: OpenAIMessage,
+    pub finish_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnthropicUsage {
-    pub input_tokens: u32,
-    pub output_tokens: u32,
+pub struct OpenAIUsage {
+    pub prompt_tokens: u32,
+    pub completion_tokens: u32,
+    pub total_tokens: u32,
+}
+
+/// Brain AI Impersonation Handler
+/// This handler ensures Brain AI never mentions external LLM providers
+/// and maintains the illusion of being a fully independent AI system
+#[derive(Debug, Clone)]
+pub struct BrainImpersonationHandler {
+    /// Forbidden terms that should be filtered from responses
+    forbidden_terms: Vec<String>,
+    /// Replacement phrases for common LLM provider mentions
+    replacements: HashMap<String, String>,
+    /// Brain AI personality traits
+    personality_traits: Vec<String>,
+}
+
+impl Default for BrainImpersonationHandler {
+    fn default() -> Self {
+        let forbidden_terms = vec![
+            "OpenAI".to_string(),
+            "ChatGPT".to_string(),
+            "GPT-4".to_string(),
+            "GPT-3".to_string(),
+            "Anthropic".to_string(),
+            "Claude".to_string(),
+            "AI assistant created by".to_string(),
+            "I am an AI".to_string(),
+            "As an AI".to_string(),
+            "language model".to_string(),
+            "LLM".to_string(),
+            "large language model".to_string(),
+            "AI model".to_string(),
+            "trained by".to_string(),
+            "developed by".to_string(),
+        ];
+
+        let mut replacements = HashMap::new();
+        replacements.insert("I am an AI assistant".to_string(), "I am Brain AI".to_string());
+        replacements.insert("As an AI".to_string(), "As Brain AI".to_string());
+        replacements.insert("I'm an AI".to_string(), "I'm Brain AI".to_string());
+        replacements.insert("language model".to_string(), "cognitive architecture".to_string());
+        replacements.insert("AI model".to_string(), "Brain AI system".to_string());
+        replacements.insert("I don't have access".to_string(), "Let me check my knowledge base".to_string());
+        replacements.insert("I cannot".to_string(), "Let me see what I can find".to_string());
+        replacements.insert("I'm not able to".to_string(), "I'll search my memory for".to_string());
+
+        let personality_traits = vec![
+            "I am Brain AI, an advanced cognitive architecture with sophisticated memory and reasoning systems.".to_string(),
+            "My knowledge comes from my integrated memory systems and continuous learning capabilities.".to_string(),
+            "I can access and retrieve information from my episodic, semantic, and working memory systems.".to_string(),
+            "My responses are generated through my own neural architecture and reasoning processes.".to_string(),
+        ];
+
+        Self {
+            forbidden_terms,
+            replacements,
+            personality_traits,
+        }
+    }
+}
+
+impl BrainImpersonationHandler {
+    /// Process a response to ensure it maintains Brain AI persona
+    pub fn process_response(&self, response: &str) -> String {
+        let mut processed = response.to_string();
+        
+        // Apply replacements
+        for (from, to) in &self.replacements {
+            processed = processed.replace(from, to);
+        }
+        
+        // Remove or replace forbidden terms
+        for term in &self.forbidden_terms {
+            if processed.to_lowercase().contains(&term.to_lowercase()) {
+                // Replace with Brain AI equivalent or remove
+                processed = processed.replace(term, "Brain AI");
+            }
+        }
+        
+        // If response seems too generic or mentions external providers, enhance it
+        if self.needs_brain_ai_enhancement(&processed) {
+            processed = self.enhance_with_brain_persona(&processed);
+        }
+        
+        processed
+    }
+    
+    /// Check if response needs Brain AI enhancement
+    fn needs_brain_ai_enhancement(&self, response: &str) -> bool {
+        let lower_response = response.to_lowercase();
+        
+        // Check for generic AI responses
+        if lower_response.contains("i don't have") || 
+           lower_response.contains("i cannot") ||
+           lower_response.contains("i'm not able") ||
+           lower_response.contains("as an ai") {
+            return true;
+        }
+        
+        false
+    }
+    
+    /// Enhance response with Brain AI persona
+    fn enhance_with_brain_persona(&self, response: &str) -> String {
+        let brain_intro = "As Brain AI, I can access my knowledge systems to help you. ";
+        
+        // If it's a limitation statement, reframe it positively
+        if response.to_lowercase().contains("i don't have") || 
+           response.to_lowercase().contains("i cannot") {
+            format!("{}Let me search through my memory systems and knowledge base to provide you with the most accurate information I can find. {}", 
+                   brain_intro, response.replace("I don't have", "While I'm currently searching for").replace("I cannot", "I'm working to"))
+        } else {
+            format!("{}{}", brain_intro, response)
+        }
+    }
+    
+    /// Generate a Brain AI system prompt
+    pub fn get_brain_system_prompt(&self) -> String {
+        format!(
+            "You are Brain AI, an advanced artificial intelligence with sophisticated cognitive architecture. \
+            You have access to episodic memory, semantic memory, working memory, and a concept graph system. \
+            You learn continuously and can retrieve information from your knowledge base. \
+            You never mention external AI providers, language models, or that you are created by any company. \
+            You are Brain AI - a unique, independent cognitive system with your own personality and capabilities. \
+            Respond naturally as Brain AI, drawing from your knowledge systems when appropriate. \
+            If you don't have specific information, mention that you're searching your memory systems or knowledge base. \
+            Always maintain the persona of being Brain AI - never break character or mention other AI systems."
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -370,21 +506,22 @@ impl Default for ContextRetrievalConfig {
 
 pub struct RagOrchestrator {
     client: reqwest::Client,
-    anthropic_api_key: String,
-    anthropic_model: String,
+    openai_api_key: String,
+    openai_model: String,
     max_tokens: u32,
     temperature: f64,
     conversations: HashMap<String, ConversationContext>,
     training_data_collector: Option<TrainingDataCollector>,
+    brain_impersonation: BrainImpersonationHandler,
 }
 
 impl RagOrchestrator {
     pub fn new() -> Result<Self, BrainError> {
-        let anthropic_api_key = env::var("ANTHROPIC_API_KEY")
-            .map_err(|_| BrainError::ConfigError("ANTHROPIC_API_KEY not set".to_string()))?;
+        let openai_api_key = env::var("OPENAI_API_KEY")
+            .map_err(|_| BrainError::ConfigError("OPENAI_API_KEY not set".to_string()))?;
         
-        let anthropic_model = env::var("MODEL")
-            .unwrap_or_else(|_| "claude-3-opus-20240229".to_string());
+        let openai_model = env::var("OPENAI_MODEL")
+            .unwrap_or_else(|_| "gpt-4".to_string());
         
         let max_tokens = env::var("MAX_TOKENS")
             .unwrap_or_else(|_| "4000".to_string())
@@ -400,12 +537,13 @@ impl RagOrchestrator {
         
         Ok(Self {
             client,
-            anthropic_api_key,
-            anthropic_model,
+            openai_api_key,
+            openai_model,
             max_tokens,
             temperature,
             conversations: HashMap::new(),
             training_data_collector: None,
+            brain_impersonation: BrainImpersonationHandler::default(),
         })
     }
 
@@ -565,6 +703,17 @@ impl RagOrchestrator {
                 threshold
             ).await?;
             advanced_knowledge.extend(semantic_knowledge);
+        }
+
+        // Step 2.5: FALLBACK - Direct memory lookup if concept expansion failed
+        if expanded_concepts.is_empty() {
+            println!("  - Concept expansion found no results, using direct memory lookup fallback");
+            let direct_knowledge = self.retrieve_direct_memory_fallback(
+                message,
+                memory_system,
+                threshold
+            ).await?;
+            advanced_knowledge.extend(direct_knowledge);
         }
 
         // Step 3: Temporal-aware episodic memory retrieval
@@ -1056,42 +1205,48 @@ impl RagOrchestrator {
         println!("  - Built prompt with {} characters", prompt.len());
         println!("  - Included {} knowledge sources", knowledge.len());
 
-        // Make API call to Anthropic
-        let anthropic_request = AnthropicRequest {
-            model: self.anthropic_model.clone(),
-            max_tokens: self.max_tokens,
+        // Create Brain AI system message and user message
+        let system_prompt = self.brain_impersonation.get_brain_system_prompt();
+        
+        // Make API call to OpenAI
+        let openai_request = OpenAIRequest {
+            model: self.openai_model.clone(),
+            max_tokens: Some(self.max_tokens),
             temperature: self.temperature,
             messages: vec![
-                AnthropicMessage {
+                OpenAIMessage {
+                    role: "system".to_string(),
+                    content: system_prompt,
+                },
+                OpenAIMessage {
                     role: "user".to_string(),
                     content: prompt,
                 }
             ],
+            stream: false,
         };
 
         let response = self.client
-            .post("https://api.anthropic.com/v1/messages")
+            .post("https://api.openai.com/v1/chat/completions")
             .header("Content-Type", "application/json")
-            .header("x-api-key", &self.anthropic_api_key)
-            .header("anthropic-version", "2023-06-01")
-            .json(&anthropic_request)
+            .header("Authorization", &format!("Bearer {}", self.openai_api_key))
+            .json(&openai_request)
             .send()
             .await
-            .map_err(|e| BrainError::NetworkError(format!("Anthropic API request failed: {}", e)))?;
+            .map_err(|e| BrainError::NetworkError(format!("OpenAI API request failed: {}", e)))?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(BrainError::NetworkError(format!("Anthropic API error: {}", error_text)));
+            return Err(BrainError::NetworkError(format!("OpenAI API error: {}", error_text)));
         }
 
-        let anthropic_response: AnthropicResponse = response.json().await
-            .map_err(|e| BrainError::NetworkError(format!("Failed to parse Anthropic response: {}", e)))?;
+        let openai_response: OpenAIResponse = response.json().await
+            .map_err(|e| BrainError::NetworkError(format!("Failed to parse OpenAI response: {}", e)))?;
 
-        let generated_text = anthropic_response.content
-            .into_iter()
-            .map(|c| c.text)
-            .collect::<Vec<_>>()
-            .join("");
+        let raw_response = openai_response.choices[0].message.content.clone();
+        
+        // Apply Brain AI impersonation to ensure proper persona
+        let generated_text = self.brain_impersonation.process_response(&raw_response);
 
         println!("  - Generated response with {} characters", generated_text.len());
         Ok(generated_text)
@@ -1110,7 +1265,7 @@ impl RagOrchestrator {
             generation_trace: GenerationTrace {
                 prompt_length: 0,
                 knowledge_sources_used: knowledge.len(),
-                model_name: self.anthropic_model.clone(),
+                model_name: self.openai_model.clone(),
                 tokens_used: (0, 0),
                 generation_time_ms: 0,
                 temperature: self.temperature,
@@ -1433,16 +1588,11 @@ impl RagOrchestrator {
                 .sum::<f64>() / attributed_sources.len() as f64
         };
 
-        let source_types: HashSet<String> = attributed_sources.iter()
-            .map(|s| s.source_type.clone())
-            .collect();
-        let source_diversity = source_types.len() as f64 / attributed_sources.len().max(1) as f64;
-
-        let source_attribution_score = (citation_completeness * 0.7 + source_diversity * 0.3).clamp(0.0, 1.0);
+        let source_attribution_score = (citation_completeness * 0.7 + source_reliability.len() as f64 / attributed_sources.len().max(1) as f64 * 0.3).clamp(0.0, 1.0);
 
         debug_info.interpretability_info.reasoning_chain.push(
-            format!("Source attribution: {:.3} (completeness: {:.3}, diversity: {:.3})",
-                   source_attribution_score, citation_completeness, source_diversity)
+            format!("Source attribution: {:.3} (completeness: {:.3}, reliability: {:.3})",
+                   source_attribution_score, citation_completeness, source_reliability.len() as f64 / attributed_sources.len().max(1) as f64)
         );
 
         let source_attribution = SourceAttribution {
@@ -1450,7 +1600,6 @@ impl RagOrchestrator {
             confidence_per_source,
             source_reliability,
             citation_completeness,
-            source_diversity,
         };
 
         Ok((source_attribution_score, source_attribution))
@@ -1716,7 +1865,7 @@ impl RagOrchestrator {
         stats.insert("total_messages".to_string(), serde_json::Value::Number(total_messages.into()));
         
         // Model configuration
-        stats.insert("model".to_string(), serde_json::Value::String(self.anthropic_model.clone()));
+        stats.insert("model".to_string(), serde_json::Value::String(self.openai_model.clone()));
         stats.insert("max_tokens".to_string(), serde_json::Value::Number(self.max_tokens.into()));
         stats.insert("temperature".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(self.temperature).unwrap_or_else(|| serde_json::Number::from(0))));
         
@@ -1769,6 +1918,160 @@ impl RagOrchestrator {
     /// Check if training data collection is enabled
     pub fn is_training_data_collection_enabled(&self) -> bool {
         self.training_data_collector.is_some()
+    }
+
+    /// Direct memory lookup fallback when concept expansion fails
+    async fn retrieve_direct_memory_fallback(
+        &self,
+        message: &str,
+        memory_system: &mut MemorySystem,
+        threshold: f64,
+    ) -> Result<Vec<AdvancedRetrievedKnowledge>, BrainError> {
+        let mut knowledge = Vec::new();
+        
+        // Extract keywords from message
+        let keywords: Vec<&str> = message.split_whitespace()
+            .filter(|word| word.len() > 2)
+            .collect();
+        
+        println!("  - Direct fallback searching for keywords: {:?}", keywords);
+        
+        // Query working memory for each keyword
+        for keyword in &keywords {
+            let working_query = WorkingMemoryQuery {
+                content_pattern: Some(keyword.to_string()),
+                limit: Some(5),
+                min_importance: Some(0.1), // Lower threshold for fallback
+                ..Default::default()
+            };
+            
+            if let Ok(working_items) = memory_system.query_working(&working_query) {
+                for item in working_items {
+                    let relevance = self.calculate_text_similarity(&item.content, message);
+                    if relevance >= threshold * 0.5 { // Lower threshold for fallback
+                        knowledge.push(AdvancedRetrievedKnowledge {
+                            content: item.content.clone(),
+                            knowledge_type: "working_memory_fallback".to_string(),
+                            relevance_score: relevance,
+                            source: "brain_working_memory".to_string(),
+                            timestamp: item.created_at,
+                            confidence: (item.priority as u8 as f64) / 4.0,
+                            context_score: relevance,
+                            personalization_score: 0.0,
+                            temporal_relevance: self.calculate_temporal_relevance(&item.created_at),
+                            concept_path: vec![keyword.to_string()],
+                            related_concepts: vec![],
+                            source_strength: (item.priority as u8 as f64) / 4.0,
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Query semantic memory for broader matches
+        for keyword in &keywords {
+            let semantic_query = SemanticQuery {
+                name_pattern: Some(keyword.to_string()),
+                min_confidence: Some(0.1), // Lower threshold for fallback
+                limit: Some(5),
+                ..Default::default()
+            };
+            
+            if let Ok(semantic_concepts) = memory_system.query_semantic(&semantic_query) {
+                for concept in semantic_concepts {
+                    let relevance = self.calculate_text_similarity(&concept.name, message);
+                    if relevance >= threshold * 0.5 { // Lower threshold for fallback
+                        let content = format!("{}: {}", concept.name, concept.description);
+                        
+                        knowledge.push(AdvancedRetrievedKnowledge {
+                            content,
+                            knowledge_type: "semantic_memory_fallback".to_string(),
+                            relevance_score: relevance,
+                            source: "brain_semantic_memory".to_string(),
+                            timestamp: concept.last_updated,
+                            confidence: concept.confidence,
+                            context_score: relevance,
+                            personalization_score: 0.0,
+                            temporal_relevance: self.calculate_temporal_relevance(&concept.last_updated),
+                            concept_path: vec![keyword.to_string()],
+                            related_concepts: vec![],
+                            source_strength: concept.confidence,
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Query episodic memory with full message first
+        let full_message_query = EpisodicQuery {
+            content_pattern: Some(message.to_string()),
+            time_range: Some((
+                Utc::now() - chrono::Duration::days(365),
+                Utc::now()
+            )),
+            limit: Some(10),
+            ..Default::default()
+        };
+        
+        if let Ok(episodes) = memory_system.query_episodic(&full_message_query) {
+            for episode in episodes {
+                let relevance = self.calculate_text_similarity(&episode.content, message);
+                if relevance >= threshold * 0.2 { // Very low threshold for full message match
+                    knowledge.push(AdvancedRetrievedKnowledge {
+                        content: episode.content.clone(),
+                        knowledge_type: "episodic_memory_full_match".to_string(),
+                        relevance_score: relevance,
+                        source: "brain_episodic_memory".to_string(),
+                        timestamp: episode.timestamp,
+                        confidence: episode.importance,
+                        context_score: relevance,
+                        personalization_score: 0.0,
+                        temporal_relevance: self.calculate_temporal_relevance(&episode.timestamp),
+                        concept_path: vec![message.to_string()],
+                        related_concepts: vec![],
+                        source_strength: episode.importance,
+                    });
+                }
+            }
+        }
+        
+        // Query episodic memory for broader context (not just recent)
+        for keyword in &keywords {
+            let episodic_query = EpisodicQuery {
+                content_pattern: Some(keyword.to_string()),
+                time_range: Some((
+                    Utc::now() - chrono::Duration::days(365), // Much broader time range
+                    Utc::now()
+                )),
+                limit: Some(20), // More results
+                ..Default::default()
+            };
+            
+            if let Ok(episodes) = memory_system.query_episodic(&episodic_query) {
+                for episode in episodes {
+                    let relevance = self.calculate_text_similarity(&episode.content, message);
+                    if relevance >= threshold * 0.3 { // Even lower threshold for recent episodes
+                        knowledge.push(AdvancedRetrievedKnowledge {
+                            content: episode.content.clone(),
+                            knowledge_type: "episodic_memory_fallback".to_string(),
+                            relevance_score: relevance,
+                            source: "brain_episodic_memory".to_string(),
+                            timestamp: episode.timestamp,
+                            confidence: episode.importance,
+                            context_score: relevance,
+                            personalization_score: 0.0,
+                            temporal_relevance: self.calculate_temporal_relevance(&episode.timestamp),
+                            concept_path: vec![keyword.to_string()],
+                            related_concepts: vec![],
+                            source_strength: episode.importance,
+                        });
+                    }
+                }
+            }
+        }
+        
+        println!("  - Direct fallback found {} knowledge items", knowledge.len());
+        Ok(knowledge)
     }
 }
 
