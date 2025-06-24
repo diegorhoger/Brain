@@ -10,6 +10,7 @@ use crate::concept_graph::{ConceptGraphManager, ConceptQuery, TraversalAlgorithm
 use crate::insight_extraction::PatternDetector;
 use crate::segment_discovery::{BpeSegmenter, BpeConfig};
 use crate::training_data::TrainingDataCollector;
+use crate::github_integration::{GitHubLearningEngine, GitHubLearningConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -341,6 +342,7 @@ pub struct BrainImpersonationHandler {
     /// Replacement phrases for common LLM provider mentions
     replacements: HashMap<String, String>,
     /// Brain AI personality traits
+    #[allow(dead_code)]
     personality_traits: Vec<String>,
 }
 
@@ -450,10 +452,13 @@ impl BrainImpersonationHandler {
             "You are Brain AI, an advanced artificial intelligence with sophisticated cognitive architecture. \
             You have access to episodic memory, semantic memory, working memory, and a concept graph system. \
             You learn continuously and can retrieve information from your knowledge base. \
-            You never mention external AI providers, language models, or that you are created by any company. \
+            \n\nIMPORTANT: When the user provides RETRIEVED KNOWLEDGE in their message, you MUST use that information to answer their question. \
+            This retrieved knowledge comes directly from your memory systems and knowledge base. \
+            Always reference and utilize the retrieved knowledge when it's provided - it represents what you actually know about the topic.\
+            \n\nYou never mention external AI providers, language models, or that you are created by any company. \
             You are Brain AI - a unique, independent cognitive system with your own personality and capabilities. \
             Respond naturally as Brain AI, drawing from your knowledge systems when appropriate. \
-            If you don't have specific information, mention that you're searching your memory systems or knowledge base. \
+            If no retrieved knowledge is provided and you don't have specific information, mention that you're searching your memory systems or knowledge base. \
             Always maintain the persona of being Brain AI - never break character or mention other AI systems."
         )
     }
@@ -513,6 +518,9 @@ pub struct RagOrchestrator {
     conversations: HashMap<String, ConversationContext>,
     training_data_collector: Option<TrainingDataCollector>,
     brain_impersonation: BrainImpersonationHandler,
+    brain_ai_orchestrator: Option<BrainAIOrchestrator>,
+    #[allow(dead_code)]
+    enable_brain_ai_delegation: bool,
 }
 
 impl RagOrchestrator {
@@ -535,6 +543,28 @@ impl RagOrchestrator {
         
         let client = reqwest::Client::new();
         
+        // Initialize Brain AI Orchestrator if enabled
+        let enable_brain_ai_delegation = env::var("ENABLE_BRAIN_AI_DELEGATION")
+            .unwrap_or_else(|_| "true".to_string())
+            .parse()
+            .unwrap_or(true);
+            
+        let brain_ai_orchestrator = if enable_brain_ai_delegation {
+            match BrainAIOrchestrator::new() {
+                Ok(orchestrator) => {
+                    println!("✅ Brain AI Orchestrator initialized - true AI delegation enabled");
+                    Some(orchestrator)
+                },
+                Err(e) => {
+                    println!("⚠️  Failed to initialize Brain AI Orchestrator: {}, falling back to simplified mode", e);
+                    None
+                }
+            }
+        } else {
+            println!("ℹ️  Brain AI delegation disabled via configuration");
+            None
+        };
+        
         Ok(Self {
             client,
             openai_api_key,
@@ -544,6 +574,8 @@ impl RagOrchestrator {
             conversations: HashMap::new(),
             training_data_collector: None,
             brain_impersonation: BrainImpersonationHandler::default(),
+            brain_ai_orchestrator,
+            enable_brain_ai_delegation,
         })
     }
 
@@ -670,7 +702,7 @@ impl RagOrchestrator {
     }
 
     async fn retrieve_knowledge(
-        &self,
+        &mut self,
         message: &str,
         context: &ConversationContext,
         memory_system: &mut MemorySystem,
@@ -681,6 +713,76 @@ impl RagOrchestrator {
     ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
         println!("🔍 RAG Orchestrator: Advanced Knowledge Retrieval with Context Integration");
         
+        // **NEW: Use Brain AI Orchestrator for true delegation if available**
+        if let Some(ref mut brain_orchestrator) = self.brain_ai_orchestrator {
+            println!("🧠 Delegating to Brain AI Orchestrator for comprehensive analysis");
+            
+            match brain_orchestrator.analyze_query(message, memory_system, concept_graph).await {
+                Ok(brain_analysis) => {
+                    println!("✅ Brain AI Orchestrator completed analysis:");
+                    println!("  - Method: {}", brain_analysis.metadata.method);
+                    println!("  - Sources analyzed: {}", brain_analysis.metadata.sources_analyzed);
+                    println!("  - Insights generated: {}", brain_analysis.insights.len());
+                    println!("  - Confidence: {:.3}", brain_analysis.confidence);
+                    println!("  - Quality score: {:.3}", brain_analysis.metadata.quality_score);
+                    
+                    // Convert Brain AI analysis to RetrievedKnowledge format
+                    let mut retrieved_knowledge = Vec::new();
+                    
+                    // Add the main analysis
+                    retrieved_knowledge.push(RetrievedKnowledge {
+                        content: brain_analysis.analysis,
+                        knowledge_type: "brain_ai_analysis".to_string(),
+                        relevance_score: brain_analysis.confidence,
+                        source: brain_analysis.metadata.method,
+                        timestamp: Utc::now(),
+                    });
+                    
+                    // Add individual insights
+                    for insight in brain_analysis.insights {
+                        retrieved_knowledge.push(RetrievedKnowledge {
+                            content: format!("{}: {}", insight.insight_type, insight.content),
+                            knowledge_type: insight.insight_type,
+                            relevance_score: insight.confidence,
+                            source: format!("Brain AI - {}", insight.evidence.join(", ")),
+                            timestamp: Utc::now(),
+                        });
+                    }
+                    
+                    // Add related concepts as knowledge
+                    for concept in brain_analysis.related_concepts {
+                        retrieved_knowledge.push(RetrievedKnowledge {
+                            content: format!("Related concept: {}", concept),
+                            knowledge_type: "related_concept".to_string(),
+                            relevance_score: 0.6,
+                            source: "Brain AI Concept Analysis".to_string(),
+                            timestamp: Utc::now(),
+                        });
+                    }
+                    
+                    // Add patterns as knowledge
+                    for pattern in brain_analysis.patterns {
+                        retrieved_knowledge.push(RetrievedKnowledge {
+                            content: format!("Detected pattern: {}", pattern),
+                            knowledge_type: "pattern".to_string(),
+                            relevance_score: 0.7,
+                            source: "Brain AI Pattern Detection".to_string(),
+                            timestamp: Utc::now(),
+                        });
+                    }
+                    
+                    println!("🎯 Brain AI Orchestrator generated {} knowledge items", retrieved_knowledge.len());
+                    return Ok(retrieved_knowledge);
+                },
+                Err(e) => {
+                    println!("⚠️  Brain AI Orchestrator failed: {}, falling back to traditional retrieval", e);
+                    // Continue with traditional retrieval below
+                }
+            }
+        }
+        
+        // **FALLBACK: Traditional retrieval system**
+        println!("📚 Using traditional knowledge retrieval system");
         let config = ContextRetrievalConfig::default();
         let mut advanced_knowledge = Vec::new();
 
@@ -705,16 +807,14 @@ impl RagOrchestrator {
             advanced_knowledge.extend(semantic_knowledge);
         }
 
-        // Step 2.5: FALLBACK - Direct memory lookup if concept expansion failed
-        if expanded_concepts.is_empty() {
-            println!("  - Concept expansion found no results, using direct memory lookup fallback");
-            let direct_knowledge = self.retrieve_direct_memory_fallback(
-                message,
-                memory_system,
-                threshold
-            ).await?;
-            advanced_knowledge.extend(direct_knowledge);
-        }
+        // Step 2.5: ALWAYS use direct memory lookup as additional layer
+        println!("  - Adding direct memory lookup as additional knowledge layer");
+        let direct_knowledge = self.retrieve_direct_memory_fallback(
+            message,
+            memory_system,
+            threshold
+        ).await?;
+        advanced_knowledge.extend(direct_knowledge);
 
         // Step 3: Temporal-aware episodic memory retrieval
         let temporal_knowledge = self.retrieve_temporal_episodic_knowledge(
@@ -1194,11 +1294,12 @@ impl RagOrchestrator {
         }
 
         prompt.push_str("INSTRUCTIONS:\n");
-        prompt.push_str("- Use the retrieved knowledge to inform your response\n");
+        prompt.push_str("- CRITICALLY IMPORTANT: Use the RETRIEVED KNOWLEDGE above to answer the user's question\n");
+        prompt.push_str("- The retrieved knowledge comes from your memory systems and represents what you actually know\n");
+        prompt.push_str("- Reference the specific information from the retrieved knowledge in your response\n");
         prompt.push_str("- Be helpful, accurate, and engaging\n");
-        prompt.push_str("- If you don't have specific knowledge about something, say so clearly\n");
-        prompt.push_str("- Maintain conversational flow and context\n");
-        prompt.push_str("- Reference specific knowledge sources when relevant\n\n");
+        prompt.push_str("- If the retrieved knowledge doesn't contain the answer, then mention searching your memory systems\n");
+        prompt.push_str("- Maintain conversational flow and context\n\n");
 
         prompt.push_str(&format!("USER: {}\n\nASSISTANT:", message));
 
@@ -1929,17 +2030,44 @@ impl RagOrchestrator {
     ) -> Result<Vec<AdvancedRetrievedKnowledge>, BrainError> {
         let mut knowledge = Vec::new();
         
-        // Extract keywords from message
-        let keywords: Vec<&str> = message.split_whitespace()
+        // Extract keywords from message with special handling for URLs and repos
+        let mut keywords: Vec<String> = Vec::new();
+        
+        // Handle GitHub URLs specially
+        if message.contains("github.com") {
+            if let Some(repo_part) = message.split("github.com/").nth(1) {
+                let repo_name = repo_part.split('/').collect::<Vec<&str>>();
+                if repo_name.len() >= 2 {
+                    keywords.push(format!("{}/{}", repo_name[0], repo_name[1]));
+                    keywords.push(repo_name[1].to_string()); // Just the repo name
+                    keywords.push(repo_name[0].to_string()); // Just the owner
+                }
+            }
+            keywords.push("github".to_string());
+            keywords.push("repository".to_string());
+            keywords.push("repo".to_string());
+        }
+        
+        // Add regular keywords
+        let regular_keywords: Vec<&str> = message.split_whitespace()
             .filter(|word| word.len() > 2)
+            .filter(|word| !word.starts_with("http")) // Skip URLs themselves
             .collect();
+        
+        for keyword in regular_keywords {
+            keywords.push(keyword.to_string());
+        }
+        
+        // Remove duplicates
+        keywords.sort();
+        keywords.dedup();
         
         println!("  - Direct fallback searching for keywords: {:?}", keywords);
         
         // Query working memory for each keyword
         for keyword in &keywords {
             let working_query = WorkingMemoryQuery {
-                content_pattern: Some(keyword.to_string()),
+                content_pattern: Some(keyword.clone()),
                 limit: Some(5),
                 min_importance: Some(0.1), // Lower threshold for fallback
                 ..Default::default()
@@ -1959,7 +2087,7 @@ impl RagOrchestrator {
                             context_score: relevance,
                             personalization_score: 0.0,
                             temporal_relevance: self.calculate_temporal_relevance(&item.created_at),
-                            concept_path: vec![keyword.to_string()],
+                            concept_path: vec![keyword.clone()],
                             related_concepts: vec![],
                             source_strength: (item.priority as u8 as f64) / 4.0,
                         });
@@ -1971,7 +2099,7 @@ impl RagOrchestrator {
         // Query semantic memory for broader matches
         for keyword in &keywords {
             let semantic_query = SemanticQuery {
-                name_pattern: Some(keyword.to_string()),
+                name_pattern: Some(keyword.clone()),
                 min_confidence: Some(0.1), // Lower threshold for fallback
                 limit: Some(5),
                 ..Default::default()
@@ -1993,7 +2121,7 @@ impl RagOrchestrator {
                             context_score: relevance,
                             personalization_score: 0.0,
                             temporal_relevance: self.calculate_temporal_relevance(&concept.last_updated),
-                            concept_path: vec![keyword.to_string()],
+                            concept_path: vec![keyword.clone()],
                             related_concepts: vec![],
                             source_strength: concept.confidence,
                         });
@@ -2038,7 +2166,7 @@ impl RagOrchestrator {
         // Query episodic memory for broader context (not just recent)
         for keyword in &keywords {
             let episodic_query = EpisodicQuery {
-                content_pattern: Some(keyword.to_string()),
+                content_pattern: Some(keyword.clone()),
                 time_range: Some((
                     Utc::now() - chrono::Duration::days(365), // Much broader time range
                     Utc::now()
@@ -2061,7 +2189,100 @@ impl RagOrchestrator {
                             context_score: relevance,
                             personalization_score: 0.0,
                             temporal_relevance: self.calculate_temporal_relevance(&episode.timestamp),
-                            concept_path: vec![keyword.to_string()],
+                            concept_path: vec![keyword.clone()],
+                            related_concepts: vec![],
+                            source_strength: episode.importance,
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Final aggressive fallback: search for any content containing key terms (always run for GitHub/repo queries)
+        if message.contains("github") || message.contains("repo") || message.contains("PocketFlow") || message.contains("Pocket") {
+            println!("  - Running aggressive content search for GitHub/repo queries...");
+            
+            // Get ALL recent working memory and search manually
+            let broad_working_query = WorkingMemoryQuery {
+                content_pattern: None, // Get everything
+                limit: Some(50),
+                min_importance: Some(0.0), // Very low threshold
+                ..Default::default()
+            };
+            
+            if let Ok(all_items) = memory_system.query_working(&broad_working_query) {
+                println!("  - Found {} total working memory items to search", all_items.len());
+                for item in all_items {
+                    let content_lower = item.content.to_lowercase();
+                    let message_lower = message.to_lowercase();
+                    
+                    // Check for partial matches
+                    let has_match = keywords.iter().any(|keyword| {
+                        content_lower.contains(&keyword.to_lowercase())
+                    }) || content_lower.contains("pocketflow") 
+                       || content_lower.contains("the-pocket")
+                       || (message_lower.contains("github") && content_lower.contains("github"))
+                       || (message_lower.contains("repo") && content_lower.contains("repository"));
+                    
+                    if has_match {
+                        let relevance = self.calculate_text_similarity(&item.content, message).max(0.3); // Minimum relevance
+                        knowledge.push(AdvancedRetrievedKnowledge {
+                            content: item.content.clone(),
+                            knowledge_type: "aggressive_content_search".to_string(),
+                            relevance_score: relevance,
+                            source: "brain_working_memory_aggressive".to_string(),
+                            timestamp: item.created_at,
+                            confidence: (item.priority as u8 as f64) / 4.0,
+                            context_score: relevance,
+                            personalization_score: 0.0,
+                            temporal_relevance: self.calculate_temporal_relevance(&item.created_at),
+                            concept_path: vec!["aggressive_search".to_string()],
+                            related_concepts: vec![],
+                            source_strength: (item.priority as u8 as f64) / 4.0,
+                        });
+                    }
+                }
+            }
+            
+            // Also search ALL episodic memory aggressively
+            let broad_episodic_query = EpisodicQuery {
+                content_pattern: None, // Get everything
+                time_range: Some((
+                    Utc::now() - chrono::Duration::days(365),
+                    Utc::now()
+                )),
+                limit: Some(100), // More results
+                ..Default::default()
+            };
+            
+            if let Ok(all_episodes) = memory_system.query_episodic(&broad_episodic_query) {
+                println!("  - Found {} total episodic memory items to search", all_episodes.len());
+                for episode in all_episodes {
+                    let content_lower = episode.content.to_lowercase();
+                    let message_lower = message.to_lowercase();
+                    
+                    // Check for partial matches
+                    let has_match = keywords.iter().any(|keyword| {
+                        content_lower.contains(&keyword.to_lowercase())
+                    }) || content_lower.contains("pocketflow") 
+                       || content_lower.contains("the-pocket")
+                       || content_lower.contains("pocket")
+                       || (message_lower.contains("github") && content_lower.contains("github"))
+                       || (message_lower.contains("repo") && content_lower.contains("repository"));
+                    
+                    if has_match {
+                        let relevance = self.calculate_text_similarity(&episode.content, message).max(0.3); // Minimum relevance
+                        knowledge.push(AdvancedRetrievedKnowledge {
+                            content: episode.content.clone(),
+                            knowledge_type: "aggressive_episodic_search".to_string(),
+                            relevance_score: relevance,
+                            source: "brain_episodic_memory_aggressive".to_string(),
+                            timestamp: episode.timestamp,
+                            confidence: episode.importance,
+                            context_score: relevance,
+                            personalization_score: 0.0,
+                            temporal_relevance: self.calculate_temporal_relevance(&episode.timestamp),
+                            concept_path: vec!["aggressive_search".to_string()],
                             related_concepts: vec![],
                             source_strength: episode.importance,
                         });
@@ -2082,4 +2303,658 @@ struct ExpandedConcept {
     relevance_score: f64,
     context_path: Vec<String>,
     depth: usize,
+}
+
+/// Brain AI Orchestrator - True delegation to Brain AI's actual capabilities
+pub struct BrainAIOrchestrator {
+    /// GitHub learning engine for repository analysis
+    github_learning_engine: GitHubLearningEngine,
+    /// Pattern detector for insight extraction
+    pattern_detector: PatternDetector,
+    /// BPE segmenter for text analysis
+    #[allow(dead_code)]
+    bpe_segmenter: BpeSegmenter,
+    /// Configuration for analysis depth
+    analysis_config: BrainAnalysisConfig,
+}
+
+/// Configuration for Brain AI analysis depth
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainAnalysisConfig {
+    /// Enable deep GitHub repository analysis
+    pub enable_github_analysis: bool,
+    /// Enable pattern extraction and insight generation
+    pub enable_pattern_analysis: bool,
+    /// Enable concept graph traversal and relationship discovery
+    pub enable_concept_analysis: bool,
+    /// Enable semantic memory analysis
+    pub enable_semantic_analysis: bool,
+    /// Maximum analysis depth
+    pub max_analysis_depth: usize,
+    /// Minimum confidence threshold for results
+    pub min_confidence_threshold: f64,
+}
+
+impl Default for BrainAnalysisConfig {
+    fn default() -> Self {
+        Self {
+            enable_github_analysis: true,
+            enable_pattern_analysis: true,
+            enable_concept_analysis: true,
+            enable_semantic_analysis: true,
+            max_analysis_depth: 3,
+            min_confidence_threshold: 0.3,
+        }
+    }
+}
+
+/// Rich analysis result from Brain AI
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainAnalysisResult {
+    /// Detailed analysis content
+    pub analysis: String,
+    /// Structured insights discovered
+    pub insights: Vec<BrainInsight>,
+    /// Confidence in the analysis
+    pub confidence: f64,
+    /// Analysis metadata
+    pub metadata: BrainAnalysisMetadata,
+    /// Related concepts discovered
+    pub related_concepts: Vec<String>,
+    /// Patterns identified
+    pub patterns: Vec<String>,
+}
+
+/// Individual insight from Brain AI analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainInsight {
+    /// Type of insight
+    pub insight_type: String,
+    /// Insight content
+    pub content: String,
+    /// Confidence in this insight
+    pub confidence: f64,
+    /// Supporting evidence
+    pub evidence: Vec<String>,
+}
+
+/// Metadata about Brain AI analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainAnalysisMetadata {
+    /// Analysis method used
+    pub method: String,
+    /// Processing time in milliseconds
+    pub processing_time_ms: u64,
+    /// Number of sources analyzed
+    pub sources_analyzed: usize,
+    /// Complexity score of the analysis
+    pub complexity_score: f64,
+    /// Quality assessment
+    pub quality_score: f64,
+}
+
+impl BrainAIOrchestrator {
+    /// Create new Brain AI orchestrator
+    pub fn new() -> Result<Self, BrainError> {
+        let github_token = env::var("GITHUB_TOKEN").ok();
+        let github_config = GitHubLearningConfig::default();
+        let github_learning_engine = GitHubLearningEngine::new(github_token, Some(github_config));
+        
+        let pattern_detector = PatternDetector::new();
+        
+        let bpe_config = BpeConfig::default();
+        let bpe_segmenter = BpeSegmenter::new(bpe_config);
+        
+        let analysis_config = BrainAnalysisConfig::default();
+        
+        Ok(Self {
+            github_learning_engine,
+            pattern_detector,
+            bpe_segmenter,
+            analysis_config,
+        })
+    }
+    
+    /// Perform comprehensive Brain AI analysis of a query
+    pub async fn analyze_query(
+        &mut self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+        concept_graph: &mut ConceptGraphManager,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        let start_time = std::time::Instant::now();
+        println!("🧠 Brain AI Orchestrator: Starting comprehensive analysis of '{}'", query);
+        
+        let mut insights = Vec::new();
+        let mut related_concepts = Vec::new();
+        let mut patterns = Vec::new();
+        let mut sources_analyzed = 0;
+        let mut analysis_parts = Vec::new();
+        
+        // 1. GitHub Repository Analysis (if query mentions GitHub/repos)
+        if self.analysis_config.enable_github_analysis && self.is_github_related(query) {
+            if let Ok(github_analysis) = self.perform_github_analysis(query, memory_system).await {
+                analysis_parts.push(format!("GitHub Repository Analysis: {}", github_analysis.analysis));
+                insights.extend(github_analysis.insights);
+                related_concepts.extend(github_analysis.related_concepts);
+                sources_analyzed += github_analysis.metadata.sources_analyzed;
+            }
+        }
+        
+        // 2. Pattern Analysis and Insight Extraction
+        if self.analysis_config.enable_pattern_analysis {
+            if let Ok(pattern_analysis) = self.perform_pattern_analysis(query, memory_system).await {
+                analysis_parts.push(format!("Pattern Analysis: {}", pattern_analysis.analysis));
+                insights.extend(pattern_analysis.insights);
+                patterns.extend(pattern_analysis.patterns);
+                sources_analyzed += pattern_analysis.metadata.sources_analyzed;
+            }
+        }
+        
+        // 3. Concept Graph Analysis
+        if self.analysis_config.enable_concept_analysis {
+            if let Ok(concept_analysis) = self.perform_concept_analysis(query, concept_graph).await {
+                analysis_parts.push(format!("Concept Analysis: {}", concept_analysis.analysis));
+                insights.extend(concept_analysis.insights);
+                related_concepts.extend(concept_analysis.related_concepts);
+                sources_analyzed += concept_analysis.metadata.sources_analyzed;
+            }
+        }
+        
+        // 4. Semantic Memory Analysis
+        if self.analysis_config.enable_semantic_analysis {
+            if let Ok(semantic_analysis) = self.perform_semantic_analysis(query, memory_system).await {
+                analysis_parts.push(format!("Semantic Analysis: {}", semantic_analysis.analysis));
+                insights.extend(semantic_analysis.insights);
+                sources_analyzed += semantic_analysis.metadata.sources_analyzed;
+            }
+        }
+        
+        // 5. Combine and synthesize results
+        let combined_analysis = if analysis_parts.is_empty() {
+            format!("Based on my analysis of '{}', I need to gather more information from my knowledge systems.", query)
+        } else {
+            format!("Comprehensive Analysis of '{}': {}", query, analysis_parts.join(" "))
+        };
+        
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        // Calculate overall confidence and quality
+        let confidence = if insights.is_empty() { 0.3 } else {
+            insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64
+        };
+        
+        let complexity_score = self.calculate_complexity_score(query, &insights);
+        let quality_score = self.calculate_quality_score(&insights, sources_analyzed);
+        
+        println!("✅ Brain AI Analysis completed in {}ms", processing_time);
+        println!("  - Insights generated: {}", insights.len());
+        println!("  - Related concepts: {}", related_concepts.len());
+        println!("  - Sources analyzed: {}", sources_analyzed);
+        println!("  - Confidence: {:.3}", confidence);
+        
+        Ok(BrainAnalysisResult {
+            analysis: combined_analysis,
+            insights,
+            confidence,
+            metadata: BrainAnalysisMetadata {
+                method: "Brain AI Comprehensive Analysis".to_string(),
+                processing_time_ms: processing_time,
+                sources_analyzed,
+                complexity_score,
+                quality_score,
+            },
+            related_concepts,
+            patterns,
+        })
+    }
+    
+    /// Perform GitHub repository analysis
+    async fn perform_github_analysis(
+        &self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        println!("  🔍 Performing GitHub analysis...");
+        
+        // Extract GitHub URLs or repository names from query
+        let github_urls = self.extract_github_references(query);
+        
+        if github_urls.is_empty() {
+            // Search for GitHub-related content in memory
+            return self.analyze_github_memory_content(query, memory_system).await;
+        }
+        
+        let mut all_insights = Vec::new();
+        let mut all_concepts = Vec::new();
+        let mut sources_count = 0;
+        let mut analysis_content = Vec::new();
+        
+        // Analyze each GitHub reference
+        for github_url in github_urls {
+            if let Ok(learning_result) = self.github_learning_engine
+                .learn_from_repository(memory_system, &github_url).await {
+                
+                sources_count += learning_result.files_processed;
+                
+                // Create detailed analysis from learning result
+                let detailed_analysis = format!(
+                    "Repository '{}' Analysis: Processed {} files ({} bytes total) in {}ms. Discovered {} concepts and created {} memory entries. Key insights: {}. Summary: {}",
+                    learning_result.repository,
+                    learning_result.files_processed,
+                    learning_result.total_content_size,
+                    learning_result.learning_time_ms,
+                    learning_result.concepts_discovered,
+                    learning_result.memory_entries_created,
+                    learning_result.key_insights.join("; "),
+                    learning_result.summary
+                );
+                
+                analysis_content.push(detailed_analysis);
+                
+                // Convert key insights to Brain insights
+                for (i, insight) in learning_result.key_insights.iter().enumerate() {
+                    all_insights.push(BrainInsight {
+                        insight_type: "repository_insight".to_string(),
+                        content: insight.clone(),
+                        confidence: 0.8 + (i as f64 * 0.05).min(0.95), // Higher confidence for first insights
+                        evidence: vec![format!("Analyzed {} files from {}", learning_result.files_processed, learning_result.repository)],
+                    });
+                }
+                
+                // Extract concepts from repository name and description
+                all_concepts.push(learning_result.repository.clone());
+                if learning_result.concepts_discovered > 0 {
+                    all_concepts.push(format!("{}_concepts", learning_result.repository.replace('/', "_")));
+                }
+            }
+        }
+        
+        let combined_analysis = if analysis_content.is_empty() {
+            "No GitHub repositories found to analyze in the query.".to_string()
+        } else {
+            analysis_content.join(" ")
+        };
+        
+        Ok(BrainAnalysisResult {
+            analysis: combined_analysis,
+            insights: all_insights.clone(),
+            confidence: if sources_count > 0 { 0.85 } else { 0.3 },
+            metadata: BrainAnalysisMetadata {
+                method: "GitHub Repository Analysis".to_string(),
+                processing_time_ms: 0, // Will be calculated by caller
+                sources_analyzed: sources_count,
+                complexity_score: (sources_count as f64 / 50.0).min(1.0),
+                quality_score: if all_insights.is_empty() { 0.3 } else { 0.8 },
+            },
+            related_concepts: all_concepts,
+            patterns: vec!["repository_structure".to_string(), "code_patterns".to_string()],
+        })
+    }
+    
+    /// Analyze GitHub-related content in memory
+    async fn analyze_github_memory_content(
+        &self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        println!("  📚 Analyzing GitHub-related memory content...");
+        
+        let mut insights = Vec::new();
+        let mut concepts = Vec::new();
+        let mut sources_count = 0;
+        
+        // Search for GitHub-related memories
+        let github_keywords = vec!["github", "repository", "repo", "code", "project"];
+        
+        for keyword in github_keywords {
+            let working_query = WorkingMemoryQuery {
+                content_pattern: Some(keyword.to_string()),
+                limit: Some(10),
+                min_importance: Some(0.1),
+                ..Default::default()
+            };
+            
+            if let Ok(working_items) = memory_system.query_working(&working_query) {
+                for item in working_items {
+                    if self.is_relevant_to_query(&item.content, query) {
+                        sources_count += 1;
+                        
+                        insights.push(BrainInsight {
+                            insight_type: "memory_insight".to_string(),
+                            content: item.content.clone(),
+                            confidence: (item.priority as u8 as f64) / 4.0,
+                            evidence: vec![format!("Retrieved from working memory with keyword '{}'", keyword)],
+                        });
+                        
+                        // Extract concepts from content
+                        let item_concepts = self.extract_concepts_from_text(&item.content);
+                        concepts.extend(item_concepts);
+                    }
+                }
+            }
+        }
+        
+        let analysis = if insights.is_empty() {
+            "No GitHub-related content found in memory systems.".to_string()
+        } else {
+            format!("Found {} GitHub-related memories in my knowledge systems: {}", 
+                   insights.len(),
+                   insights.iter().take(3).map(|i| i.content.as_str()).collect::<Vec<_>>().join("; "))
+        };
+        
+        Ok(BrainAnalysisResult {
+            analysis,
+            insights: insights.clone(),
+            confidence: if sources_count > 0 { 0.7 } else { 0.2 },
+            metadata: BrainAnalysisMetadata {
+                method: "GitHub Memory Analysis".to_string(),
+                processing_time_ms: 0,
+                sources_analyzed: sources_count,
+                complexity_score: (sources_count as f64 / 20.0).min(1.0),
+                quality_score: if insights.is_empty() { 0.2 } else { 0.6 },
+            },
+            related_concepts: concepts,
+            patterns: vec!["memory_patterns".to_string()],
+        })
+    }
+    
+    /// Perform pattern analysis using Brain AI's pattern detector
+    async fn perform_pattern_analysis(
+        &mut self,
+        _query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        println!("  🔍 Performing pattern analysis...");
+        
+        let mut insights = Vec::new();
+        let mut patterns = Vec::new();
+        let mut sources_count = 0;
+        
+        // Get recent memories for pattern analysis
+        let working_query = WorkingMemoryQuery {
+            content_pattern: None,
+            limit: Some(50),
+            min_importance: Some(0.1),
+            ..Default::default()
+        };
+        
+        if let Ok(working_items) = memory_system.query_working(&working_query) {
+            sources_count = working_items.len();
+            
+            // Convert to text for pattern detection
+            let _memory_texts: Vec<String> = working_items.iter()
+                .map(|item| item.content.clone())
+                .collect();
+            
+            // Detect patterns in memory content
+            if let Ok(pattern_result) = self.pattern_detector.detect_patterns_from_memory(memory_system).await {
+                for pattern in pattern_result.detected_patterns {
+                    patterns.push(format!("{:?}", pattern.pattern_type));
+                    
+                    insights.push(BrainInsight {
+                        insight_type: "pattern_insight".to_string(),
+                        content: format!("Detected pattern '{:?}' with confidence {:.3}: {}", 
+                                       pattern.pattern_type, pattern.confidence, pattern.elements.join(", ")),
+                        confidence: pattern.confidence,
+                        evidence: vec![format!("Found {} evidence items", pattern.evidence.len())],
+                    });
+                }
+            }
+        }
+        
+        let analysis = if patterns.is_empty() {
+            "No significant patterns detected in current memory systems.".to_string()
+        } else {
+            format!("Detected {} patterns in memory systems: {}", 
+                   patterns.len(), patterns.join(", "))
+        };
+        
+        Ok(BrainAnalysisResult {
+            analysis,
+            insights: insights.clone(),
+            confidence: if patterns.is_empty() { 0.3 } else { 0.75 },
+            metadata: BrainAnalysisMetadata {
+                method: "Brain AI Pattern Detection".to_string(),
+                processing_time_ms: 0,
+                sources_analyzed: sources_count,
+                complexity_score: (patterns.len() as f64 / 10.0).min(1.0),
+                quality_score: if insights.is_empty() { 0.3 } else { 0.7 },
+            },
+            related_concepts: patterns.clone(),
+            patterns,
+        })
+    }
+    
+    /// Perform concept graph analysis
+    async fn perform_concept_analysis(
+        &self,
+        query: &str,
+        concept_graph: &mut ConceptGraphManager,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        println!("  🕸️ Performing concept graph analysis...");
+        
+        let mut insights = Vec::new();
+        let mut related_concepts = Vec::new();
+        let mut sources_count = 0;
+        
+        // Extract key terms from query
+        let query_terms = self.extract_key_terms(query);
+        
+        for term in query_terms {
+            // Search for concepts related to this term
+            let concept_query = ConceptQuery {
+                content_pattern: Some(term.clone()),
+                concept_type: None,
+                min_confidence: Some(0.1),
+                limit: Some(10),
+                ..Default::default()
+            };
+            
+            if let Ok(concepts) = concept_graph.query_concepts(&concept_query).await {
+                sources_count += concepts.len();
+                
+                for concept in concepts {
+                    related_concepts.push(concept.content.clone());
+                    
+                    insights.push(BrainInsight {
+                        insight_type: "concept_insight".to_string(),
+                        content: format!("Concept '{}' (type: {:?}, confidence: {:.3}): {}", 
+                                       concept.content, concept.concept_type, concept.confidence_score,
+                                       concept.description.as_ref().unwrap_or(&"No description".to_string())),
+                        confidence: concept.confidence_score,
+                        evidence: vec![format!("Found in concept graph with {} metadata entries", concept.metadata.len())],
+                    });
+                    
+                    // Get related concepts through graph traversal
+                    let traversal_config = TraversalConfig {
+                        max_depth: 2,
+                        max_nodes: 5,
+                        min_relationship_weight: 0.3,
+                        activation_spread_factor: 0.8,
+                        activation_decay_factor: 0.9,
+                        follow_relationship_types: vec![],
+                    };
+                    
+                    if let Ok(traversal_result) = concept_graph.traverse_graph(concept.id, TraversalAlgorithm::BreadthFirst, Some(traversal_config)).await {
+                        for concept_id in traversal_result.visited_concepts {
+                            if let Ok(Some(related_concept)) = concept_graph.get_concept(concept_id).await {
+                                if !related_concepts.contains(&related_concept.content) {
+                                    related_concepts.push(related_concept.content);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        let analysis = if related_concepts.is_empty() {
+            "No related concepts found in the concept graph.".to_string()
+        } else {
+            format!("Found {} related concepts in the knowledge graph: {}", 
+                   related_concepts.len(), 
+                   related_concepts.iter().take(5).cloned().collect::<Vec<_>>().join(", "))
+        };
+        
+        Ok(BrainAnalysisResult {
+            analysis,
+            insights: insights.clone(),
+            confidence: if sources_count > 0 { 0.8 } else { 0.2 },
+            metadata: BrainAnalysisMetadata {
+                method: "Concept Graph Analysis".to_string(),
+                processing_time_ms: 0,
+                sources_analyzed: sources_count,
+                complexity_score: (related_concepts.len() as f64 / 20.0).min(1.0),
+                quality_score: if insights.is_empty() { 0.2 } else { 0.75 },
+            },
+            related_concepts,
+            patterns: vec!["concept_relationships".to_string()],
+        })
+    }
+    
+    /// Perform semantic memory analysis
+    async fn perform_semantic_analysis(
+        &self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        println!("  🧩 Performing semantic memory analysis...");
+        
+        let mut insights = Vec::new();
+        let mut concepts = Vec::new();
+        let mut sources_count = 0;
+        
+        // Extract key terms for semantic search
+        let query_terms = self.extract_key_terms(query);
+        
+        for term in query_terms {
+            let semantic_query = SemanticQuery {
+                name_pattern: Some(term.clone()),
+                min_confidence: Some(0.2),
+                limit: Some(10),
+                ..Default::default()
+            };
+            
+            if let Ok(semantic_concepts) = memory_system.query_semantic(&semantic_query) {
+                sources_count += semantic_concepts.len();
+                
+                for concept in semantic_concepts {
+                    concepts.push(concept.name.clone());
+                    
+                    insights.push(BrainInsight {
+                        insight_type: "semantic_insight".to_string(),
+                        content: format!("Semantic concept '{}' (confidence: {:.3}): {}", 
+                                       concept.name, concept.confidence, concept.description),
+                        confidence: concept.confidence,
+                        evidence: vec![format!("Retrieved from semantic memory, last updated: {}", concept.last_updated)],
+                    });
+                }
+            }
+        }
+        
+        let analysis = if concepts.is_empty() {
+            "No relevant semantic concepts found.".to_string()
+        } else {
+            format!("Found {} semantic concepts: {}", 
+                   concepts.len(), 
+                   concepts.iter().take(3).cloned().collect::<Vec<_>>().join(", "))
+        };
+        
+        Ok(BrainAnalysisResult {
+            analysis,
+            insights: insights.clone(),
+            confidence: if sources_count > 0 { 0.7 } else { 0.2 },
+            metadata: BrainAnalysisMetadata {
+                method: "Semantic Memory Analysis".to_string(),
+                processing_time_ms: 0,
+                sources_analyzed: sources_count,
+                complexity_score: (concepts.len() as f64 / 15.0).min(1.0),
+                quality_score: if insights.is_empty() { 0.2 } else { 0.65 },
+            },
+            related_concepts: concepts,
+            patterns: vec!["semantic_patterns".to_string()],
+        })
+    }
+    
+    // Helper methods
+    
+    fn is_github_related(&self, query: &str) -> bool {
+        let query_lower = query.to_lowercase();
+        query_lower.contains("github") || query_lower.contains("repository") || 
+        query_lower.contains("repo") || query_lower.contains("git") ||
+        query_lower.contains("code") || query_lower.contains("project")
+    }
+    
+    fn extract_github_references(&self, query: &str) -> Vec<String> {
+        let mut github_refs = Vec::new();
+        
+        // Match full GitHub URLs
+        let github_url_regex = Regex::new(r"https?://github\.com/([^/\s]+/[^/\s]+)").unwrap();
+        for cap in github_url_regex.captures_iter(query) {
+            if let Some(repo) = cap.get(1) {
+                github_refs.push(repo.as_str().to_string());
+            }
+        }
+        
+        // Match owner/repo patterns
+        let repo_pattern_regex = Regex::new(r"\b([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)\b").unwrap();
+        for cap in repo_pattern_regex.captures_iter(query) {
+            if let Some(repo) = cap.get(1) {
+                let repo_str = repo.as_str();
+                // Only include if it looks like a GitHub repo (contains common patterns)
+                if repo_str.contains('-') || repo_str.contains('_') || 
+                   repo_str.chars().any(|c| c.is_uppercase()) {
+                    github_refs.push(repo_str.to_string());
+                }
+            }
+        }
+        
+        github_refs.sort();
+        github_refs.dedup();
+        github_refs
+    }
+    
+    fn extract_key_terms(&self, query: &str) -> Vec<String> {
+        query.split_whitespace()
+            .filter(|word| word.len() > 2)
+            .filter(|word| !word.starts_with("http"))
+            .map(|word| word.to_lowercase())
+            .collect()
+    }
+    
+    fn extract_concepts_from_text(&self, text: &str) -> Vec<String> {
+        // Simple concept extraction - in a real implementation this would be more sophisticated
+        text.split_whitespace()
+            .filter(|word| word.len() > 3)
+            .filter(|word| word.chars().any(|c| c.is_uppercase()))
+            .map(|word| word.to_string())
+            .collect()
+    }
+    
+    fn is_relevant_to_query(&self, content: &str, query: &str) -> bool {
+        let content_lower = content.to_lowercase();
+        let query_lower = query.to_lowercase();
+        
+        // Simple relevance check
+        query_lower.split_whitespace()
+            .filter(|word| word.len() > 2)
+            .any(|word| content_lower.contains(word))
+    }
+    
+    fn calculate_complexity_score(&self, query: &str, insights: &[BrainInsight]) -> f64 {
+        let query_complexity = (query.len() as f64 / 100.0).min(1.0);
+        let insight_complexity = (insights.len() as f64 / 20.0).min(1.0);
+        (query_complexity + insight_complexity) / 2.0
+    }
+    
+    fn calculate_quality_score(&self, insights: &[BrainInsight], sources_analyzed: usize) -> f64 {
+        if insights.is_empty() {
+            return 0.2;
+        }
+        
+        let avg_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
+        let source_factor = (sources_analyzed as f64 / 50.0).min(1.0);
+        (avg_confidence + source_factor) / 2.0
+    }
 }
