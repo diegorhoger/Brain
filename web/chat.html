@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain AI Chat</title>
+    <link rel="stylesheet" href="chat.css">
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <!-- Marked for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🧠 Brain AI Chat</h1>
+            <p>Paste content to learn from, then chat about it • Powered by LLM Orchestrator</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <p>Hi! I'm your Brain AI assistant. You can:</p>
+                    <ul class="welcome-list">
+                        <li>Paste any content you want me to learn from</li>
+                        <li>Ask questions about what I've learned</li>
+                        <li>Have conversations about the content</li>
+                    </ul>
+                    <p>Just type or paste something to get started!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <span>Brain AI is thinking...</span>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-textarea" 
+                        placeholder="Type a message or paste content to learn from..."
+                        rows="1"
+                    ></textarea>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="insertQuickAction('📖 Learn from content')">📖 Learn from content</button>
+                        <button class="quick-action-btn" onclick="insertQuickAction('📝 Summarize')">📝 Summarize</button>
+                        <button class="quick-action-btn" onclick="insertQuickAction('🔍 Key insights')">🔍 Key insights</button>
+                    </div>
+                </div>
+                <button id="sendButton" class="send-button" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-indicator" id="statusIndicator"></div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const statusIndicator = document.getElementById('statusIndicator');
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message on Enter (but allow Shift+Enter for new lines)
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function insertQuickAction(text) {
+            chatInput.value = text;
+            chatInput.focus();
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+        }
+
+        function showStatus(message, type = 'info') {
+            statusIndicator.textContent = message;
+            statusIndicator.className = `status-indicator show ${type}`;
+            setTimeout(() => {
+                statusIndicator.classList.remove('show');
+            }, 3000);
+        }
+
+        function addMessage(content, type = 'user') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'user' ? '👤' : (type === 'system' ? '⚙️' : '🤖');
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Process content with proper markdown rendering
+            try {
+                contentDiv.innerHTML = formatText(content);
+                
+                // Apply syntax highlighting to any code blocks that were rendered
+                contentDiv.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (error) {
+                console.error('Markdown rendering error:', error);
+                // Fallback to simple text
+                contentDiv.textContent = content;
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Global variables to track library loading
+        let librariesLoaded = false;
+
+        // Initialize libraries when page loads
+        window.addEventListener('load', function() {
+            setTimeout(initializeLibraries, 100);
+        });
+
+        function initializeLibraries() {
+            try {
+                // Configure Mermaid if available
+                if (typeof mermaid !== 'undefined') {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: 'default',
+                        securityLevel: 'loose',
+                        fontFamily: 'inherit',
+                        fontSize: 14
+                    });
+                    console.log('✅ Mermaid initialized');
+                }
+
+                // Configure Marked for markdown parsing if available
+                if (typeof marked !== 'undefined') {
+                    if (marked.setOptions) {
+                        marked.setOptions({
+                            breaks: true,
+                            gfm: true,
+                            sanitize: false
+                        });
+                    }
+                    console.log('✅ Marked initialized');
+                }
+
+                if (typeof hljs !== 'undefined') {
+                    console.log('✅ Highlight.js loaded');
+                }
+
+                librariesLoaded = true;
+            } catch (error) {
+                console.error('Library initialization error:', error);
+                librariesLoaded = false;
+            }
+        }
+
+        function formatText(text) {
+            if (!text || typeof text !== 'string') {
+                return '';
+            }
+
+            // Clean up any remaining internal identifiers
+            let cleanText = text
+                .replace(/web_content_ai:\s*/gi, '')
+                .replace(/pattern_analysis:\s*/gi, '')
+                .replace(/semantic_analysis:\s*/gi, '')
+                .replace(/github_analysis:\s*/gi, '')
+                .replace(/code_analysis:\s*/gi, '')
+                .replace(/document_analysis:\s*/gi, '');
+
+            // Always use basic formatting for reliability
+            return basicMarkdownFormat(cleanText);
+        }
+
+        function basicMarkdownFormat(text) {
+            let html = text;
+            
+            try {
+                // Handle code blocks first
+                html = html.replace(/```(\w+)?\n([\s\S]*?)\n```/g, function(match, lang, code) {
+                    const escapedCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<pre><code class="language-${lang || 'text'}">${escapedCode}</code></pre>`;
+                });
+
+                // Handle inline code
+                html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+                // Handle headers
+                html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+                html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+                html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
+                // Handle bold and italic
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+
+                // Handle numbered lists first
+                html = html.replace(/(\d+)\.\s+(.+?)(?=\n|$)/gm, '<li class="numbered">$2</li>');
+                
+                // Handle bullet lists
+                html = html.replace(/^[\*\-]\s+(.+?)(?=\n|$)/gm, '<li class="bullet">$1</li>');
+                
+                // Wrap consecutive numbered list items in <ol>
+                html = html.replace(/(<li class="numbered">.*?<\/li>)(\s*<li class="numbered">.*?<\/li>)*/gs, function(match) {
+                    return '<ol>' + match.replace(/class="numbered"/g, '') + '</ol>';
+                });
+                
+                // Wrap consecutive bullet list items in <ul>
+                html = html.replace(/(<li class="bullet">.*?<\/li>)(\s*<li class="bullet">.*?<\/li>)*/gs, function(match) {
+                    return '<ul>' + match.replace(/class="bullet"/g, '') + '</ul>';
+                });
+
+                // Handle blockquotes
+                html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+
+                // Handle paragraphs
+                html = html.replace(/\n\n+/g, '</p><p>');
+                html = '<p>' + html + '</p>';
+                
+                // Clean up empty paragraphs
+                html = html.replace(/<p><\/p>/g, '');
+                html = html.replace(/<p>\s*<\/p>/g, '');
+                
+                // Handle single line breaks
+                html = html.replace(/\n/g, '<br>');
+
+                // Enhance special sections
+                html = enhanceSpecialSections(html);
+
+                return html;
+            } catch (error) {
+                console.error('Basic formatting error:', error);
+                // Ultimate fallback - just escape HTML and add line breaks
+                return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            }
+        }
+
+        function processMermaidDiagrams(text) {
+            // Only process if mermaid is available
+            if (typeof mermaid === 'undefined') {
+                return text;
+            }
+            
+            // Find mermaid code blocks and replace them with div containers
+            return text.replace(/```mermaid\n([\s\S]*?)\n```/g, function(match, diagram) {
+                const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
+                
+                // Schedule mermaid rendering after DOM update
+                setTimeout(() => {
+                    const element = document.getElementById(id);
+                    if (element && typeof mermaid !== 'undefined') {
+                        try {
+                            mermaid.render(id + '-svg', diagram.trim()).then(result => {
+                                element.innerHTML = result.svg;
+                                element.classList.add('mermaid-rendered');
+                            }).catch(err => {
+                                console.error('Mermaid rendering error:', err);
+                                element.innerHTML = '<div class="mermaid-error">Error rendering diagram</div>';
+                            });
+                        } catch (err) {
+                            console.error('Mermaid error:', err);
+                            element.innerHTML = '<div class="mermaid-error">Error rendering diagram</div>';
+                        }
+                    }
+                }, 100);
+
+                return `<div id="${id}" class="mermaid-container">Loading diagram...</div>`;
+            });
+        }
+
+        function enhanceSpecialSections(html) {
+            return html
+                // Enhance analysis sections with better styling
+                .replace(/<p>🔍\s*Analysis:([^<]*)<\/p>/g, '<div class="analysis-section"><strong>🔍 Analysis:</strong>$1</div>')
+                .replace(/<p>🔄\s*Pattern detected:([^<]*)<\/p>/g, '<div class="pattern-section"><strong>🔄 Pattern detected:</strong>$1</div>')
+                .replace(/<p>🔗\s*Web content detected([^<]*)<\/p>/g, '<div class="web-section"><strong>🔗 Web content detected</strong>$1</div>')
+                .replace(/<p>💻\s*Code analysis([^<]*)<\/p>/g, '<div class="code-section"><strong>💻 Code analysis</strong>$1</div>')
+                .replace(/<p>📄\s*Document content([^<]*)<\/p>/g, '<div class="document-section"><strong>📄 Document content</strong>$1</div>')
+                .replace(/<p>📊\s*Text analysis:([^<]*)<\/p>/g, '<div class="text-section"><strong>📊 Text analysis:</strong>$1</div>')
+                .replace(/<p>🔧\s*Technical content([^<]*)<\/p>/g, '<div class="tech-section"><strong>🔧 Technical content</strong>$1</div>')
+                
+                // Also handle cases where the icons are at the start of paragraphs
+                .replace(/🔍\s*Analysis:/g, '<div class="analysis-section"><strong>🔍 Analysis:</strong>')
+                .replace(/🔄\s*Pattern detected:/g, '<div class="pattern-section"><strong>🔄 Pattern detected:</strong>')
+                .replace(/🔗\s*Web content detected/g, '<div class="web-section"><strong>🔗 Web content detected</strong>')
+                .replace(/💻\s*Code analysis/g, '<div class="code-section"><strong>💻 Code analysis</strong>')
+                .replace(/📄\s*Document content/g, '<div class="document-section"><strong>📄 Document content</strong>')
+                .replace(/📊\s*Text analysis:/g, '<div class="text-section"><strong>📊 Text analysis:</strong>')
+                .replace(/🔧\s*Technical content/g, '<div class="tech-section"><strong>🔧 Technical content</strong>');
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function isLearningContent(text) {
+            // Simple heuristic to determine if this looks like content to learn from
+            return text.length > 200 || 
+                   text.includes('```') || 
+                   text.includes('function') || 
+                   text.includes('class') ||
+                   text.includes('import') ||
+                   text.toLowerCase().includes('learn from');
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            
+            // Disable send button and show typing
+            sendButton.disabled = true;
+            showTyping();
+
+            try {
+                let endpoint, requestBody;
+                
+                if (isLearningContent(message)) {
+                    // This looks like content to learn from
+                    endpoint = '/api/chat/learn';
+                    requestBody = { content: message };
+                    showStatus('Learning from content...', 'info');
+                } else {
+                    // This looks like a conversational query
+                    endpoint = '/api/chat/converse';
+                    requestBody = { message: message };
+                    showStatus('Processing query...', 'info');
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                hideTyping();
+                
+                if (data.response) {
+                    addMessage(data.response, 'assistant');
+                    showStatus('Response received', 'success');
+                } else {
+                    addMessage(`Error: ${data.error || 'Unknown error occurred'}`, 'system');
+                    showStatus('Error occurred', 'error');
+                }
+
+            } catch (error) {
+                hideTyping();
+                console.error('Error:', error);
+                addMessage(`Connection error: ${error.message}`, 'system');
+                showStatus('Connection error', 'error');
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // Initialize
+        chatInput.focus();
+    </script>
+</body>
+</html> 
