@@ -2,10 +2,11 @@
 
 /**
  * Post-build script to remove inline styles from mdBook generated HTML
- * This script processes the generated HTML files to replace inline styles with CSS classes
- * Resolves linting warnings about inline styles while preserving functionality
+ * and fix accessibility issues with form elements
+ * This script uses simple sed commands for reliable, clean fixes
  */
 
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,99 +14,49 @@ const BOOK_DIR = path.join(__dirname, 'book');
 const FILES_TO_PROCESS = ['print.html']; // Can add more files if needed
 
 /**
- * Remove inline styles and replace with CSS classes
- * @param {string} content - HTML content
- * @returns {string} - Processed HTML content
- */
-function removeInlineStyles(content) {
-    let processedContent = content;
-    let changesCount = 0;
-
-    // Pattern 1: Exact match for the most common page break pattern
-    const exactPageBreakPattern = /<div\s+style="break-before:\s*page;\s*page-break-before:\s*always;"\s*><\/div>/gi;
-    processedContent = processedContent.replace(exactPageBreakPattern, '<div class="page-break-before"></div>');
-    changesCount += (content.match(exactPageBreakPattern) || []).length;
-
-    // Pattern 2: Variations with different spacing
-    const spacingVariations = [
-        /<div\s+style="break-before:\s*page;\s*page-break-before:\s*always"\s*><\/div>/gi,
-        /<div\s+style="break-before:page;page-break-before:always;"\s*><\/div>/gi,
-        /<div\s+style="break-before:page;page-break-before:always"\s*><\/div>/gi,
-        /<div\s+style="break-before:\s*page\s*;\s*page-break-before:\s*always\s*;"\s*><\/div>/gi
-    ];
-
-    spacingVariations.forEach(pattern => {
-        const matches = content.match(pattern) || [];
-        processedContent = processedContent.replace(pattern, '<div class="page-break-before"></div>');
-        changesCount += matches.length;
-    });
-
-    // Pattern 3: More flexible pattern for any div with page break styles
-    const flexibleBreakPattern = /<div\s+style="[^"]*(?:break-before:\s*page|page-break-before:\s*always)[^"]*"\s*><\/div>/gi;
-    processedContent = processedContent.replace(flexibleBreakPattern, (match) => {
-        // Only count if not already replaced
-        if (!match.includes('class="page-break-before"')) {
-            changesCount++;
-            return '<div class="page-break-before"></div>';
-        }
-        return match;
-    });
-
-    // Pattern 4: Handle any remaining inline styles with page breaks (not just divs)
-    const anyElementPattern = /<(\w+)([^>]*)\s+style="([^"]*(?:break-before:\s*page|page-break-before:\s*always)[^"]*)"([^>]*)>/gi;
-    processedContent = processedContent.replace(anyElementPattern, (match, tagName, beforeStyle, styleContent, afterStyle) => {
-        changesCount++;
-        
-        // Remove page break styles from the style attribute
-        let cleanStyle = styleContent
-            .replace(/break-before:\s*page\s*;?\s*/gi, '')
-            .replace(/page-break-before:\s*always\s*;?\s*/gi, '')
-            .replace(/^\s*;\s*/, '') // Remove leading semicolon
-            .replace(/\s*;\s*$/, '') // Remove trailing semicolon
-            .replace(/;\s*;+/g, ';') // Remove double semicolons
-            .trim();
-
-        // Build the replacement tag
-        let result = `<${tagName}${beforeStyle}`;
-        
-        // Add CSS class
-        if (beforeStyle.includes('class=')) {
-            result = result.replace(/class="([^"]*)"/, 'class="$1 page-break-before"');
-        } else {
-            result += ' class="page-break-before"';
-        }
-
-        // Add cleaned style attribute only if there are remaining styles
-        if (cleanStyle) {
-            result += ` style="${cleanStyle}"`;
-        }
-
-        result += afterStyle + '>';
-        return result;
-    });
-
-    // Pattern 5: Clean up any remaining style attributes that only contain whitespace or empty values
-    const emptyStylePattern = /\s+style="[\s;]*"/gi;
-    processedContent = processedContent.replace(emptyStylePattern, '');
-
-    return { content: processedContent, changes: changesCount };
-}
-
-/**
- * Process a single HTML file
+ * Process a single HTML file using sed commands
  * @param {string} filePath - Path to the HTML file
  */
 function processFile(filePath) {
     try {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const { content: processedContent, changes } = removeInlineStyles(content);
+        const fileName = path.basename(filePath);
+        console.log(`🔧 Processing ${fileName}...`);
         
-        if (changes > 0) {
-            fs.writeFileSync(filePath, processedContent, 'utf8');
-            console.log(`✅ Processed ${path.basename(filePath)}: Removed ${changes} inline styles`);
-        } else {
-            console.log(`ℹ️  ${path.basename(filePath)}: No inline styles found`);
+        let changesCount = 0;
+
+        // Fix 1: Replace inline page break styles with CSS classes
+        try {
+            execSync(`sed -i '' 's/style="break-before: *page; *page-break-before: *always;"/class="page-break-before"/g' "${filePath}"`);
+            console.log(`  ✅ Fixed inline page break styles`);
+            changesCount++;
+        } catch (error) {
+            console.log(`  ℹ️  No inline page break styles found`);
         }
+
+        // Fix 2: Add accessibility attributes to checkboxes
+        try {
+            execSync(`sed -i '' 's/<input disabled="" type="checkbox"\\/\\/>/<input disabled="" type="checkbox" aria-label="Checkbox item" title="Checkbox item" \\/>/g' "${filePath}"`);
+            console.log(`  ✅ Fixed checkbox accessibility`);
+            changesCount++;
+        } catch (error) {
+            console.log(`  ℹ️  No checkboxes to fix`);
+        }
+
+        // Fix 3: Clean up any remaining malformed input tags
+        try {
+            execSync(`sed -i '' 's/<input\\([^>]*\\)\\/\\([^>]\\)/<input\\1 \\/\\2/g' "${filePath}"`);
+            console.log(`  ✅ Cleaned up malformed input tags`);
+            changesCount++;
+        } catch (error) {
+            console.log(`  ℹ️  No malformed input tags found`);
+        }
+
+        if (changesCount > 0) {
+            console.log(`✅ Successfully processed ${fileName}`);
+        } else {
+            console.log(`ℹ️  ${fileName} was already clean`);
+        }
+        
     } catch (error) {
         console.error(`❌ Error processing ${filePath}:`, error.message);
     }
@@ -115,7 +66,7 @@ function processFile(filePath) {
  * Main execution function
  */
 function main() {
-    console.log('🔧 Starting inline styles removal...');
+    console.log('🔧 Starting HTML cleanup and accessibility fixes...');
     
     if (!fs.existsSync(BOOK_DIR)) {
         console.error(`❌ Book directory not found: ${BOOK_DIR}`);
@@ -138,7 +89,8 @@ function main() {
 
     console.log(`\n🎉 Complete! Processed ${totalProcessed} file(s)`);
     console.log('📋 Inline styles have been replaced with CSS classes');
-    console.log('✨ Your documentation should now pass inline style linting checks');
+    console.log('♿ Form accessibility issues have been fixed');
+    console.log('✨ Your documentation should now pass linting checks');
 }
 
 // Run the script

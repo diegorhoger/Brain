@@ -239,6 +239,51 @@ impl WebServer {
             .and(warp::get())
             .and_then(Self::handle_export);
 
+        // Enhanced LLM Training Integration endpoints
+        let learning_analytics = api
+            .and(warp::path("learning"))
+            .and(warp::path("analytics"))
+            .and(warp::path::end())
+            .and(warp::get())
+            .and_then(Self::handle_learning_analytics);
+
+        let start_learning_session = api
+            .and(warp::path("learning"))
+            .and(warp::path("session"))
+            .and(warp::path("start"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and_then(Self::handle_start_learning_session);
+
+        let end_learning_session = api
+            .and(warp::path("learning"))
+            .and(warp::path("session"))
+            .and(warp::path("end"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and_then(Self::handle_end_learning_session);
+
+        let knowledge_gaps = api
+            .and(warp::path("learning"))
+            .and(warp::path("gaps"))
+            .and(warp::path::end())
+            .and(warp::get())
+            .and_then(Self::handle_knowledge_gaps);
+
+        let learning_recommendations = api
+            .and(warp::path("learning"))
+            .and(warp::path("recommendations"))
+            .and(warp::path::end())
+            .and(warp::get())
+            .and_then(Self::handle_learning_recommendations);
+
+        let performance_trends = api
+            .and(warp::path("learning"))
+            .and(warp::path("performance"))
+            .and(warp::path::end())
+            .and(warp::get())
+            .and_then(Self::handle_performance_trends);
+
         // Combine all routes
         let routes = static_files
             .or(status)
@@ -253,6 +298,12 @@ impl WebServer {
             .or(rag_chat)
             .or(rag_stats)
             .or(export)
+            .or(learning_analytics)
+            .or(start_learning_session)
+            .or(end_learning_session)
+            .or(knowledge_gaps)
+            .or(learning_recommendations)
+            .or(performance_trends)
             .with(cors);
 
         println!("🚀 Brain AI Web Server starting on http://localhost:{}", self.port);
@@ -524,8 +575,64 @@ impl WebServer {
     ) -> Result<impl Reply, warp::Rejection> {
         let start_time = std::time::Instant::now();
         
-        let (memories_found, relevance_score) = {
+        let (memories_found, relevance_score, memory_contents) = {
             let memory = memory_system.lock().await;
+            
+            let mut total_memories = 0;
+            let mut max_relevance: f64 = 0.0;
+            let mut all_contents = Vec::new();
+            
+            // Query working memory with multiple strategies
+            let search_terms = Self::extract_search_terms(&request.query);
+            
+            for term in &search_terms {
+                let working_query = WorkingMemoryQuery {
+                    content_pattern: Some(term.clone()),
+                    limit: Some(10),
+                    ..Default::default()
+                };
+                
+                if let Ok(working_items) = memory.query_working(&working_query) {
+                    for item in &working_items {
+                        let relevance = Self::calculate_text_similarity(&item.content, &request.query);
+                        max_relevance = max_relevance.max(relevance);
+                        
+                        all_contents.push(serde_json::json!({
+                            "type": "working_memory",
+                            "content": item.content,
+                            "relevance": relevance,
+                            "priority": format!("{:?}", item.priority),
+                            "created_at": item.created_at.to_rfc3339(),
+                            "search_term": term
+                        }));
+                    }
+                    total_memories += working_items.len();
+                }
+            }
+            
+            // Also try exact query
+            let working_query = WorkingMemoryQuery {
+                content_pattern: Some(request.query.clone()),
+                limit: Some(20),
+                ..Default::default()
+            };
+            
+            if let Ok(working_items) = memory.query_working(&working_query) {
+                for item in &working_items {
+                    let relevance = Self::calculate_text_similarity(&item.content, &request.query);
+                    max_relevance = max_relevance.max(relevance);
+                    
+                    all_contents.push(serde_json::json!({
+                        "type": "working_memory",
+                        "content": item.content,
+                        "relevance": relevance,
+                        "priority": format!("{:?}", item.priority),
+                        "created_at": item.created_at.to_rfc3339(),
+                        "search_term": "exact_match"
+                    }));
+                }
+                total_memories += working_items.len();
+            }
             
             // Query episodic memory for the search term
             let episodic_query = EpisodicQuery {
@@ -538,30 +645,21 @@ impl WebServer {
                 ..Default::default()
             };
             
-            let mut total_memories = 0;
-            let mut max_relevance: f64 = 0.0;
-            
             if let Ok(episodes) = memory.query_episodic(&episodic_query) {
-                total_memories += episodes.len();
-                for episode in episodes {
+                for episode in &episodes {
                     let relevance = Self::calculate_text_similarity(&episode.content, &request.query);
                     max_relevance = max_relevance.max(relevance);
+                    
+                    all_contents.push(serde_json::json!({
+                        "type": "episodic_memory",
+                        "content": episode.content,
+                        "relevance": relevance,
+                        "importance": episode.importance,
+                        "timestamp": episode.timestamp.to_rfc3339(),
+                        "tags": episode.tags
+                    }));
                 }
-            }
-            
-            // Also query working memory
-            let working_query = WorkingMemoryQuery {
-                content_pattern: Some(request.query.clone()),
-                limit: Some(20),
-                ..Default::default()
-            };
-            
-            if let Ok(working_items) = memory.query_working(&working_query) {
-                total_memories += working_items.len();
-                for item in working_items {
-                    let relevance = Self::calculate_text_similarity(&item.content, &request.query);
-                    max_relevance = max_relevance.max(relevance);
-                }
+                total_memories += episodes.len();
             }
             
             // Query semantic memory
@@ -572,14 +670,29 @@ impl WebServer {
             };
             
             if let Ok(semantic_concepts) = memory.query_semantic(&semantic_query) {
-                total_memories += semantic_concepts.len();
-                for concept in semantic_concepts {
+                for concept in &semantic_concepts {
                     let relevance = Self::calculate_text_similarity(&concept.name, &request.query);
                     max_relevance = max_relevance.max(relevance);
+                    
+                    all_contents.push(serde_json::json!({
+                        "type": "semantic_memory",
+                        "name": concept.name,
+                        "description": concept.description,
+                        "relevance": relevance,
+                        "confidence": concept.confidence
+                    }));
                 }
+                total_memories += semantic_concepts.len();
             }
             
-            (total_memories, max_relevance)
+            // Sort by relevance
+            all_contents.sort_by(|a, b| {
+                let rel_a = a["relevance"].as_f64().unwrap_or(0.0);
+                let rel_b = b["relevance"].as_f64().unwrap_or(0.0);
+                rel_b.partial_cmp(&rel_a).unwrap()
+            });
+            
+            (total_memories, max_relevance, all_contents)
         };
         
         let processing_time = start_time.elapsed().as_millis() as u64;
@@ -588,6 +701,7 @@ impl WebServer {
         data.insert("memories_found".to_string(), serde_json::Value::Number(memories_found.into()));
         data.insert("query".to_string(), serde_json::Value::String(request.query.clone()));
         data.insert("relevance_score".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(relevance_score).unwrap_or_else(|| serde_json::Number::from(0))));
+        data.insert("memory_contents".to_string(), serde_json::Value::Array(memory_contents));
         
         let response = ProcessResponse {
             success: true,
@@ -596,6 +710,53 @@ impl WebServer {
             processing_time,
         };
         Ok(warp::reply::json(&response))
+    }
+
+    /// Extract search terms from a query for better matching
+    fn extract_search_terms(query: &str) -> Vec<String> {
+        let mut terms = Vec::new();
+        
+        // Add the full query
+        terms.push(query.to_string());
+        
+        // Add lowercased version
+        terms.push(query.to_lowercase());
+        
+        // Add individual words
+        for word in query.split_whitespace() {
+            if word.len() > 2 {
+                terms.push(word.to_string());
+                terms.push(word.to_lowercase());
+            }
+        }
+        
+        // Add specific variations for common terms
+        let query_lower = query.to_lowercase();
+        if query_lower.contains("pocketflow") {
+            terms.extend(vec![
+                "PocketFlow".to_string(),
+                "pocketflow".to_string(),
+                "pocket".to_string(),
+                "flow".to_string(),
+                "Pocket Flow".to_string(),
+                "pocket-flow".to_string(),
+            ]);
+        }
+        
+        if query_lower.contains("architecture") {
+            terms.extend(vec![
+                "architecture".to_string(),
+                "pattern".to_string(),
+                "design".to_string(),
+                "framework".to_string(),
+            ]);
+        }
+        
+        // Remove duplicates
+        terms.sort();
+        terms.dedup();
+        
+        terms
     }
 
     async fn handle_segment(request: ProcessRequest) -> Result<impl Reply, warp::Rejection> {
@@ -1175,6 +1336,100 @@ impl WebServer {
         } else {
             intersection as f64 / union as f64
         }
+    }
+
+    // Enhanced LLM Training Integration handlers
+    async fn handle_learning_analytics() -> Result<impl warp::Reply, warp::Rejection> {
+        // For now, return a placeholder response
+        let analytics = serde_json::json!({
+            "active_learning_status": {
+                "total_gaps_identified": 0,
+                "high_priority_gaps": 0,
+                "follow_up_questions_generated": 0,
+                "learning_objectives_active": 0,
+                "recent_gap_trends": []
+            },
+            "query_enhancement_insights": {
+                "successful_patterns_count": 0,
+                "failed_patterns_count": 0,
+                "domain_rules_count": 0,
+                "top_performing_patterns": [],
+                "improvement_opportunities": []
+            },
+            "meta_learning_recommendations": {
+                "learning_patterns_identified": 0,
+                "memory_optimizations_suggested": 0,
+                "relationship_insights_discovered": 0,
+                "high_priority_recommendations": 0,
+                "recent_insights": []
+            },
+            "performance_trends": {
+                "query_performance_trend": "Stable",
+                "learning_effectiveness_trend": "Stable",
+                "overall_improvement": 0.0,
+                "recent_performance_summary": "No data available"
+            },
+            "learning_efficiency": 0.0
+        });
+        Ok(warp::reply::json(&analytics))
+    }
+
+    async fn handle_start_learning_session(
+        request: serde_json::Value
+    ) -> Result<impl warp::Reply, warp::Rejection> {
+        let objective = request.get("objective")
+            .and_then(|v| v.as_str())
+            .unwrap_or("General learning session");
+        
+        let session_id = format!("session_{}", chrono::Utc::now().timestamp());
+        Ok(warp::reply::json(&serde_json::json!({
+            "session_id": session_id,
+            "status": "started",
+            "objective": objective
+        })))
+    }
+
+    async fn handle_end_learning_session(
+        request: serde_json::Value
+    ) -> Result<impl warp::Reply, warp::Rejection> {
+        let session_id = request.get("session_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        
+        let summary = serde_json::json!({
+            "session_id": session_id,
+            "duration_minutes": 0.0,
+            "activities_completed": 0,
+            "knowledge_gained": 0,
+            "avg_activity_success": 0.0,
+            "insights_generated": 0,
+            "overall_effectiveness": 0.0
+        });
+        Ok(warp::reply::json(&summary))
+    }
+
+    async fn handle_knowledge_gaps() -> Result<impl warp::Reply, warp::Rejection> {
+        let gaps: Vec<serde_json::Value> = Vec::new();
+        Ok(warp::reply::json(&gaps))
+    }
+
+    async fn handle_learning_recommendations() -> Result<impl warp::Reply, warp::Rejection> {
+        let recommendations: Vec<String> = vec![
+            "Consider expanding concept relationships".to_string(),
+            "Improve query pattern recognition".to_string(),
+            "Enhance memory retrieval efficiency".to_string(),
+        ];
+        Ok(warp::reply::json(&recommendations))
+    }
+
+    async fn handle_performance_trends() -> Result<impl warp::Reply, warp::Rejection> {
+        let trends = serde_json::json!({
+            "query_performance_trend": "Stable",
+            "learning_effectiveness_trend": "Stable",
+            "overall_improvement": 0.0,
+            "recent_performance_summary": "No data available"
+        });
+        Ok(warp::reply::json(&trends))
     }
 }
 

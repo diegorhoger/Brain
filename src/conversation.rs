@@ -2294,6 +2294,63 @@ impl RagOrchestrator {
         println!("  - Direct fallback found {} knowledge items", knowledge.len());
         Ok(knowledge)
     }
+
+    // API methods for web endpoints
+    pub async fn get_learning_analytics(&self) -> LearningAnalytics {
+        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.get_learning_analytics().await
+        } else {
+            LearningAnalytics::default()
+        }
+    }
+
+    pub async fn start_learning_session(&mut self, objective: String) -> String {
+        if let Some(ref mut brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.start_learning_session(objective).await
+        } else {
+            format!("session_{}", chrono::Utc::now().timestamp())
+        }
+    }
+
+    pub async fn end_learning_session(&mut self, session_id: String) -> LearningSessionSummary {
+        if let Some(ref mut brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.end_learning_session(session_id).await
+        } else {
+            LearningSessionSummary {
+                session_id,
+                duration_minutes: 0.0,
+                activities_completed: 0,
+                knowledge_gained: 0,
+                avg_activity_success: 0.0,
+                insights_generated: 0,
+                overall_effectiveness: 0.0,
+            }
+        }
+    }
+
+    pub async fn get_current_knowledge_gaps(&self) -> Vec<KnowledgeGap> {
+        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.get_current_knowledge_gaps().await
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub async fn get_meta_learning_recommendations(&self) -> Vec<String> {
+        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.get_meta_learning_recommendations().await
+        } else {
+            vec!["Initialize Brain AI for recommendations".to_string()]
+        }
+    }
+
+    pub async fn get_performance_trends(&self) -> PerformanceTrends {
+        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
+            brain_ai.learning_orchestrator.get_performance_trends().await
+        } else {
+            PerformanceTrends::default()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -2316,6 +2373,8 @@ pub struct BrainAIOrchestrator {
     bpe_segmenter: BpeSegmenter,
     /// Configuration for analysis depth
     analysis_config: BrainAnalysisConfig,
+    /// Enhanced LLM training integration system
+    learning_orchestrator: BrainLearningOrchestrator,
 }
 
 /// Configuration for Brain AI analysis depth
@@ -2412,6 +2471,7 @@ impl BrainAIOrchestrator {
             pattern_detector,
             bpe_segmenter,
             analysis_config,
+            learning_orchestrator: BrainLearningOrchestrator::new(),
         })
     }
     
@@ -2471,7 +2531,7 @@ impl BrainAIOrchestrator {
         }
         
         // 5. Combine and synthesize results
-        let combined_analysis = if analysis_parts.is_empty() {
+        let mut combined_analysis = if analysis_parts.is_empty() {
             format!("Based on my analysis of '{}', I need to gather more information from my knowledge systems.", query)
         } else {
             format!("Comprehensive Analysis of '{}': {}", query, analysis_parts.join(" "))
@@ -2493,12 +2553,38 @@ impl BrainAIOrchestrator {
         println!("  - Sources analyzed: {}", sources_analyzed);
         println!("  - Confidence: {:.3}", confidence);
         
+        // Enhanced LLM Training Integration - Process query for learning
+        let learning_opportunities = self.learning_orchestrator
+            .process_query_for_learning(query, confidence, quality_score, sources_analyzed)
+            .await
+            .unwrap_or_else(|_| LearningOpportunities {
+                identified_gaps: Vec::new(),
+                follow_up_questions: Vec::new(),
+                suggested_improvements: Vec::new(),
+                learning_recommendations: Vec::new(),
+            });
+
+        // If learning opportunities were identified, enhance the analysis
+        if !learning_opportunities.identified_gaps.is_empty() || !learning_opportunities.follow_up_questions.is_empty() {
+            let mut enhanced_analysis = combined_analysis.clone();
+            
+            if !learning_opportunities.identified_gaps.is_empty() {
+                enhanced_analysis.push_str(&format!("\n\n🧠 **Learning Opportunities Identified:** {} knowledge gaps detected for deeper understanding.", learning_opportunities.identified_gaps.len()));
+            }
+            
+            if !learning_opportunities.follow_up_questions.is_empty() {
+                enhanced_analysis.push_str(&format!("\n\n❓ **Follow-up Questions Generated:** {} clarifying questions to enhance knowledge.", learning_opportunities.follow_up_questions.len()));
+            }
+            
+            combined_analysis = enhanced_analysis;
+        }
+
         Ok(BrainAnalysisResult {
             analysis: combined_analysis,
             insights,
             confidence,
             metadata: BrainAnalysisMetadata {
-                method: "Brain AI Comprehensive Analysis".to_string(),
+                method: "Brain AI Comprehensive Analysis with Enhanced Learning".to_string(),
                 processing_time_ms: processing_time,
                 sources_analyzed,
                 complexity_score,
@@ -2813,148 +2899,1996 @@ impl BrainAIOrchestrator {
         })
     }
     
-    /// Perform semantic memory analysis
+    /// Perform semantic memory analysis using DoTA-RAG inspired multi-stage retrieval
     async fn perform_semantic_analysis(
         &self,
         query: &str,
         memory_system: &mut MemorySystem,
     ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  🧩 Performing semantic memory analysis...");
+        println!("  🧩 Performing DoTA-RAG inspired semantic memory analysis...");
         
         let mut insights = Vec::new();
         let mut concepts = Vec::new();
         let mut sources_count = 0;
+        let mut all_retrieved_content = Vec::new();
         
-        // Extract key terms for semantic search
-        let query_terms = self.extract_key_terms(query);
+        // Stage 1: Query Rewriting and Expansion (inspired by DoTA-RAG)
+        let expanded_queries = self.rewrite_and_expand_query(query);
+        println!("  📝 Generated {} expanded queries from original", expanded_queries.len());
         
-        for term in query_terms {
-            let semantic_query = SemanticQuery {
-                name_pattern: Some(term.clone()),
-                min_confidence: Some(0.2),
-                limit: Some(10),
-                ..Default::default()
+        // Stage 2: Dynamic Routing to Specialized Search Strategies
+        for (strategy_name, search_query) in expanded_queries {
+            println!("  🔄 Executing strategy '{}' with query: '{}'", strategy_name, search_query);
+            
+            let strategy_results = match strategy_name.as_str() {
+                "direct_exact" => self.search_exact_matches(memory_system, &search_query).await,
+                "semantic_fuzzy" => self.search_semantic_fuzzy(memory_system, &search_query).await,
+                "architectural_patterns" => self.search_architectural_patterns(memory_system, &search_query).await,
+                "conceptual_synonyms" => self.search_conceptual_synonyms(memory_system, &search_query).await,
+                "contextual_embedding" => self.search_contextual_embeddings(memory_system, &search_query).await,
+                _ => Vec::new(),
             };
             
-            if let Ok(semantic_concepts) = memory_system.query_semantic(&semantic_query) {
-                sources_count += semantic_concepts.len();
-                
-                for concept in semantic_concepts {
-                    concepts.push(concept.name.clone());
-                    
-                    insights.push(BrainInsight {
-                        insight_type: "semantic_insight".to_string(),
-                        content: format!("Semantic concept '{}' (confidence: {:.3}): {}", 
-                                       concept.name, concept.confidence, concept.description),
-                        confidence: concept.confidence,
-                        evidence: vec![format!("Retrieved from semantic memory, last updated: {}", concept.last_updated)],
-                    });
-                }
-            }
+            all_retrieved_content.extend(strategy_results);
         }
         
-        let analysis = if concepts.is_empty() {
-            "No relevant semantic concepts found.".to_string()
+        // Stage 3: Multi-stage Retrieval and Ranking (DoTA-RAG approach)
+        let ranked_results = self.rank_and_deduplicate_results(query, all_retrieved_content);
+        println!("  📊 Ranked and deduplicated to {} high-quality results", ranked_results.len());
+        
+        // Stage 4: Generate insights from ranked results
+        for (rank, content) in ranked_results.iter().enumerate() {
+            sources_count += 1;
+            
+            let confidence = self.calculate_dynamic_confidence(query, content, rank);
+            let insight_type = self.classify_insight_type(content);
+            
+            insights.push(BrainInsight {
+                insight_type,
+                content: content.clone(),
+                confidence,
+                evidence: vec![format!("Multi-stage retrieval rank {}, confidence {:.3}", rank + 1, confidence)],
+            });
+            
+            // Extract concepts from high-quality content
+            concepts.extend(self.extract_advanced_concepts(content));
+        }
+        
+        let insights_empty = insights.is_empty();
+        let insights_len = insights.len();
+        let confidence = self.calculate_overall_confidence(&insights, sources_count);
+        
+        let final_analysis = if insights_empty {
+            "DoTA-RAG inspired analysis found no relevant semantic knowledge in memory systems.".to_string()
         } else {
-            format!("Found {} semantic concepts: {}", 
-                   concepts.len(), 
-                   concepts.iter().take(3).cloned().collect::<Vec<_>>().join(", "))
+            format!("DoTA-RAG multi-stage analysis found {} high-confidence insights from {} sources. Top insights: {}",
+                insights_len,
+                sources_count,
+                insights.iter().take(2).map(|i| &i.content[..i.content.len().min(100)]).collect::<Vec<_>>().join("; "))
         };
         
+        println!("  ✅ DoTA-RAG analysis complete: {} insights, {:.3} confidence", insights_len, confidence);
+        
         Ok(BrainAnalysisResult {
-            analysis,
-            insights: insights.clone(),
-            confidence: if sources_count > 0 { 0.7 } else { 0.2 },
+            analysis: final_analysis,
+            insights,
+            confidence,
             metadata: BrainAnalysisMetadata {
-                method: "Semantic Memory Analysis".to_string(),
+                method: "DoTA-RAG Multi-Stage Semantic Analysis".to_string(),
                 processing_time_ms: 0,
                 sources_analyzed: sources_count,
-                complexity_score: (concepts.len() as f64 / 15.0).min(1.0),
-                quality_score: if insights.is_empty() { 0.2 } else { 0.65 },
+                complexity_score: (sources_count as f64 / 10.0).min(1.0),
+                quality_score: if insights_empty { 0.3 } else { 0.9 },
             },
             related_concepts: concepts,
-            patterns: vec!["semantic_patterns".to_string()],
+            patterns: vec!["multi_stage_retrieval".to_string(), "dynamic_routing".to_string()],
         })
     }
-    
-    // Helper methods
-    
-    fn is_github_related(&self, query: &str) -> bool {
-        let query_lower = query.to_lowercase();
-        query_lower.contains("github") || query_lower.contains("repository") || 
-        query_lower.contains("repo") || query_lower.contains("git") ||
-        query_lower.contains("code") || query_lower.contains("project")
-    }
-    
-    fn extract_github_references(&self, query: &str) -> Vec<String> {
-        let mut github_refs = Vec::new();
+
+    /// Stage 1: Query rewriting and expansion (DoTA-RAG inspired)
+    fn rewrite_and_expand_query(&self, query: &str) -> Vec<(String, String)> {
+        let mut expanded_queries = Vec::new();
         
-        // Match full GitHub URLs
-        let github_url_regex = Regex::new(r"https?://github\.com/([^/\s]+/[^/\s]+)").unwrap();
-        for cap in github_url_regex.captures_iter(query) {
-            if let Some(repo) = cap.get(1) {
-                github_refs.push(repo.as_str().to_string());
+        // Direct exact match
+        expanded_queries.push(("direct_exact".to_string(), query.to_string()));
+        
+        // Architectural pattern specific rewrites
+        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
+            expanded_queries.extend(vec![
+                ("architectural_patterns".to_string(), "Node-Flow Architecture".to_string()),
+                ("architectural_patterns".to_string(), "Async Parallel Processing".to_string()),
+                ("architectural_patterns".to_string(), "Batch Optimization Framework".to_string()),
+                ("architectural_patterns".to_string(), "BaseNode pattern".to_string()),
+                ("architectural_patterns".to_string(), "Flow orchestration".to_string()),
+            ]);
+        }
+        
+        // PocketFlow specific rewrites
+        if query.to_lowercase().contains("pocketflow") {
+            expanded_queries.extend(vec![
+                ("semantic_fuzzy".to_string(), "PocketFlow framework".to_string()),
+                ("semantic_fuzzy".to_string(), "100-line LLM framework".to_string()),
+                ("semantic_fuzzy".to_string(), "Agents build Agents".to_string()),
+                ("contextual_embedding".to_string(), "The-Pocket/PocketFlow".to_string()),
+            ]);
+        }
+        
+        // Conceptual synonym expansion
+        let conceptual_terms = self.generate_conceptual_synonyms(query);
+        for term in conceptual_terms {
+            expanded_queries.push(("conceptual_synonyms".to_string(), term));
+        }
+        
+        // Component-based queries
+        if query.to_lowercase().contains("component") || query.to_lowercase().contains("class") {
+            expanded_queries.extend(vec![
+                ("semantic_fuzzy".to_string(), "BaseNode class".to_string()),
+                ("semantic_fuzzy".to_string(), "Flow class".to_string()),
+                ("semantic_fuzzy".to_string(), "BatchNode ParallelBatchNode".to_string()),
+            ]);
+        }
+        
+        expanded_queries
+    }
+
+    /// Generate conceptual synonyms and related terms
+    fn generate_conceptual_synonyms(&self, query: &str) -> Vec<String> {
+        let mut synonyms = Vec::new();
+        let query_lower = query.to_lowercase();
+        
+        // Architecture synonyms
+        if query_lower.contains("architecture") {
+            synonyms.extend(vec![
+                "design pattern".to_string(),
+                "framework structure".to_string(),
+                "system design".to_string(),
+                "architectural approach".to_string(),
+                "implementation pattern".to_string(),
+            ]);
+        }
+        
+        // Pattern synonyms
+        if query_lower.contains("pattern") {
+            synonyms.extend(vec![
+                "design approach".to_string(),
+                "implementation strategy".to_string(),
+                "architectural style".to_string(),
+                "framework paradigm".to_string(),
+            ]);
+        }
+        
+        // Component synonyms
+        if query_lower.contains("component") || query_lower.contains("class") {
+            synonyms.extend(vec![
+                "building block".to_string(),
+                "module".to_string(),
+                "element".to_string(),
+                "unit".to_string(),
+            ]);
+        }
+        
+        synonyms
+    }
+
+    /// Stage 2a: Search for exact matches
+    async fn search_exact_matches(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
+        let mut results = Vec::new();
+        
+        // Try working memory exact match
+        let working_query = WorkingMemoryQuery {
+            content_pattern: Some(query.to_string()),
+            priority: None,
+            min_importance: None,
+            created_after: None,
+            limit: Some(5),
+        };
+        
+        if let Ok(items) = memory_system.query_working(&working_query) {
+            for item in items {
+                results.push(item.content);
             }
         }
         
-        // Match owner/repo patterns
-        let repo_pattern_regex = Regex::new(r"\b([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)\b").unwrap();
-        for cap in repo_pattern_regex.captures_iter(query) {
-            if let Some(repo) = cap.get(1) {
-                let repo_str = repo.as_str();
-                // Only include if it looks like a GitHub repo (contains common patterns)
-                if repo_str.contains('-') || repo_str.contains('_') || 
-                   repo_str.chars().any(|c| c.is_uppercase()) {
-                    github_refs.push(repo_str.to_string());
+        results
+    }
+
+    /// Stage 2b: Semantic fuzzy search with embedding-like behavior
+    async fn search_semantic_fuzzy(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
+        let mut results = Vec::new();
+        
+        // Use find_related_memories for semantic search
+        if let Ok(related_results) = memory_system.find_related_memories(query, 5) {
+            for item in related_results.working_results {
+                results.push(item.content);
+            }
+            for concept in related_results.semantic_results {
+                results.push(format!("Semantic concept '{}': {}", concept.name, concept.description));
+            }
+        }
+        
+        // Also try keyword-based fuzzy matching
+        let keywords = self.extract_advanced_keywords(query);
+        for keyword in keywords {
+            let keyword_query = WorkingMemoryQuery {
+                content_pattern: Some(keyword),
+                priority: None,
+                min_importance: None,
+                created_after: None,
+                limit: Some(3),
+            };
+            
+            if let Ok(items) = memory_system.query_working(&keyword_query) {
+                for item in items {
+                    if !results.contains(&item.content) {
+                        results.push(item.content);
+                    }
                 }
             }
         }
         
-        github_refs.sort();
-        github_refs.dedup();
-        github_refs
+        results
     }
-    
-    fn extract_key_terms(&self, query: &str) -> Vec<String> {
-        query.split_whitespace()
-            .filter(|word| word.len() > 2)
-            .filter(|word| !word.starts_with("http"))
-            .map(|word| word.to_lowercase())
+
+    /// Stage 2c: Architectural pattern specific search
+    async fn search_architectural_patterns(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
+        let mut results = Vec::new();
+        
+        // Search for architectural terms in stored content
+        let arch_terms = vec![
+            "BaseNode", "Flow", "AsyncFlow", "BatchNode", "ParallelBatchNode",
+            "architecture", "pattern", "framework", "design", "orchestration",
+            "workflow", "agent", "pipeline", "processing"
+        ];
+        
+        for term in arch_terms {
+            let term_query = WorkingMemoryQuery {
+                content_pattern: Some(term.to_string()),
+                priority: None,
+                min_importance: None,
+                created_after: None,
+                limit: Some(2),
+            };
+            
+            if let Ok(items) = memory_system.query_working(&term_query) {
+                for item in items {
+                    if !results.contains(&item.content) && self.is_architecturally_relevant(&item.content, query) {
+                        results.push(item.content);
+                    }
+                }
+            }
+        }
+        
+        results
+    }
+
+    /// Stage 2d: Conceptual synonym search
+    async fn search_conceptual_synonyms(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
+        let mut results = Vec::new();
+        
+        // Use semantic memory for conceptual search
+        let semantic_query = SemanticQuery {
+            name_pattern: Some(query.to_string()),
+            min_confidence: Some(0.2),
+            limit: Some(5),
+            ..Default::default()
+        };
+        
+        if let Ok(concepts) = memory_system.query_semantic(&semantic_query) {
+            for concept in concepts {
+                results.push(format!("Conceptual match '{}' (confidence: {:.3}): {}", 
+                    concept.name, concept.confidence, concept.description));
+            }
+        }
+        
+        results
+    }
+
+    /// Stage 2e: Contextual embedding search (simulated)
+    async fn search_contextual_embeddings(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
+        let mut results = Vec::new();
+        
+        // Simulate embedding-based search by looking for contextual matches
+        let context_terms = self.extract_contextual_terms(query);
+        
+        for term in context_terms {
+            let context_query = WorkingMemoryQuery {
+                content_pattern: Some(term),
+                priority: None,
+                min_importance: None,
+                created_after: None,
+                limit: Some(2),
+            };
+            
+            if let Ok(items) = memory_system.query_working(&context_query) {
+                for item in items {
+                    if !results.contains(&item.content) && self.calculate_contextual_relevance(&item.content, query) > 0.5 {
+                        results.push(item.content);
+                    }
+                }
+            }
+        }
+        
+        results
+    }
+
+    /// Stage 3: Rank and deduplicate results (DoTA-RAG inspired)
+    fn rank_and_deduplicate_results(&self, query: &str, mut results: Vec<String>) -> Vec<String> {
+        // Remove duplicates
+        results.sort();
+        results.dedup();
+        
+        // Score and rank results
+        let mut scored_results: Vec<(f64, String)> = results
+            .into_iter()
+            .map(|content| {
+                let score = self.calculate_comprehensive_relevance_score(query, &content);
+                (score, content)
+            })
+            .collect();
+        
+        // Sort by score (highest first)
+        scored_results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        
+        // Return top-ranked results
+        scored_results.into_iter()
+            .take(10) // Limit to top 10 results
+            .map(|(_, content)| content)
             .collect()
     }
-    
-    fn extract_concepts_from_text(&self, text: &str) -> Vec<String> {
-        // Simple concept extraction - in a real implementation this would be more sophisticated
-        text.split_whitespace()
-            .filter(|word| word.len() > 3)
-            .filter(|word| word.chars().any(|c| c.is_uppercase()))
-            .map(|word| word.to_string())
-            .collect()
+
+    /// Calculate comprehensive relevance score (DoTA-RAG inspired ranking)
+    fn calculate_comprehensive_relevance_score(&self, query: &str, content: &str) -> f64 {
+        let mut score = 0.0;
+        
+        // Exact match bonus
+        if content.to_lowercase().contains(&query.to_lowercase()) {
+            score += 1.0;
+        }
+        
+        // Keyword overlap scoring
+        let query_keywords = self.extract_advanced_keywords(query);
+        let content_lower = content.to_lowercase();
+        let keyword_matches = query_keywords.iter()
+            .filter(|keyword| content_lower.contains(&keyword.to_lowercase()))
+            .count();
+        score += (keyword_matches as f64 / query_keywords.len().max(1) as f64) * 0.8;
+        
+        // Architectural relevance bonus
+        if self.is_architecturally_relevant(content, query) {
+            score += 0.6;
+        }
+        
+        // Content quality scoring (longer, structured content gets higher scores)
+        if content.len() > 100 {
+            score += 0.3;
+        }
+        if content.contains("class ") || content.contains("def ") || content.contains("import ") {
+            score += 0.4; // Code content bonus
+        }
+        if content.contains("README") || content.contains("documentation") {
+            score += 0.5; // Documentation bonus
+        }
+        
+        // PocketFlow specific bonuses
+        if content.to_lowercase().contains("pocketflow") {
+            score += 0.7;
+        }
+        if content.to_lowercase().contains("basenode") || content.to_lowercase().contains("flow") {
+            score += 0.5;
+        }
+        
+        score
     }
-    
-    fn is_relevant_to_query(&self, content: &str, query: &str) -> bool {
+
+    /// Extract advanced keywords with stemming and expansion
+    fn extract_advanced_keywords(&self, text: &str) -> Vec<String> {
+        let mut keywords = Vec::new();
+        
+        // Basic word extraction
+        for word in text.split_whitespace() {
+            let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
+            if clean_word.len() > 2 && !self.is_stop_word(&clean_word) {
+                keywords.push(clean_word.clone());
+                keywords.push(word.to_string()); // Also keep original case
+            }
+        }
+        
+        // Add technical term variations
+        if text.to_lowercase().contains("architecture") {
+            keywords.extend(vec!["arch".to_string(), "design".to_string(), "pattern".to_string()]);
+        }
+        if text.to_lowercase().contains("pattern") {
+            keywords.extend(vec!["approach".to_string(), "style".to_string(), "method".to_string()]);
+        }
+        
+        keywords.sort();
+        keywords.dedup();
+        keywords
+    }
+
+    /// Check if a word is a stop word
+    fn is_stop_word(&self, word: &str) -> bool {
+        let stop_words = vec![
+            "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by",
+            "is", "are", "was", "were", "be", "been", "have", "has", "had", "do", "does", "did",
+            "will", "would", "could", "should", "may", "might", "can", "a", "an", "what", "how",
+            "where", "when", "why", "who", "which", "that", "this", "these", "those", "about",
+            "tell", "me", "you", "your", "my", "his", "her", "its", "our", "their"
+        ];
+        stop_words.contains(&word)
+    }
+
+    /// Extract contextual terms for embedding-like search
+    fn extract_contextual_terms(&self, query: &str) -> Vec<String> {
+        let mut terms = Vec::new();
+        
+        // Add the full query
+        terms.push(query.to_string());
+        
+        // Add domain-specific context terms
+        terms.extend(vec![
+            "framework".to_string(),
+            "python".to_string(),
+            "llm".to_string(),
+            "agent".to_string(),
+            "workflow".to_string(),
+            "orchestration".to_string(),
+            "processing".to_string(),
+            "async".to_string(),
+            "parallel".to_string(),
+            "batch".to_string(),
+        ]);
+        
+        terms
+    }
+
+    /// Check if content is architecturally relevant
+    fn is_architecturally_relevant(&self, content: &str, query: &str) -> bool {
         let content_lower = content.to_lowercase();
         let query_lower = query.to_lowercase();
         
-        // Simple relevance check
-        query_lower.split_whitespace()
-            .filter(|word| word.len() > 2)
-            .any(|word| content_lower.contains(word))
+        // Check for architectural keywords
+        let arch_keywords = vec![
+            "architecture", "pattern", "design", "framework", "structure",
+            "basenode", "flow", "batch", "parallel", "async", "orchestration",
+            "workflow", "agent", "pipeline", "processing", "class", "component"
+        ];
+        
+        let has_arch_keywords = arch_keywords.iter()
+            .any(|keyword| content_lower.contains(keyword) || query_lower.contains(keyword));
+        
+        // Check for code patterns
+        let has_code_patterns = content_lower.contains("class ") || 
+                               content_lower.contains("def ") || 
+                               content_lower.contains("import ");
+        
+        has_arch_keywords || has_code_patterns
     }
-    
-    fn calculate_complexity_score(&self, query: &str, insights: &[BrainInsight]) -> f64 {
-        let query_complexity = (query.len() as f64 / 100.0).min(1.0);
-        let insight_complexity = (insights.len() as f64 / 20.0).min(1.0);
-        (query_complexity + insight_complexity) / 2.0
-    }
-    
-    fn calculate_quality_score(&self, insights: &[BrainInsight], sources_analyzed: usize) -> f64 {
-        if insights.is_empty() {
-            return 0.2;
+
+    /// Calculate contextual relevance
+    fn calculate_contextual_relevance(&self, content: &str, query: &str) -> f64 {
+        let content_lower = content.to_lowercase();
+        let query_lower = query.to_lowercase();
+        
+        let mut relevance = 0.0;
+        
+        // Direct mention bonus
+        if content_lower.contains(&query_lower) {
+            relevance += 0.8;
         }
         
-        let avg_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
-        let source_factor = (sources_analyzed as f64 / 50.0).min(1.0);
-        (avg_confidence + source_factor) / 2.0
+        // Keyword overlap
+        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
+        let matching_words = query_words.iter()
+            .filter(|word| content_lower.contains(*word))
+            .count();
+        
+        relevance += (matching_words as f64 / query_words.len().max(1) as f64) * 0.6;
+        
+        // Context bonus for PocketFlow
+        if content_lower.contains("pocketflow") && query_lower.contains("pocketflow") {
+            relevance += 0.5;
+        }
+        
+        relevance.min(1.0)
+    }
+
+    /// Calculate dynamic confidence based on rank and content quality
+    fn calculate_dynamic_confidence(&self, query: &str, content: &str, rank: usize) -> f64 {
+        let base_confidence = 0.9 - (rank as f64 * 0.1); // Decrease confidence with rank
+        let relevance_bonus = self.calculate_contextual_relevance(content, query) * 0.3;
+        let quality_bonus = if content.len() > 200 { 0.1 } else { 0.0 };
+        
+        (base_confidence + relevance_bonus + quality_bonus).min(1.0).max(0.1)
+    }
+
+    /// Classify insight type based on content
+    fn classify_insight_type(&self, content: &str) -> String {
+        let content_lower = content.to_lowercase();
+        
+        if content_lower.contains("class ") || content_lower.contains("def ") {
+            "code_analysis".to_string()
+        } else if content_lower.contains("readme") || content_lower.contains("documentation") {
+            "documentation_insight".to_string()
+        } else if content_lower.contains("architecture") || content_lower.contains("pattern") {
+            "architectural_insight".to_string()
+        } else if content_lower.contains("semantic concept") {
+            "semantic_concept".to_string()
+        } else {
+            "general_knowledge".to_string()
+        }
+    }
+
+    /// Extract advanced concepts from content
+    fn extract_advanced_concepts(&self, content: &str) -> Vec<String> {
+        let mut concepts = Vec::new();
+        
+        // Extract capitalized terms (likely proper nouns/concepts)
+        for word in content.split_whitespace() {
+            if word.len() > 2 && word.chars().next().unwrap().is_uppercase() {
+                concepts.push(word.to_string());
+            }
+        }
+        
+        // Extract technical terms
+        let content_lower = content.to_lowercase();
+        if content_lower.contains("basenode") {
+            concepts.push("BaseNode".to_string());
+        }
+        if content_lower.contains("flow") {
+            concepts.push("Flow".to_string());
+        }
+        if content_lower.contains("batch") {
+            concepts.push("Batch Processing".to_string());
+        }
+        if content_lower.contains("async") {
+            concepts.push("Asynchronous Processing".to_string());
+        }
+        
+        concepts.sort();
+        concepts.dedup();
+        concepts
+    }
+
+    /// Calculate overall confidence based on insights and sources
+    fn calculate_overall_confidence(&self, insights: &[BrainInsight], sources_count: usize) -> f64 {
+        if insights.is_empty() {
+            return if sources_count > 0 { 0.3 } else { 0.1 };
+        }
+
+        let insight_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
+        let source_bonus = (sources_count as f64 / 20.0).min(0.2);
+        
+        (insight_confidence + source_bonus).min(1.0)
+    }
+
+    /// Check if query is GitHub related
+    fn is_github_related(&self, query: &str) -> bool {
+        let query_lower = query.to_lowercase();
+        query_lower.contains("github") ||
+        query_lower.contains("repository") ||
+        query_lower.contains("repo") ||
+        query_lower.contains("pocketflow") ||
+        query_lower.contains("the-pocket")
+    }
+
+    /// Calculate complexity score based on query and insights
+    fn calculate_complexity_score(&self, _query: &str, insights: &[BrainInsight]) -> f64 {
+        if insights.is_empty() {
+            0.1
+        } else {
+            // Base complexity on number of insights and their types
+            let base_score = (insights.len() as f64 / 10.0).min(1.0);
+            let type_diversity = insights.iter()
+                .map(|i| &i.insight_type)
+                .collect::<std::collections::HashSet<_>>()
+                .len() as f64 / 5.0; // Normalize by expected max types
+            
+            (base_score + type_diversity * 0.3).min(1.0)
+        }
+    }
+
+    /// Calculate quality score based on insights and sources
+    fn calculate_quality_score(&self, insights: &[BrainInsight], sources_analyzed: usize) -> f64 {
+        if insights.is_empty() {
+            0.2
+        } else {
+            let avg_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
+            let source_factor = (sources_analyzed as f64 / 20.0).min(0.3); // Bonus for more sources
+            let completeness_factor = if insights.len() >= 3 { 0.2 } else { 0.0 };
+            
+            (avg_confidence + source_factor + completeness_factor).min(1.0)
+        }
+    }
+
+    /// Extract GitHub references from query
+    fn extract_github_references(&self, query: &str) -> Vec<String> {
+        let mut github_refs = Vec::new();
+        
+        // Look for GitHub URLs
+        if query.contains("github.com/") {
+            // Extract GitHub URLs using simple pattern matching
+            let words: Vec<&str> = query.split_whitespace().collect();
+            for word in words {
+                if word.contains("github.com/") {
+                    github_refs.push(word.to_string());
+                }
+            }
+        }
+        
+        // Look for repository patterns
+        if query.to_lowercase().contains("pocketflow") {
+            github_refs.push("The-Pocket/PocketFlow".to_string());
+        }
+        
+        github_refs
+    }
+
+    /// Extract key terms from query for search
+    fn extract_key_terms(&self, query: &str) -> Vec<String> {
+        let mut terms = Vec::new();
+        
+        // Add the full query
+        terms.push(query.to_string());
+        
+        // Extract important words (longer than 3 characters, not stop words)
+        for word in query.split_whitespace() {
+            let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric());
+            if clean_word.len() > 3 && !self.is_stop_word(&clean_word.to_lowercase()) {
+                terms.push(clean_word.to_string());
+                terms.push(clean_word.to_lowercase());
+            }
+        }
+        
+        // Add domain-specific terms for PocketFlow
+        if query.to_lowercase().contains("pocketflow") {
+            terms.extend(vec![
+                "PocketFlow".to_string(),
+                "BaseNode".to_string(),
+                "Flow".to_string(),
+                "BatchNode".to_string(),
+                "ParallelBatchNode".to_string(),
+                "README".to_string(),
+                "framework".to_string(),
+                "architecture".to_string(),
+            ]);
+        }
+        
+        // Add architectural terms
+        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
+            terms.extend(vec![
+                "architecture".to_string(),
+                "pattern".to_string(),
+                "design".to_string(),
+                "framework".to_string(),
+                "Node-Flow".to_string(),
+                "Async".to_string(),
+                "Parallel".to_string(),
+                "Batch".to_string(),
+                "Optimization".to_string(),
+            ]);
+        }
+        
+        terms.sort();
+        terms.dedup();
+        terms
+    }
+
+    /// Check if content is relevant to the query
+    fn is_content_relevant(&self, content: &str, query: &str) -> bool {
+        let content_lower = content.to_lowercase();
+        let query_lower = query.to_lowercase();
+        
+        // Direct mention
+        if content_lower.contains(&query_lower) {
+            return true;
+        }
+        
+        // Check for key terms
+        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
+        let matching_words = query_words.iter()
+            .filter(|word| word.len() > 3 && content_lower.contains(*word))
+            .count();
+        
+        // Require at least 2 matching words for relevance
+        matching_words >= 2 || content_lower.len() > 500 // Long content is likely to be comprehensive
+    }
+
+    /// Check if content is relevant to query
+    fn is_relevant_to_query(&self, content: &str, query: &str) -> bool {
+        self.is_content_relevant(content, query)
+    }
+
+    /// Extract concepts from text content
+    fn extract_concepts_from_text(&self, content: &str) -> Vec<String> {
+        let mut concepts = Vec::new();
+        
+        // Extract capitalized words (likely concepts)
+        for word in content.split_whitespace() {
+            if word.len() > 2 && word.chars().next().unwrap().is_uppercase() {
+                let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric());
+                if clean_word.len() > 2 {
+                    concepts.push(clean_word.to_string());
+                }
+            }
+        }
+        
+        // Extract technical terms
+        let content_lower = content.to_lowercase();
+        let tech_terms = vec![
+            ("basenode", "BaseNode"),
+            ("flow", "Flow"),
+            ("async", "Async"),
+            ("parallel", "Parallel"),
+            ("batch", "Batch"),
+            ("framework", "Framework"),
+            ("architecture", "Architecture"),
+            ("pattern", "Pattern"),
+            ("orchestration", "Orchestration"),
+            ("workflow", "Workflow"),
+            ("agent", "Agent"),
+            ("pipeline", "Pipeline"),
+        ];
+        
+        for (search_term, concept_name) in tech_terms {
+            if content_lower.contains(search_term) {
+                concepts.push(concept_name.to_string());
+            }
+        }
+        
+        concepts.sort();
+        concepts.dedup();
+        concepts
+    }
+}
+
+/// Enhanced LLM Training Integration System
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainLearningOrchestrator {
+    /// Active learning component
+    pub active_learner: ActiveLearningSystem,
+    /// Adaptive query enhancement
+    pub query_enhancer: AdaptiveQueryEnhancer,
+    /// Meta-learning capabilities
+    pub meta_learner: MetaLearningSystem,
+    /// Learning session tracking
+    pub learning_sessions: Vec<LearningSession>,
+    /// Performance metrics
+    pub performance_tracker: PerformanceTracker,
+}
+
+/// Active Learning System - Identifies knowledge gaps and generates learning opportunities
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActiveLearningSystem {
+    /// Identified knowledge gaps
+    pub knowledge_gaps: Vec<KnowledgeGap>,
+    /// Generated follow-up questions
+    pub follow_up_questions: Vec<FollowUpQuestion>,
+    /// Learning objectives
+    pub learning_objectives: Vec<LearningObjective>,
+    /// Confidence thresholds for gap detection
+    pub gap_detection_config: GapDetectionConfig,
+}
+
+/// Adaptive Query Enhancement - Learns from successful patterns
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdaptiveQueryEnhancer {
+    /// Successful query patterns
+    pub successful_patterns: Vec<QueryPattern>,
+    /// Failed query patterns to avoid
+    pub failed_patterns: Vec<QueryPattern>,
+    /// Domain-specific enhancement rules
+    pub domain_rules: HashMap<String, Vec<EnhancementRule>>,
+    /// User feedback integration
+    pub feedback_history: Vec<QueryFeedback>,
+}
+
+/// Meta-Learning System - Analyzes the Brain's own learning patterns
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetaLearningSystem {
+    /// Learning pattern analysis
+    pub learning_patterns: Vec<LearningPattern>,
+    /// Memory optimization insights
+    pub memory_optimizations: Vec<MemoryOptimization>,
+    /// Concept relationship improvements
+    pub relationship_insights: Vec<RelationshipInsight>,
+    /// Self-improvement recommendations
+    pub improvement_recommendations: Vec<ImprovementRecommendation>,
+}
+
+/// Knowledge Gap Detection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KnowledgeGap {
+    pub gap_id: String,
+    pub topic: String,
+    pub description: String,
+    pub confidence_deficit: f64,
+    pub related_queries: Vec<String>,
+    pub suggested_learning_actions: Vec<String>,
+    pub priority: GapPriority,
+    pub discovered_at: DateTime<Utc>,
+}
+
+/// Follow-up Question Generation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FollowUpQuestion {
+    pub question_id: String,
+    pub question: String,
+    pub context: String,
+    pub target_knowledge_area: String,
+    pub expected_learning_outcome: String,
+    pub difficulty_level: DifficultyLevel,
+    pub generated_at: DateTime<Utc>,
+}
+
+/// Learning Objective Tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningObjective {
+    pub objective_id: String,
+    pub description: String,
+    pub target_concepts: Vec<String>,
+    pub success_criteria: Vec<String>,
+    pub progress: f64, // 0.0 to 1.0
+    pub estimated_completion: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Query Pattern Learning
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryPattern {
+    pub pattern_id: String,
+    pub pattern_type: PatternType,
+    pub query_structure: String,
+    pub success_rate: f64,
+    pub avg_confidence: f64,
+    pub domain: String,
+    pub usage_count: u32,
+    pub last_used: DateTime<Utc>,
+}
+
+/// Enhancement Rules for Query Improvement
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancementRule {
+    pub rule_id: String,
+    pub condition: String,
+    pub enhancement: String,
+    pub effectiveness_score: f64,
+    pub applicable_domains: Vec<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// User Feedback Integration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryFeedback {
+    pub feedback_id: String,
+    pub original_query: String,
+    pub response_quality: f64,
+    pub user_satisfaction: f64,
+    pub suggested_improvements: Vec<String>,
+    pub feedback_at: DateTime<Utc>,
+}
+
+/// Learning Pattern Analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningPattern {
+    pub pattern_id: String,
+    pub pattern_name: String,
+    pub description: String,
+    pub frequency: f64,
+    pub effectiveness: f64,
+    pub conditions: Vec<String>,
+    pub outcomes: Vec<String>,
+    pub discovered_at: DateTime<Utc>,
+}
+
+/// Memory Optimization Insights
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryOptimization {
+    pub optimization_id: String,
+    pub optimization_type: OptimizationType,
+    pub description: String,
+    pub expected_improvement: f64,
+    pub implementation_complexity: ComplexityLevel,
+    pub suggested_at: DateTime<Utc>,
+}
+
+/// Concept Relationship Insights
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RelationshipInsight {
+    pub insight_id: String,
+    pub concept_a: String,
+    pub concept_b: String,
+    pub relationship_type: String,
+    pub strength: f64,
+    pub confidence: f64,
+    pub supporting_evidence: Vec<String>,
+    pub discovered_at: DateTime<Utc>,
+}
+
+/// Self-Improvement Recommendations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImprovementRecommendation {
+    pub recommendation_id: String,
+    pub category: ImprovementCategory,
+    pub description: String,
+    pub expected_benefit: f64,
+    pub implementation_effort: f64,
+    pub priority: RecommendationPriority,
+    pub suggested_at: DateTime<Utc>,
+}
+
+/// Learning Session Tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningSession {
+    pub session_id: String,
+    pub start_time: DateTime<Utc>,
+    pub end_time: Option<DateTime<Utc>>,
+    pub learning_activities: Vec<LearningActivity>,
+    pub knowledge_gained: Vec<String>,
+    pub performance_metrics: SessionMetrics,
+    pub insights_generated: Vec<String>,
+}
+
+/// Individual Learning Activity
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningActivity {
+    pub activity_id: String,
+    pub activity_type: ActivityType,
+    pub description: String,
+    pub duration_ms: u64,
+    pub success: bool,
+    pub knowledge_impact: f64,
+    pub performed_at: DateTime<Utc>,
+}
+
+/// Performance Tracking System
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerformanceTracker {
+    /// Query performance over time
+    pub query_performance: Vec<QueryPerformanceMetric>,
+    /// Learning effectiveness metrics
+    pub learning_effectiveness: Vec<LearningEffectivenessMetric>,
+    /// Knowledge retention tracking
+    pub retention_metrics: Vec<RetentionMetric>,
+    /// Overall improvement trends
+    pub improvement_trends: HashMap<String, Vec<TrendPoint>>,
+}
+
+/// Configuration for Gap Detection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GapDetectionConfig {
+    pub min_confidence_threshold: f64,
+    pub gap_detection_sensitivity: f64,
+    pub max_gaps_per_session: usize,
+    pub priority_weighting: HashMap<String, f64>,
+}
+
+/// Session Performance Metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionMetrics {
+    pub queries_processed: u32,
+    pub avg_response_time: f64,
+    pub avg_confidence: f64,
+    pub knowledge_gaps_identified: u32,
+    pub learning_objectives_met: u32,
+    pub user_satisfaction: f64,
+}
+
+/// Query Performance Tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryPerformanceMetric {
+    pub timestamp: DateTime<Utc>,
+    pub query_type: String,
+    pub response_time_ms: u64,
+    pub confidence: f64,
+    pub user_satisfaction: f64,
+    pub knowledge_sources_used: u32,
+}
+
+/// Learning Effectiveness Measurement
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningEffectivenessMetric {
+    pub timestamp: DateTime<Utc>,
+    pub learning_activity: String,
+    pub knowledge_retention: f64,
+    pub application_success: f64,
+    pub transfer_learning: f64,
+}
+
+/// Knowledge Retention Tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetentionMetric {
+    pub concept: String,
+    pub initial_confidence: f64,
+    pub current_confidence: f64,
+    pub retention_rate: f64,
+    pub last_accessed: DateTime<Utc>,
+    pub access_frequency: u32,
+}
+
+/// Trend Analysis Point
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrendPoint {
+    pub timestamp: DateTime<Utc>,
+    pub metric_name: String,
+    pub value: f64,
+    pub trend_direction: TrendDirection,
+}
+
+// Enums for categorization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GapPriority {
+    Critical,
+    High,
+    Medium,
+    Low,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DifficultyLevel {
+    Beginner,
+    Intermediate,
+    Advanced,
+    Expert,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PatternType {
+    Successful,
+    Failed,
+    Experimental,
+    Optimized,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OptimizationType {
+    Storage,
+    Retrieval,
+    Indexing,
+    Relationship,
+    Performance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ComplexityLevel {
+    Simple,
+    Moderate,
+    Complex,
+    VeryComplex,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ImprovementCategory {
+    QueryProcessing,
+    MemoryManagement,
+    LearningEfficiency,
+    UserExperience,
+    Performance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RecommendationPriority {
+    Urgent,
+    High,
+    Medium,
+    Low,
+    Optional,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ActivityType {
+    KnowledgeAcquisition,
+    PatternRecognition,
+    ConceptLinking,
+    GapIdentification,
+    QueryOptimization,
+    MetaAnalysis,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TrendDirection {
+    Improving,
+    Stable,
+    Declining,
+    Volatile,
+}
+
+impl BrainLearningOrchestrator {
+    /// Create a new Brain Learning Orchestrator
+    pub fn new() -> Self {
+        Self {
+            active_learner: ActiveLearningSystem::new(),
+            query_enhancer: AdaptiveQueryEnhancer::new(),
+            meta_learner: MetaLearningSystem::new(),
+            learning_sessions: Vec::new(),
+            performance_tracker: PerformanceTracker::new(),
+        }
+    }
+
+
+
+    /// Process a query and identify learning opportunities
+    pub async fn process_query_for_learning(
+        &mut self,
+        query: &str,
+        response_confidence: f64,
+        response_quality: f64,
+        knowledge_sources: usize,
+    ) -> Result<LearningOpportunities, BrainError> {
+        // 1. Identify knowledge gaps
+        let gaps = self.active_learner.identify_knowledge_gaps(query, response_confidence).await?;
+        
+        // 2. Generate follow-up questions
+        let follow_ups = self.active_learner.generate_follow_up_questions(query, &gaps).await?;
+        
+        // 3. Learn from query patterns
+        self.query_enhancer.learn_from_query(query, response_confidence, response_quality).await?;
+        
+        // 4. Update performance tracking
+        self.performance_tracker.record_query_performance(
+            query,
+            response_confidence,
+            response_quality,
+            knowledge_sources,
+        ).await?;
+
+        Ok(LearningOpportunities {
+            identified_gaps: gaps,
+            follow_up_questions: follow_ups,
+            suggested_improvements: self.query_enhancer.suggest_query_improvements(query).await?,
+            learning_recommendations: self.meta_learner.generate_learning_recommendations().await?,
+        })
+    }
+
+
+
+
+
+    /// Calculate overall learning efficiency
+    async fn calculate_learning_efficiency(&self) -> Result<f64, BrainError> {
+        if self.learning_sessions.is_empty() {
+            return Ok(0.0);
+        }
+
+        let total_effectiveness: f64 = self.learning_sessions.iter()
+            .map(|s| s.performance_metrics.avg_confidence)
+            .sum();
+        
+        Ok(total_effectiveness / self.learning_sessions.len() as f64)
+    }
+}
+
+impl ActiveLearningSystem {
+    /// Create a new Active Learning System
+    pub fn new() -> Self {
+        Self {
+            knowledge_gaps: Vec::new(),
+            follow_up_questions: Vec::new(),
+            learning_objectives: Vec::new(),
+            gap_detection_config: GapDetectionConfig::default(),
+        }
+    }
+
+    /// Identify knowledge gaps based on query performance
+    pub async fn identify_knowledge_gaps(&mut self, query: &str, confidence: f64) -> Result<Vec<KnowledgeGap>, BrainError> {
+        let mut gaps = Vec::new();
+
+        if confidence < self.gap_detection_config.min_confidence_threshold {
+            let gap = KnowledgeGap {
+                gap_id: Uuid::new_v4().to_string(),
+                topic: self.extract_topic_from_query(query),
+                description: format!("Low confidence response ({}%) for query: {}", (confidence * 100.0) as u32, query),
+                confidence_deficit: self.gap_detection_config.min_confidence_threshold - confidence,
+                related_queries: vec![query.to_string()],
+                suggested_learning_actions: self.generate_learning_actions(query, confidence).await?,
+                priority: self.calculate_gap_priority(confidence),
+                discovered_at: Utc::now(),
+            };
+            gaps.push(gap.clone());
+            self.knowledge_gaps.push(gap);
+        }
+
+        Ok(gaps)
+    }
+
+    /// Generate follow-up questions to address knowledge gaps
+    pub async fn generate_follow_up_questions(&mut self, query: &str, gaps: &[KnowledgeGap]) -> Result<Vec<FollowUpQuestion>, BrainError> {
+        let mut questions = Vec::new();
+
+        for gap in gaps {
+            let follow_up = FollowUpQuestion {
+                question_id: Uuid::new_v4().to_string(),
+                question: self.generate_clarifying_question(&gap.topic, query).await?,
+                context: format!("Following up on knowledge gap: {}", gap.description),
+                target_knowledge_area: gap.topic.clone(),
+                expected_learning_outcome: format!("Improve understanding of {}", gap.topic),
+                difficulty_level: self.assess_question_difficulty(&gap.topic),
+                generated_at: Utc::now(),
+            };
+            questions.push(follow_up.clone());
+            self.follow_up_questions.push(follow_up);
+        }
+
+        Ok(questions)
+    }
+
+    /// Get current status of active learning
+    pub async fn get_status(&self) -> Result<ActiveLearningStatus, BrainError> {
+        Ok(ActiveLearningStatus {
+            total_gaps_identified: self.knowledge_gaps.len(),
+            high_priority_gaps: self.knowledge_gaps.iter().filter(|g| matches!(g.priority, GapPriority::High | GapPriority::Critical)).count(),
+            follow_up_questions_generated: self.follow_up_questions.len(),
+            learning_objectives_active: self.learning_objectives.iter().filter(|o| o.progress < 1.0).count(),
+            recent_gap_trends: self.analyze_recent_gap_trends().await?,
+        })
+    }
+
+    /// Extract topic from query using simple heuristics
+    fn extract_topic_from_query(&self, query: &str) -> String {
+        // Simple topic extraction - in a real implementation, this could use NLP
+        let words: Vec<&str> = query.split_whitespace().collect();
+        if words.len() > 2 {
+            words[0..3].join(" ")
+        } else {
+            query.to_string()
+        }
+    }
+
+    /// Generate learning actions for addressing gaps
+    async fn generate_learning_actions(&self, query: &str, confidence: f64) -> Result<Vec<String>, BrainError> {
+        let mut actions = Vec::new();
+
+        if confidence < 0.3 {
+            actions.push("Seek additional sources for this topic".to_string());
+            actions.push("Break down the query into simpler components".to_string());
+        } else if confidence < 0.6 {
+            actions.push("Verify information with cross-references".to_string());
+            actions.push("Explore related concepts".to_string());
+        }
+
+        actions.push(format!("Research more about: {}", self.extract_topic_from_query(query)));
+        Ok(actions)
+    }
+
+    /// Calculate priority of knowledge gap
+    fn calculate_gap_priority(&self, confidence: f64) -> GapPriority {
+        if confidence < 0.2 {
+            GapPriority::Critical
+        } else if confidence < 0.4 {
+            GapPriority::High
+        } else if confidence < 0.6 {
+            GapPriority::Medium
+        } else {
+            GapPriority::Low
+        }
+    }
+
+    /// Generate clarifying question
+    async fn generate_clarifying_question(&self, topic: &str, original_query: &str) -> Result<String, BrainError> {
+        // Simple question generation - could be enhanced with LLM
+        Ok(format!("Can you provide more specific details about {} in the context of '{}'?", topic, original_query))
+    }
+
+    /// Assess question difficulty
+    fn assess_question_difficulty(&self, topic: &str) -> DifficultyLevel {
+        // Simple heuristic - could be improved with domain knowledge
+        if topic.len() < 10 {
+            DifficultyLevel::Beginner
+        } else if topic.contains("architecture") || topic.contains("framework") {
+            DifficultyLevel::Advanced
+        } else {
+            DifficultyLevel::Intermediate
+        }
+    }
+
+    /// Analyze recent gap trends
+    async fn analyze_recent_gap_trends(&self) -> Result<Vec<String>, BrainError> {
+        let recent_gaps: Vec<_> = self.knowledge_gaps.iter()
+            .filter(|g| (Utc::now() - g.discovered_at).num_hours() < 24)
+            .collect();
+
+        let mut trends = Vec::new();
+        if recent_gaps.len() > 5 {
+            trends.push("High number of knowledge gaps identified recently".to_string());
+        }
+        
+        // Group by topic
+        let mut topic_counts = HashMap::new();
+        for gap in &recent_gaps {
+            *topic_counts.entry(&gap.topic).or_insert(0) += 1;
+        }
+        
+        for (topic, count) in topic_counts {
+            if count > 2 {
+                trends.push(format!("Recurring gaps in topic: {}", topic));
+            }
+        }
+
+        Ok(trends)
+    }
+}
+
+impl AdaptiveQueryEnhancer {
+    /// Create a new Adaptive Query Enhancer
+    pub fn new() -> Self {
+        Self {
+            successful_patterns: Vec::new(),
+            failed_patterns: Vec::new(),
+            domain_rules: HashMap::new(),
+            feedback_history: Vec::new(),
+        }
+    }
+
+    /// Learn from query performance
+    pub async fn learn_from_query(&mut self, query: &str, confidence: f64, quality: f64) -> Result<(), BrainError> {
+        let pattern = QueryPattern {
+            pattern_id: Uuid::new_v4().to_string(),
+            pattern_type: if confidence > 0.7 && quality > 0.7 {
+                PatternType::Successful
+            } else if confidence < 0.4 || quality < 0.4 {
+                PatternType::Failed
+            } else {
+                PatternType::Experimental
+            },
+            query_structure: self.extract_query_structure(query),
+            success_rate: (confidence + quality) / 2.0,
+            avg_confidence: confidence,
+            domain: self.identify_domain(query),
+            usage_count: 1,
+            last_used: Utc::now(),
+        };
+
+        match pattern.pattern_type {
+            PatternType::Successful => self.successful_patterns.push(pattern),
+            PatternType::Failed => self.failed_patterns.push(pattern),
+            _ => {} // Handle experimental patterns differently
+        }
+
+        Ok(())
+    }
+
+    /// Suggest query improvements
+    pub async fn suggest_query_improvements(&self, query: &str) -> Result<Vec<String>, BrainError> {
+        let mut suggestions = Vec::new();
+        let domain = self.identify_domain(query);
+
+        // Check against failed patterns
+        for failed_pattern in &self.failed_patterns {
+            if self.query_matches_pattern(query, &failed_pattern.query_structure) {
+                suggestions.push(format!("Avoid pattern '{}' which has low success rate", failed_pattern.query_structure));
+            }
+        }
+
+        // Suggest successful patterns
+        for successful_pattern in &self.successful_patterns {
+            if successful_pattern.domain == domain && successful_pattern.success_rate > 0.8 {
+                suggestions.push(format!("Consider using pattern '{}' which has high success rate", successful_pattern.query_structure));
+            }
+        }
+
+        // Domain-specific suggestions
+        if let Some(rules) = self.domain_rules.get(&domain) {
+            for rule in rules {
+                if rule.effectiveness_score > 0.7 {
+                    suggestions.push(format!("Apply rule: {}", rule.enhancement));
+                }
+            }
+        }
+
+        Ok(suggestions)
+    }
+
+    /// Get enhancement insights
+    pub async fn get_insights(&self) -> Result<QueryEnhancementInsights, BrainError> {
+        Ok(QueryEnhancementInsights {
+            successful_patterns_count: self.successful_patterns.len(),
+            failed_patterns_count: self.failed_patterns.len(),
+            domain_rules_count: self.domain_rules.values().map(|rules| rules.len()).sum(),
+            top_performing_patterns: self.get_top_patterns(5).await?,
+            improvement_opportunities: self.identify_improvement_opportunities().await?,
+        })
+    }
+
+    /// Extract query structure for pattern matching
+    fn extract_query_structure(&self, query: &str) -> String {
+        // Simple structure extraction - could be enhanced
+        let words: Vec<&str> = query.split_whitespace().collect();
+        if words.is_empty() {
+            return "empty".to_string();
+        }
+
+        let mut structure = Vec::new();
+        for word in &words[0..words.len().min(3)] {
+            if word.starts_with("what") || word.starts_with("how") || word.starts_with("why") {
+                structure.push("QUESTION_WORD");
+            } else if word.chars().next().unwrap().is_uppercase() {
+                structure.push("PROPER_NOUN");
+            } else {
+                structure.push("WORD");
+            }
+        }
+        
+        structure.join("_")
+    }
+
+    /// Identify domain from query
+    fn identify_domain(&self, query: &str) -> String {
+        let query_lower = query.to_lowercase();
+        
+        if query_lower.contains("architecture") || query_lower.contains("framework") || query_lower.contains("pattern") {
+            "software_architecture".to_string()
+        } else if query_lower.contains("code") || query_lower.contains("programming") {
+            "programming".to_string()
+        } else if query_lower.contains("github") || query_lower.contains("repository") {
+            "version_control".to_string()
+        } else {
+            "general".to_string()
+        }
+    }
+
+    /// Check if query matches pattern
+    fn query_matches_pattern(&self, query: &str, pattern: &str) -> bool {
+        let query_structure = self.extract_query_structure(query);
+        query_structure == pattern
+    }
+
+    /// Get top performing patterns
+    async fn get_top_patterns(&self, limit: usize) -> Result<Vec<QueryPattern>, BrainError> {
+        let mut patterns = self.successful_patterns.clone();
+        patterns.sort_by(|a, b| b.success_rate.partial_cmp(&a.success_rate).unwrap());
+        patterns.truncate(limit);
+        Ok(patterns)
+    }
+
+    /// Identify improvement opportunities
+    async fn identify_improvement_opportunities(&self) -> Result<Vec<String>, BrainError> {
+        let mut opportunities = Vec::new();
+
+        if self.failed_patterns.len() > self.successful_patterns.len() {
+            opportunities.push("High failure rate - consider query reformulation strategies".to_string());
+        }
+
+        if self.domain_rules.is_empty() {
+            opportunities.push("No domain-specific rules defined - consider creating enhancement rules".to_string());
+        }
+
+        Ok(opportunities)
+    }
+}
+
+impl MetaLearningSystem {
+    /// Create a new Meta-Learning System
+    pub fn new() -> Self {
+        Self {
+            learning_patterns: Vec::new(),
+            memory_optimizations: Vec::new(),
+            relationship_insights: Vec::new(),
+            improvement_recommendations: Vec::new(),
+        }
+    }
+
+    /// Analyze session patterns for meta-learning
+    pub async fn analyze_session_patterns(&mut self, session: &LearningSession) -> Result<(), BrainError> {
+        // Analyze learning patterns from the session
+        let pattern = self.extract_learning_pattern(session).await?;
+        if let Some(pattern) = pattern {
+            self.learning_patterns.push(pattern);
+        }
+
+        // Generate memory optimizations
+        let optimizations = self.identify_memory_optimizations(session).await?;
+        self.memory_optimizations.extend(optimizations);
+
+        // Generate improvement recommendations
+        let recommendations = self.generate_session_recommendations(session).await?;
+        self.improvement_recommendations.extend(recommendations);
+
+        Ok(())
+    }
+
+    /// Generate learning recommendations
+    pub async fn generate_learning_recommendations(&self) -> Result<Vec<String>, BrainError> {
+        let mut recommendations = Vec::new();
+
+        for rec in &self.improvement_recommendations {
+            if matches!(rec.priority, RecommendationPriority::High | RecommendationPriority::Urgent) {
+                recommendations.push(rec.description.clone());
+            }
+        }
+
+        if recommendations.is_empty() {
+            recommendations.push("Continue current learning approach".to_string());
+        }
+
+        Ok(recommendations)
+    }
+
+    /// Get meta-learning recommendations
+    pub async fn get_recommendations(&self) -> Result<MetaLearningRecommendations, BrainError> {
+        Ok(MetaLearningRecommendations {
+            learning_patterns_identified: self.learning_patterns.len(),
+            memory_optimizations_suggested: self.memory_optimizations.len(),
+            relationship_insights_discovered: self.relationship_insights.len(),
+            high_priority_recommendations: self.improvement_recommendations.iter()
+                .filter(|r| matches!(r.priority, RecommendationPriority::High | RecommendationPriority::Urgent))
+                .count(),
+            recent_insights: self.get_recent_insights().await?,
+        })
+    }
+
+    /// Extract learning pattern from session
+    async fn extract_learning_pattern(&self, session: &LearningSession) -> Result<Option<LearningPattern>, BrainError> {
+        if session.learning_activities.len() < 3 {
+            return Ok(None);
+        }
+
+        let success_rate = session.learning_activities.iter()
+            .map(|a| if a.success { 1.0 } else { 0.0 })
+            .sum::<f64>() / session.learning_activities.len() as f64;
+
+        if success_rate > 0.7 {
+            let pattern = LearningPattern {
+                pattern_id: Uuid::new_v4().to_string(),
+                pattern_name: "High Success Session".to_string(),
+                description: format!("Session with {}% success rate", (success_rate * 100.0) as u32),
+                frequency: 1.0, // Will be updated as more patterns are found
+                effectiveness: success_rate,
+                conditions: vec![
+                    format!("Activities: {}", session.learning_activities.len()),
+                    format!("Duration: {} minutes", (session.end_time.unwrap_or(Utc::now()) - session.start_time).num_minutes()),
+                ],
+                outcomes: session.insights_generated.clone(),
+                discovered_at: Utc::now(),
+            };
+            Ok(Some(pattern))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Identify memory optimizations
+    async fn identify_memory_optimizations(&self, session: &LearningSession) -> Result<Vec<MemoryOptimization>, BrainError> {
+        let mut optimizations = Vec::new();
+
+        if session.performance_metrics.avg_response_time > 1000.0 {
+            optimizations.push(MemoryOptimization {
+                optimization_id: Uuid::new_v4().to_string(),
+                optimization_type: OptimizationType::Performance,
+                description: "Improve response time by optimizing memory retrieval".to_string(),
+                expected_improvement: 0.3,
+                implementation_complexity: ComplexityLevel::Moderate,
+                suggested_at: Utc::now(),
+            });
+        }
+
+        if session.performance_metrics.avg_confidence < 0.6 {
+            optimizations.push(MemoryOptimization {
+                optimization_id: Uuid::new_v4().to_string(),
+                optimization_type: OptimizationType::Retrieval,
+                description: "Enhance retrieval algorithms to improve confidence".to_string(),
+                expected_improvement: 0.4,
+                implementation_complexity: ComplexityLevel::Complex,
+                suggested_at: Utc::now(),
+            });
+        }
+
+        Ok(optimizations)
+    }
+
+    /// Generate session recommendations
+    async fn generate_session_recommendations(&self, session: &LearningSession) -> Result<Vec<ImprovementRecommendation>, BrainError> {
+        let mut recommendations = Vec::new();
+
+        let avg_knowledge_impact = session.learning_activities.iter()
+            .map(|a| a.knowledge_impact)
+            .sum::<f64>() / session.learning_activities.len().max(1) as f64;
+
+        if avg_knowledge_impact < 0.5 {
+            recommendations.push(ImprovementRecommendation {
+                recommendation_id: Uuid::new_v4().to_string(),
+                category: ImprovementCategory::LearningEfficiency,
+                description: "Focus on higher-impact learning activities".to_string(),
+                expected_benefit: 0.6,
+                implementation_effort: 0.3,
+                priority: RecommendationPriority::High,
+                suggested_at: Utc::now(),
+            });
+        }
+
+        Ok(recommendations)
+    }
+
+    /// Get recent insights
+    async fn get_recent_insights(&self) -> Result<Vec<String>, BrainError> {
+        let recent_patterns: Vec<_> = self.learning_patterns.iter()
+            .filter(|p| (Utc::now() - p.discovered_at).num_hours() < 24)
+            .collect();
+
+        let insights = recent_patterns.iter()
+            .map(|p| format!("Pattern '{}': {}", p.pattern_name, p.description))
+            .collect();
+
+        Ok(insights)
+    }
+}
+
+impl BrainLearningOrchestrator {
+    // Additional API methods for web endpoints
+    pub async fn get_learning_analytics(&self) -> LearningAnalytics {
+        LearningAnalytics {
+            active_learning_status: self.active_learner.get_status().await.unwrap_or_default(),
+            query_enhancement_insights: self.query_enhancer.get_insights().await.unwrap_or_default(),
+            meta_learning_recommendations: self.meta_learner.get_recommendations().await.unwrap_or_default(),
+            performance_trends: self.performance_tracker.get_trends().await.unwrap_or_default(),
+            learning_efficiency: self.calculate_learning_efficiency().await.unwrap_or(0.0),
+        }
+    }
+
+    pub async fn start_learning_session(&mut self, objective: String) -> String {
+        let session_id = format!("session_{}", chrono::Utc::now().timestamp());
+        let session = LearningSession {
+            session_id: session_id.clone(),
+            start_time: chrono::Utc::now(),
+            end_time: None,
+            learning_activities: Vec::new(),
+            knowledge_gained: Vec::new(),
+            performance_metrics: SessionMetrics::default(),
+            insights_generated: vec![objective],
+        };
+        self.learning_sessions.push(session);
+        session_id
+    }
+
+    pub async fn end_learning_session(&mut self, session_id: String) -> LearningSessionSummary {
+        if let Some(session_index) = self.learning_sessions.iter().position(|s| s.session_id == session_id) {
+            let mut session = self.learning_sessions.remove(session_index);
+            session.end_time = Some(chrono::Utc::now());
+            
+            let duration = session.end_time.unwrap().signed_duration_since(session.start_time);
+            
+            LearningSessionSummary {
+                session_id: session.session_id,
+                duration_minutes: duration.num_minutes() as f64,
+                activities_completed: session.learning_activities.len(),
+                knowledge_gained: session.knowledge_gained.len(),
+                avg_activity_success: session.learning_activities.iter()
+                    .map(|a| if a.success { 1.0 } else { 0.0 })
+                    .sum::<f64>() / session.learning_activities.len().max(1) as f64,
+                insights_generated: session.insights_generated.len(),
+                overall_effectiveness: session.performance_metrics.avg_confidence,
+            }
+        } else {
+            LearningSessionSummary {
+                session_id,
+                duration_minutes: 0.0,
+                activities_completed: 0,
+                knowledge_gained: 0,
+                avg_activity_success: 0.0,
+                insights_generated: 0,
+                overall_effectiveness: 0.0,
+            }
+        }
+    }
+
+    pub async fn get_current_knowledge_gaps(&self) -> Vec<KnowledgeGap> {
+        self.active_learner.knowledge_gaps.clone()
+    }
+
+    pub async fn get_meta_learning_recommendations(&self) -> Vec<String> {
+        self.meta_learner.generate_learning_recommendations().await.unwrap_or_default()
+    }
+
+    pub async fn get_performance_trends(&self) -> PerformanceTrends {
+        self.performance_tracker.get_trends().await.unwrap_or_default()
+    }
+}
+
+impl PerformanceTracker {
+    /// Create a new Performance Tracker
+    pub fn new() -> Self {
+        Self {
+            query_performance: Vec::new(),
+            learning_effectiveness: Vec::new(),
+            retention_metrics: Vec::new(),
+            improvement_trends: HashMap::new(),
+        }
+    }
+
+    /// Record query performance
+    pub async fn record_query_performance(
+        &mut self,
+        query: &str,
+        confidence: f64,
+        quality: f64,
+        sources: usize,
+    ) -> Result<(), BrainError> {
+        let metric = QueryPerformanceMetric {
+            timestamp: Utc::now(),
+            query_type: self.classify_query_type(query),
+            response_time_ms: 0, // Would be measured in real implementation
+            confidence,
+            user_satisfaction: quality,
+            knowledge_sources_used: sources as u32,
+        };
+
+        self.query_performance.push(metric);
+        self.update_trends("query_confidence", confidence).await?;
+        self.update_trends("query_quality", quality).await?;
+
+        Ok(())
+    }
+
+    /// Get performance trends
+    pub async fn get_trends(&self) -> Result<PerformanceTrends, BrainError> {
+        Ok(PerformanceTrends {
+            query_performance_trend: self.calculate_trend("query_confidence").await?,
+            learning_effectiveness_trend: self.calculate_trend("learning_effectiveness").await?,
+            overall_improvement: self.calculate_overall_improvement().await?,
+            recent_performance_summary: self.get_recent_performance_summary().await?,
+        })
+    }
+
+    /// Classify query type
+    fn classify_query_type(&self, query: &str) -> String {
+        let query_lower = query.to_lowercase();
+        
+        if query_lower.starts_with("what") {
+            "factual".to_string()
+        } else if query_lower.starts_with("how") {
+            "procedural".to_string()
+        } else if query_lower.starts_with("why") {
+            "explanatory".to_string()
+        } else {
+            "general".to_string()
+        }
+    }
+
+    /// Update performance trends
+    async fn update_trends(&mut self, metric_name: &str, value: f64) -> Result<(), BrainError> {
+        let trend_point = TrendPoint {
+            timestamp: Utc::now(),
+            metric_name: metric_name.to_string(),
+            value,
+            trend_direction: self.calculate_trend_direction(metric_name, value).await?,
+        };
+
+        self.improvement_trends
+            .entry(metric_name.to_string())
+            .or_insert_with(Vec::new)
+            .push(trend_point);
+
+        Ok(())
+    }
+
+    /// Calculate trend direction
+    async fn calculate_trend_direction(&self, metric_name: &str, _current_value: f64) -> Result<TrendDirection, BrainError> {
+        if let Some(points) = self.improvement_trends.get(metric_name) {
+            if points.len() < 2 {
+                return Ok(TrendDirection::Stable);
+            }
+
+            let recent_avg = points.iter()
+                .rev()
+                .take(5)
+                .map(|p| p.value)
+                .sum::<f64>() / 5.min(points.len()) as f64;
+
+            let older_avg = points.iter()
+                .rev()
+                .skip(5)
+                .take(5)
+                .map(|p| p.value)
+                .sum::<f64>() / 5.min(points.len().saturating_sub(5)) as f64;
+
+            if recent_avg > older_avg + 0.1 {
+                Ok(TrendDirection::Improving)
+            } else if recent_avg < older_avg - 0.1 {
+                Ok(TrendDirection::Declining)
+            } else {
+                Ok(TrendDirection::Stable)
+            }
+        } else {
+            Ok(TrendDirection::Stable)
+        }
+    }
+
+    /// Calculate trend for metric
+    async fn calculate_trend(&self, metric_name: &str) -> Result<TrendDirection, BrainError> {
+        if let Some(points) = self.improvement_trends.get(metric_name) {
+            if let Some(latest) = points.last() {
+                Ok(latest.trend_direction.clone())
+            } else {
+                Ok(TrendDirection::Stable)
+            }
+        } else {
+            Ok(TrendDirection::Stable)
+        }
+    }
+
+    /// Calculate overall improvement
+    async fn calculate_overall_improvement(&self) -> Result<f64, BrainError> {
+        if self.query_performance.is_empty() {
+            return Ok(0.0);
+        }
+
+        let recent_performance = self.query_performance.iter()
+            .rev()
+            .take(10)
+            .map(|m| m.confidence)
+            .sum::<f64>() / 10.min(self.query_performance.len()) as f64;
+
+        let older_performance = self.query_performance.iter()
+            .rev()
+            .skip(10)
+            .take(10)
+            .map(|m| m.confidence)
+            .sum::<f64>() / 10.min(self.query_performance.len().saturating_sub(10)) as f64;
+
+        Ok(recent_performance - older_performance)
+    }
+
+    /// Get recent performance summary
+    async fn get_recent_performance_summary(&self) -> Result<String, BrainError> {
+        if self.query_performance.is_empty() {
+            return Ok("No performance data available".to_string());
+        }
+
+        let recent_queries = self.query_performance.iter().rev().take(10).collect::<Vec<_>>();
+        let avg_confidence = recent_queries.iter().map(|m| m.confidence).sum::<f64>() / recent_queries.len() as f64;
+        let avg_satisfaction = recent_queries.iter().map(|m| m.user_satisfaction).sum::<f64>() / recent_queries.len() as f64;
+
+        Ok(format!(
+            "Recent performance: {:.1}% confidence, {:.1}% satisfaction over {} queries",
+            avg_confidence * 100.0,
+            avg_satisfaction * 100.0,
+            recent_queries.len()
+        ))
+    }
+}
+
+// Additional supporting structures
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningOpportunities {
+    pub identified_gaps: Vec<KnowledgeGap>,
+    pub follow_up_questions: Vec<FollowUpQuestion>,
+    pub suggested_improvements: Vec<String>,
+    pub learning_recommendations: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningSessionSummary {
+    pub session_id: String,
+    pub duration_minutes: f64,
+    pub activities_completed: usize,
+    pub knowledge_gained: usize,
+    pub avg_activity_success: f64,
+    pub insights_generated: usize,
+    pub overall_effectiveness: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LearningAnalytics {
+    pub active_learning_status: ActiveLearningStatus,
+    pub query_enhancement_insights: QueryEnhancementInsights,
+    pub meta_learning_recommendations: MetaLearningRecommendations,
+    pub performance_trends: PerformanceTrends,
+    pub learning_efficiency: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActiveLearningStatus {
+    pub total_gaps_identified: usize,
+    pub high_priority_gaps: usize,
+    pub follow_up_questions_generated: usize,
+    pub learning_objectives_active: usize,
+    pub recent_gap_trends: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryEnhancementInsights {
+    pub successful_patterns_count: usize,
+    pub failed_patterns_count: usize,
+    pub domain_rules_count: usize,
+    pub top_performing_patterns: Vec<QueryPattern>,
+    pub improvement_opportunities: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetaLearningRecommendations {
+    pub learning_patterns_identified: usize,
+    pub memory_optimizations_suggested: usize,
+    pub relationship_insights_discovered: usize,
+    pub high_priority_recommendations: usize,
+    pub recent_insights: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerformanceTrends {
+    pub query_performance_trend: TrendDirection,
+    pub learning_effectiveness_trend: TrendDirection,
+    pub overall_improvement: f64,
+    pub recent_performance_summary: String,
+}
+
+impl Default for SessionMetrics {
+    fn default() -> Self {
+        Self {
+            queries_processed: 0,
+            avg_response_time: 0.0,
+            avg_confidence: 0.0,
+            knowledge_gaps_identified: 0,
+            learning_objectives_met: 0,
+            user_satisfaction: 0.0,
+        }
+    }
+}
+
+impl Default for GapDetectionConfig {
+    fn default() -> Self {
+        Self {
+            min_confidence_threshold: 0.7,
+            gap_detection_sensitivity: 0.5,
+            max_gaps_per_session: 10,
+            priority_weighting: HashMap::new(),
+        }
+    }
+}
+
+impl Default for ActiveLearningStatus {
+    fn default() -> Self {
+        Self {
+            total_gaps_identified: 0,
+            high_priority_gaps: 0,
+            follow_up_questions_generated: 0,
+            learning_objectives_active: 0,
+            recent_gap_trends: Vec::new(),
+        }
+    }
+}
+
+impl Default for QueryEnhancementInsights {
+    fn default() -> Self {
+        Self {
+            successful_patterns_count: 0,
+            failed_patterns_count: 0,
+            domain_rules_count: 0,
+            top_performing_patterns: Vec::new(),
+            improvement_opportunities: Vec::new(),
+        }
+    }
+}
+
+impl Default for MetaLearningRecommendations {
+    fn default() -> Self {
+        Self {
+            learning_patterns_identified: 0,
+            memory_optimizations_suggested: 0,
+            relationship_insights_discovered: 0,
+            high_priority_recommendations: 0,
+            recent_insights: Vec::new(),
+        }
+    }
+}
+
+impl Default for PerformanceTrends {
+    fn default() -> Self {
+        Self {
+            query_performance_trend: TrendDirection::Stable,
+            learning_effectiveness_trend: TrendDirection::Stable,
+            overall_improvement: 0.0,
+            recent_performance_summary: "No data available".to_string(),
+        }
+    }
+}
+
+impl Default for LearningAnalytics {
+    fn default() -> Self {
+        Self {
+            active_learning_status: ActiveLearningStatus::default(),
+            query_enhancement_insights: QueryEnhancementInsights::default(),
+            meta_learning_recommendations: MetaLearningRecommendations::default(),
+            performance_trends: PerformanceTrends::default(),
+            learning_efficiency: 0.0,
+        }
     }
 }

@@ -147,7 +147,7 @@ impl GitHubClient {
         
         let mut request = self.client.get(&url);
         if let Some(token) = &self.token {
-            request = request.header("Authorization", format!("token {}", token));
+            request = request.header("Authorization", format!("Bearer {}", token));
         }
         request = request.header("User-Agent", "Brain-AI/1.0");
 
@@ -199,7 +199,7 @@ impl GitHubClient {
         
         let mut request = self.client.get(&url);
         if let Some(token) = &self.token {
-            request = request.header("Authorization", format!("token {}", token));
+            request = request.header("Authorization", format!("Bearer {}", token));
         }
         request = request.header("User-Agent", "Brain-AI/1.0");
 
@@ -244,7 +244,7 @@ impl GitHubClient {
 
             let mut request = self.client.get(&url);
             if let Some(token) = &self.token {
-                request = request.header("Authorization", format!("token {}", token));
+                request = request.header("Authorization", format!("Bearer {}", token));
             }
             request = request.header("User-Agent", "Brain-AI/1.0");
 
