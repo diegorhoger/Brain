@@ -10,6 +10,8 @@ use crate::{Result, BrainError};
 use crate::memory::{MemorySystem, Priority};
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+
+
 /// GitHub API client for repository access
 pub struct GitHubClient {
     base_url: String,
@@ -96,6 +98,45 @@ pub struct GitHubLearningResult {
     pub memory_entries_created: usize,
     pub summary: String,
     pub key_insights: Vec<String>,
+}
+
+// Detailed analysis structures
+#[derive(Debug, Clone)]
+pub struct DetailedDataStructure {
+    pub name: String,
+    pub description: String,
+    pub structure_type: String, // "class", "struct", "interface", "enum", etc.
+    pub fields: Vec<String>,
+    pub file_location: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DetailedAPIEndpoint {
+    pub method: String, // GET, POST, PUT, DELETE, etc.
+    pub path: String,
+    pub description: String,
+    pub parameters: Vec<String>,
+    pub response_type: Option<String>,
+    pub file_location: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DetailedArchitecturalPattern {
+    pub name: String,
+    pub description: String,
+    pub pattern_type: String, // "architectural", "design", "framework"
+    pub evidence: String,
+    pub implementation_details: Vec<String>,
+    pub files_involved: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DetailedDependency {
+    pub name: String,
+    pub version: Option<String>,
+    pub purpose: String,
+    pub dependency_type: String, // "runtime", "dev", "peer", etc.
+    pub source_file: String,
 }
 
 impl GitHubClient {
@@ -618,7 +659,7 @@ impl GitHubLearningEngine {
         concepts
     }
 
-    /// Generate key insights about the repository
+    /// Generate key insights about the repository with detailed analysis
     fn generate_key_insights(&self, repo_info: &RepositoryInfo) -> Vec<String> {
         let mut insights = Vec::new();
 
@@ -637,7 +678,43 @@ impl GitHubLearningEngine {
             insights.push(format!("Topics: {}", repo_info.topics.join(", ")));
         }
 
-        // File type distribution
+        // Detailed data structure analysis
+        let data_structures = self.extract_detailed_data_structures(repo_info);
+        if !data_structures.is_empty() {
+            insights.push(format!("Data structures identified: {}", data_structures.len()));
+            for (i, ds) in data_structures.iter().enumerate() {
+                insights.push(format!("Data Structure {}: {} - {}", i + 1, ds.name, ds.description));
+            }
+        }
+
+        // Detailed API endpoint analysis  
+        let api_endpoints = self.extract_detailed_api_endpoints(repo_info);
+        if !api_endpoints.is_empty() {
+            insights.push(format!("API endpoints discovered: {}", api_endpoints.len()));
+            for (i, endpoint) in api_endpoints.iter().enumerate() {
+                insights.push(format!("API Endpoint {}: {} {} - {}", i + 1, endpoint.method, endpoint.path, endpoint.description));
+            }
+        }
+
+        // Detailed architectural pattern analysis
+        let architectural_patterns = self.extract_detailed_architectural_patterns(repo_info);
+        if !architectural_patterns.is_empty() {
+            insights.push(format!("Architecture patterns: {}", architectural_patterns.len()));
+            for (i, pattern) in architectural_patterns.iter().enumerate() {
+                insights.push(format!("Architecture Pattern {}: {} - {} (Evidence: {})", i + 1, pattern.name, pattern.description, pattern.evidence));
+            }
+        }
+
+        // Detailed dependency analysis
+        let dependencies = self.extract_detailed_dependencies(repo_info);
+        if !dependencies.is_empty() {
+            insights.push(format!("Dependencies analyzed: {}", dependencies.len()));
+            for (i, dep) in dependencies.iter().take(10).enumerate() { // Limit to first 10 for brevity
+                insights.push(format!("Dependency {}: {} - {}", i + 1, dep.name, dep.purpose));
+            }
+        }
+
+        // File type distribution (keep this for basic stats)
         let mut file_type_counts = HashMap::new();
         for file in &repo_info.files {
             *file_type_counts.entry(&file.file_type).or_insert(0) += 1;
@@ -647,241 +724,624 @@ impl GitHubLearningEngine {
             insights.push(format!("{:?} files: {}", file_type, count));
         }
 
-        // Extract actual architectural patterns from code content
-        let architectural_patterns = self.extract_architectural_patterns(repo_info);
-        if !architectural_patterns.is_empty() {
-            insights.push(format!("Architecture patterns: {}", architectural_patterns.join(", ")));
-            for pattern in &architectural_patterns {
-                insights.push(format!("Pattern '{}': Found in codebase with specific implementation details", pattern));
-            }
-        }
-
-        // Extract design patterns from code
-        let design_patterns = self.extract_design_patterns(repo_info);
-        if !design_patterns.is_empty() {
-            insights.push(format!("Design patterns identified: {}", design_patterns.join(", ")));
-        }
-
-        // Extract framework patterns
-        let framework_patterns = self.extract_framework_patterns(repo_info);
-        if !framework_patterns.is_empty() {
-            insights.push(format!("Framework patterns: {}", framework_patterns.join(", ")));
-        }
-
         insights
     }
 
-    /// Extract architectural patterns from repository content
-    fn extract_architectural_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+    /// Extract detailed data structures from repository files
+    fn extract_detailed_data_structures(&self, repo_info: &RepositoryInfo) -> Vec<DetailedDataStructure> {
+        let mut data_structures = Vec::new();
+
+        for file in &repo_info.files {
+            if matches!(file.file_type, FileType::Code) {
+                let file_structures = self.parse_data_structures_from_code(&file.content, &file.path);
+                data_structures.extend(file_structures);
+            }
+        }
+
+        data_structures
+    }
+
+    /// Extract detailed API endpoints from repository files
+    fn extract_detailed_api_endpoints(&self, repo_info: &RepositoryInfo) -> Vec<DetailedAPIEndpoint> {
+        let mut endpoints = Vec::new();
+
+        for file in &repo_info.files {
+            if matches!(file.file_type, FileType::Code) {
+                let file_endpoints = self.parse_api_endpoints_from_code(&file.content, &file.path);
+                endpoints.extend(file_endpoints);
+            }
+        }
+
+        // Also check README for API documentation
+        if let Some(readme) = &repo_info.readme_content {
+            let readme_endpoints = self.parse_api_endpoints_from_docs(readme, "README.md");
+            endpoints.extend(readme_endpoints);
+        }
+
+        endpoints
+    }
+
+    /// Extract detailed architectural patterns with evidence
+    fn extract_detailed_architectural_patterns(&self, repo_info: &RepositoryInfo) -> Vec<DetailedArchitecturalPattern> {
         let mut patterns = Vec::new();
 
         // Analyze README for architectural information
         if let Some(readme) = &repo_info.readme_content {
-            let readme_lower = readme.to_lowercase();
-            
-            // Look for common architectural patterns mentioned in README
-            if readme_lower.contains("microservice") || readme_lower.contains("micro-service") {
-                patterns.push("Microservices Architecture".to_string());
-            }
-            
-            if readme_lower.contains("mvc") || readme_lower.contains("model-view-controller") {
-                patterns.push("MVC (Model-View-Controller)".to_string());
-            }
-            
-            if readme_lower.contains("rest") && readme_lower.contains("api") {
-                patterns.push("REST API Architecture".to_string());
-            }
-            
-            if readme_lower.contains("event-driven") || readme_lower.contains("event driven") {
-                patterns.push("Event-Driven Architecture".to_string());
-            }
-            
-            if readme_lower.contains("plugin") || readme_lower.contains("extension") {
-                patterns.push("Plugin Architecture".to_string());
-            }
-            
-            if readme_lower.contains("layered") || readme_lower.contains("n-tier") {
-                patterns.push("Layered Architecture".to_string());
-            }
-            
-            if readme_lower.contains("serverless") || readme_lower.contains("lambda") {
-                patterns.push("Serverless Architecture".to_string());
-            }
-            
-            if readme_lower.contains("client-server") {
-                patterns.push("Client-Server Architecture".to_string());
-            }
+            let readme_patterns = self.parse_architectural_patterns_from_docs(readme, "README.md");
+            patterns.extend(readme_patterns);
         }
 
         // Analyze code files for architectural patterns
         for file in &repo_info.files {
             if matches!(file.file_type, FileType::Code) {
-                let file_patterns = self.extract_code_architectural_patterns(&file.content);
-                for pattern in file_patterns {
-                    if !patterns.contains(&pattern) {
-                        patterns.push(pattern);
-                    }
-                }
+                let code_patterns = self.parse_architectural_patterns_from_code(&file.content, &file.path);
+                patterns.extend(code_patterns);
             }
         }
-
-        // Analyze file structure for patterns
-        let structure_patterns = self.extract_structural_patterns(repo_info);
-        patterns.extend(structure_patterns);
 
         patterns
     }
 
-    /// Extract architectural patterns from code content
-    fn extract_code_architectural_patterns(&self, content: &str) -> Vec<String> {
+    /// Extract detailed dependencies with purposes
+    fn extract_detailed_dependencies(&self, repo_info: &RepositoryInfo) -> Vec<DetailedDependency> {
+        let mut dependencies = Vec::new();
+
+        for file in &repo_info.files {
+            let file_deps = match file.name.as_str() {
+                "package.json" => self.parse_npm_dependencies(&file.content, &file.path),
+                "Cargo.toml" => self.parse_cargo_dependencies(&file.content, &file.path),
+                "requirements.txt" => self.parse_python_dependencies(&file.content, &file.path),
+                "pom.xml" => self.parse_maven_dependencies(&file.content, &file.path),
+                _ => Vec::new(),
+            };
+            dependencies.extend(file_deps);
+        }
+
+        dependencies
+    }
+
+    /// Parse data structures from code content
+    fn parse_data_structures_from_code(&self, content: &str, file_path: &str) -> Vec<DetailedDataStructure> {
+        let mut structures = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+
+        for (i, line) in lines.iter().enumerate() {
+            let trimmed = line.trim();
+            
+            // JavaScript/TypeScript structures
+            if trimmed.starts_with("interface ") || trimmed.starts_with("type ") {
+                if let Some(name) = self.extract_name_after_keyword(trimmed, &["interface", "type"]) {
+                    let fields = self.extract_structure_fields(&lines, i);
+                    structures.push(DetailedDataStructure {
+                        name,
+                        description: format!("TypeScript {} defined in {}", 
+                                           if trimmed.starts_with("interface") { "interface" } else { "type" }, 
+                                           file_path),
+                        structure_type: if trimmed.starts_with("interface") { "interface".to_string() } else { "type".to_string() },
+                        fields,
+                        file_location: file_path.to_string(),
+                    });
+                }
+            }
+            
+            // Rust structures
+            else if trimmed.starts_with("struct ") || trimmed.starts_with("enum ") {
+                if let Some(name) = self.extract_name_after_keyword(trimmed, &["struct", "enum"]) {
+                    let fields = self.extract_structure_fields(&lines, i);
+                    structures.push(DetailedDataStructure {
+                        name: name.to_string(),
+                        description: format!("Rust {} defined in {}", 
+                                           if trimmed.starts_with("struct") { "struct" } else { "enum" }, 
+                                           file_path),
+                        structure_type: if trimmed.starts_with("struct") { "struct".to_string() } else { "enum".to_string() },
+                        fields,
+                        file_location: file_path.to_string(),
+                    });
+                }
+            }
+            
+            // Python classes
+            else if trimmed.starts_with("class ") {
+                if let Some(name) = self.extract_name_after_keyword(trimmed, &["class"]) {
+                    let fields = self.extract_python_class_fields(&lines, i);
+                    structures.push(DetailedDataStructure {
+                        name: name.to_string(),
+                        description: format!("Python class defined in {}", file_path),
+                        structure_type: "class".to_string(),
+                        fields,
+                        file_location: file_path.to_string(),
+                    });
+                }
+            }
+        }
+
+        structures
+    }
+
+    /// Parse API endpoints from code content
+    fn parse_api_endpoints_from_code(&self, content: &str, file_path: &str) -> Vec<DetailedAPIEndpoint> {
+        let mut endpoints = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+
+        for line in lines {
+            let trimmed = line.trim();
+            
+            // Express.js style routes
+            if let Some(captures) = self.extract_express_route(trimmed) {
+                let path = captures.1.clone();
+                endpoints.push(DetailedAPIEndpoint {
+                    method: captures.0,
+                    path: captures.1,
+                    description: format!("Express.js route in {}", file_path),
+                    parameters: self.extract_route_parameters(&path),
+                    response_type: None,
+                    file_location: file_path.to_string(),
+                });
+            }
+            
+            // FastAPI/Flask style routes
+            else if let Some(captures) = self.extract_python_route(trimmed) {
+                let path = captures.1.clone();
+                endpoints.push(DetailedAPIEndpoint {
+                    method: captures.0,
+                    path: captures.1,
+                    description: format!("Python API route in {}", file_path),
+                    parameters: self.extract_route_parameters(&path),
+                    response_type: None,
+                    file_location: file_path.to_string(),
+                });
+            }
+            
+            // Spring Boot style routes
+            else if let Some(captures) = self.extract_spring_route(trimmed) {
+                let path = captures.1.clone();
+                endpoints.push(DetailedAPIEndpoint {
+                    method: captures.0,
+                    path: captures.1,
+                    description: format!("Spring Boot endpoint in {}", file_path),
+                    parameters: self.extract_route_parameters(&path),
+                    response_type: None,
+                    file_location: file_path.to_string(),
+                });
+            }
+        }
+
+        endpoints
+    }
+
+    /// Parse API endpoints from documentation
+    fn parse_api_endpoints_from_docs(&self, content: &str, file_path: &str) -> Vec<DetailedAPIEndpoint> {
+        let mut endpoints = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+
+        for line in lines {
+            // Look for common API documentation patterns
+            if line.contains("GET ") || line.contains("POST ") || line.contains("PUT ") || line.contains("DELETE ") {
+                if let Some(captures) = self.extract_documented_endpoint(line) {
+                    let path = captures.1.clone();
+                    endpoints.push(DetailedAPIEndpoint {
+                        method: captures.0,
+                        path: captures.1,
+                        description: format!("API endpoint documented in {}", file_path),
+                        parameters: self.extract_route_parameters(&path),
+                        response_type: None,
+                        file_location: file_path.to_string(),
+                    });
+                }
+            }
+        }
+
+        endpoints
+    }
+
+    /// Parse architectural patterns from documentation
+    fn parse_architectural_patterns_from_docs(&self, content: &str, file_path: &str) -> Vec<DetailedArchitecturalPattern> {
         let mut patterns = Vec::new();
         let content_lower = content.to_lowercase();
 
-        // Look for common architectural patterns in code
-        if content_lower.contains("interface") && content_lower.contains("implementation") {
-            patterns.push("Interface Segregation Pattern".to_string());
-        }
-        
-        if content_lower.contains("factory") && (content_lower.contains("create") || content_lower.contains("new")) {
-            patterns.push("Factory Pattern".to_string());
-        }
-        
-        if content_lower.contains("singleton") || (content_lower.contains("instance") && content_lower.contains("static")) {
-            patterns.push("Singleton Pattern".to_string());
-        }
-        
-        if content_lower.contains("observer") || content_lower.contains("listener") {
-            patterns.push("Observer Pattern".to_string());
-        }
-        
-        if content_lower.contains("strategy") && content_lower.contains("algorithm") {
-            patterns.push("Strategy Pattern".to_string());
-        }
-        
-        if content_lower.contains("command") && content_lower.contains("execute") {
-            patterns.push("Command Pattern".to_string());
-        }
-        
-        if content_lower.contains("adapter") || content_lower.contains("wrapper") {
-            patterns.push("Adapter Pattern".to_string());
-        }
-        
-        if content_lower.contains("decorator") && content_lower.contains("wrap") {
-            patterns.push("Decorator Pattern".to_string());
-        }
+        let pattern_definitions = vec![
+            ("Microservices Architecture", "microservice", "Service-oriented architecture with independently deployable services"),
+            ("REST API Architecture", "rest", "Representational State Transfer architectural style for web services"),
+            ("MVC Pattern", "mvc", "Model-View-Controller architectural pattern"),
+            ("Event-Driven Architecture", "event-driven", "Architecture based on event production and consumption"),
+            ("Plugin Architecture", "plugin", "Extensible architecture supporting third-party extensions"),
+            ("Layered Architecture", "layered", "Architecture organized into horizontal layers"),
+            ("Client-Server Architecture", "client-server", "Distributed architecture with client and server components"),
+            ("Serverless Architecture", "serverless", "Cloud computing execution model with stateless compute containers"),
+        ];
 
-        patterns
-    }
-
-    /// Extract design patterns from repository
-    fn extract_design_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
-        let mut patterns = Vec::new();
-
-        for file in &repo_info.files {
-            if matches!(file.file_type, FileType::Code) {
-                let content_lower = file.content.to_lowercase();
-                
-                // Repository pattern
-                if content_lower.contains("repository") && (content_lower.contains("save") || content_lower.contains("find")) {
-                    if !patterns.contains(&"Repository Pattern".to_string()) {
-                        patterns.push("Repository Pattern".to_string());
-                    }
-                }
-                
-                // Service pattern
-                if content_lower.contains("service") && content_lower.contains("business") {
-                    if !patterns.contains(&"Service Layer Pattern".to_string()) {
-                        patterns.push("Service Layer Pattern".to_string());
-                    }
-                }
-                
-                // DTO pattern
-                if content_lower.contains("dto") || content_lower.contains("data transfer object") {
-                    if !patterns.contains(&"Data Transfer Object Pattern".to_string()) {
-                        patterns.push("Data Transfer Object Pattern".to_string());
-                    }
-                }
+        for (name, keyword, description) in pattern_definitions {
+            if content_lower.contains(keyword) {
+                patterns.push(DetailedArchitecturalPattern {
+                    name: name.to_string(),
+                    description: description.to_string(),
+                    pattern_type: "architectural".to_string(),
+                    evidence: format!("Mentioned in {} documentation", file_path),
+                    implementation_details: self.extract_pattern_details(&content, keyword),
+                    files_involved: vec![file_path.to_string()],
+                });
             }
         }
 
         patterns
     }
 
-    /// Extract framework-specific patterns
-    fn extract_framework_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+    /// Parse architectural patterns from code
+    fn parse_architectural_patterns_from_code(&self, content: &str, file_path: &str) -> Vec<DetailedArchitecturalPattern> {
         let mut patterns = Vec::new();
 
-        // Check for specific frameworks and their patterns
-        for file in &repo_info.files {
-            let content_lower = file.content.to_lowercase();
-            let path_lower = file.path.to_lowercase();
-            
-            // React patterns
-            if content_lower.contains("react") || content_lower.contains("jsx") {
-                if !patterns.contains(&"Component-Based Architecture".to_string()) {
-                    patterns.push("Component-Based Architecture".to_string());
-                }
-            }
-            
-            // Express.js patterns
-            if content_lower.contains("express") && content_lower.contains("router") {
-                if !patterns.contains(&"Middleware Pattern".to_string()) {
-                    patterns.push("Middleware Pattern".to_string());
-                }
-            }
-            
-            // Spring patterns
-            if content_lower.contains("@controller") || content_lower.contains("@service") {
-                if !patterns.contains(&"Dependency Injection Pattern".to_string()) {
-                    patterns.push("Dependency Injection Pattern".to_string());
-                }
-            }
-            
-            // Django patterns
-            if path_lower.contains("models.py") || path_lower.contains("views.py") {
-                if !patterns.contains(&"Model-View-Template Pattern".to_string()) {
-                    patterns.push("Model-View-Template Pattern".to_string());
-                }
-            }
+        // Detect common code patterns
+        if content.contains("@RestController") || content.contains("@Controller") {
+            patterns.push(DetailedArchitecturalPattern {
+                name: "MVC Controller Pattern".to_string(),
+                description: "Spring Boot MVC controller implementation".to_string(),
+                pattern_type: "framework".to_string(),
+                evidence: format!("Spring annotations found in {}", file_path),
+                implementation_details: vec!["Uses Spring Boot annotations for REST endpoints".to_string()],
+                files_involved: vec![file_path.to_string()],
+            });
+        }
+
+        if content.contains("express()") || content.contains("app.get") || content.contains("app.post") {
+            patterns.push(DetailedArchitecturalPattern {
+                name: "Express.js Web Framework Pattern".to_string(),
+                description: "Node.js web application framework implementation".to_string(),
+                pattern_type: "framework".to_string(),
+                evidence: format!("Express.js patterns found in {}", file_path),
+                implementation_details: vec!["Uses Express.js for HTTP server and routing".to_string()],
+                files_involved: vec![file_path.to_string()],
+            });
         }
 
         patterns
     }
 
-    /// Extract patterns from file/directory structure
-    fn extract_structural_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
-        let mut patterns = Vec::new();
-        let mut directories = std::collections::HashSet::new();
-
-        // Extract directory structure
-        for file in &repo_info.files {
-            if let Some(dir) = std::path::Path::new(&file.path).parent() {
-                directories.insert(dir.to_string_lossy().to_lowercase());
+    /// Parse NPM dependencies
+    fn parse_npm_dependencies(&self, content: &str, file_path: &str) -> Vec<DetailedDependency> {
+        let mut dependencies = Vec::new();
+        
+        if let Ok(package_json) = serde_json::from_str::<serde_json::Value>(content) {
+            if let Some(deps) = package_json.get("dependencies").and_then(|d| d.as_object()) {
+                for (name, version) in deps {
+                    dependencies.push(DetailedDependency {
+                        name: name.clone(),
+                        version: version.as_str().map(|s| s.to_string()),
+                        purpose: self.infer_dependency_purpose(name),
+                        dependency_type: "runtime".to_string(),
+                        source_file: file_path.to_string(),
+                    });
+                }
+            }
+            
+            if let Some(dev_deps) = package_json.get("devDependencies").and_then(|d| d.as_object()) {
+                for (name, version) in dev_deps {
+                    dependencies.push(DetailedDependency {
+                        name: name.clone(),
+                        version: version.as_str().map(|s| s.to_string()),
+                        purpose: self.infer_dependency_purpose(name),
+                        dependency_type: "development".to_string(),
+                        source_file: file_path.to_string(),
+                    });
+                }
             }
         }
 
-        // Look for common directory patterns
-        if directories.contains("src") && directories.contains("test") {
-            patterns.push("Source-Test Separation Pattern".to_string());
-        }
-        
-        if directories.contains("lib") || directories.contains("libs") {
-            patterns.push("Library Modularization Pattern".to_string());
-        }
-        
-        if directories.contains("api") && directories.contains("models") {
-            patterns.push("API-Model Separation Pattern".to_string());
-        }
-        
-        if directories.contains("controllers") && directories.contains("services") {
-            patterns.push("Controller-Service Layer Pattern".to_string());
-        }
-        
-        if directories.contains("components") {
-            patterns.push("Component Organization Pattern".to_string());
+        dependencies
+    }
+
+    /// Parse Cargo dependencies (simplified)
+    fn parse_cargo_dependencies(&self, content: &str, file_path: &str) -> Vec<DetailedDependency> {
+        let mut dependencies = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+        let mut in_dependencies = false;
+
+        for line in lines {
+            let trimmed = line.trim();
+            
+            if trimmed == "[dependencies]" {
+                in_dependencies = true;
+                continue;
+            }
+            
+            if trimmed.starts_with('[') && trimmed != "[dependencies]" {
+                in_dependencies = false;
+                continue;
+            }
+            
+            if in_dependencies && trimmed.contains('=') {
+                let parts: Vec<&str> = trimmed.split('=').collect();
+                if parts.len() >= 2 {
+                    let name = parts[0].trim().trim_matches('"');
+                    let version = parts[1].trim().trim_matches('"');
+                    
+                    dependencies.push(DetailedDependency {
+                        name: name.to_string(),
+                        version: Some(version.to_string()),
+                        purpose: self.infer_dependency_purpose(name),
+                        dependency_type: "runtime".to_string(),
+                        source_file: file_path.to_string(),
+                    });
+                }
+            }
         }
 
-        patterns
+        dependencies
+    }
+
+    /// Parse Python dependencies (simplified)
+    fn parse_python_dependencies(&self, content: &str, file_path: &str) -> Vec<DetailedDependency> {
+        let mut dependencies = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+
+        for line in lines {
+            let trimmed = line.trim();
+            if !trimmed.is_empty() && !trimmed.starts_with('#') {
+                let name = if trimmed.contains("==") {
+                    trimmed.split("==").next().unwrap_or(trimmed)
+                } else if trimmed.contains(">=") {
+                    trimmed.split(">=").next().unwrap_or(trimmed)
+                } else {
+                    trimmed
+                };
+
+                dependencies.push(DetailedDependency {
+                    name: name.to_string(),
+                    version: None,
+                    purpose: self.infer_dependency_purpose(name),
+                    dependency_type: "runtime".to_string(),
+                    source_file: file_path.to_string(),
+                });
+            }
+        }
+
+        dependencies
+    }
+
+    /// Parse Maven dependencies (simplified)
+    fn parse_maven_dependencies(&self, _content: &str, _file_path: &str) -> Vec<DetailedDependency> {
+        // Simplified implementation - would need proper XML parsing for full support
+        Vec::new()
+    }
+
+    // Helper methods for parsing
+    fn extract_name_after_keyword(&self, line: &str, keywords: &[&str]) -> Option<String> {
+        for keyword in keywords {
+            if line.starts_with(keyword) {
+                let after_keyword = &line[keyword.len()..].trim();
+                if let Some(space_pos) = after_keyword.find(' ') {
+                    return Some(after_keyword[..space_pos].to_string());
+                } else if let Some(brace_pos) = after_keyword.find('{') {
+                    return Some(after_keyword[..brace_pos].trim().to_string());
+                } else {
+                    return Some(after_keyword.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    fn extract_structure_fields(&self, lines: &[&str], start_index: usize) -> Vec<String> {
+        let mut fields = Vec::new();
+        let mut brace_count = 0;
+        let mut found_opening_brace = false;
+
+        for line in lines.iter().skip(start_index) {
+            for ch in line.chars() {
+                match ch {
+                    '{' => {
+                        brace_count += 1;
+                        found_opening_brace = true;
+                    }
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 && found_opening_brace {
+                            return fields;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            if found_opening_brace && brace_count > 0 {
+                let trimmed = line.trim();
+                if !trimmed.is_empty() && !trimmed.starts_with('{') && !trimmed.starts_with('}') {
+                    fields.push(trimmed.to_string());
+                }
+            }
+        }
+
+        fields
+    }
+
+    fn extract_python_class_fields(&self, lines: &[&str], start_index: usize) -> Vec<String> {
+        let mut fields = Vec::new();
+        let mut _in_class = false;
+
+        for line in lines.iter().skip(start_index + 1) {
+            let trimmed = line.trim();
+            
+            if trimmed.is_empty() {
+                continue;
+            }
+            
+            // If we hit another class or function at the same level, we're done
+            if !line.starts_with(' ') && !line.starts_with('\t') {
+                break;
+            }
+            
+            _in_class = true;
+            
+            // Look for field definitions (self.field = ...)
+            if trimmed.starts_with("self.") && trimmed.contains('=') {
+                let field_name = trimmed.split('=').next().unwrap_or(trimmed).trim();
+                fields.push(field_name.to_string());
+            }
+            // Look for method definitions
+            else if trimmed.starts_with("def ") {
+                let method_name = trimmed.split('(').next().unwrap_or(trimmed);
+                fields.push(method_name.to_string());
+            }
+        }
+
+        fields
+    }
+
+    fn extract_express_route(&self, line: &str) -> Option<(String, String)> {
+        let methods = ["get", "post", "put", "delete", "patch"];
+        
+        for method in &methods {
+            let pattern = format!("app.{}(", method);
+            if line.contains(&pattern) {
+                if let Some(start) = line.find('\'') {
+                    if let Some(end) = line[start + 1..].find('\'') {
+                        let path = &line[start + 1..start + 1 + end];
+                        return Some((method.to_uppercase(), path.to_string()));
+                    }
+                }
+                if let Some(start) = line.find('"') {
+                    if let Some(end) = line[start + 1..].find('"') {
+                        let path = &line[start + 1..start + 1 + end];
+                        return Some((method.to_uppercase(), path.to_string()));
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    fn extract_python_route(&self, line: &str) -> Option<(String, String)> {
+        // FastAPI style: @app.get("/path")
+        if line.starts_with("@app.") {
+            let methods = ["get", "post", "put", "delete", "patch"];
+            for method in &methods {
+                if line.contains(&format!("@app.{}(", method)) {
+                    if let Some(start) = line.find('"') {
+                        if let Some(end) = line[start + 1..].find('"') {
+                            let path = &line[start + 1..start + 1 + end];
+                            return Some((method.to_uppercase(), path.to_string()));
+                        }
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    fn extract_spring_route(&self, line: &str) -> Option<(String, String)> {
+        // Spring Boot style: @GetMapping("/path")
+        let mappings = [
+            ("@GetMapping", "GET"),
+            ("@PostMapping", "POST"),
+            ("@PutMapping", "PUT"),
+            ("@DeleteMapping", "DELETE"),
+            ("@PatchMapping", "PATCH"),
+        ];
+        
+        for (annotation, method) in &mappings {
+            if line.contains(annotation) {
+                if let Some(start) = line.find('"') {
+                    if let Some(end) = line[start + 1..].find('"') {
+                        let path = &line[start + 1..start + 1 + end];
+                        return Some((method.to_string(), path.to_string()));
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    fn extract_documented_endpoint(&self, line: &str) -> Option<(String, String)> {
+        let methods = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+        
+        for method in &methods {
+            if line.contains(method) {
+                // Look for path after the method
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                for (i, part) in parts.iter().enumerate() {
+                    if part == method && i + 1 < parts.len() {
+                        let path = parts[i + 1].trim_matches('`').trim_matches('*');
+                        return Some((method.to_string(), path.to_string()));
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    fn extract_route_parameters(&self, path: &str) -> Vec<String> {
+        let mut params = Vec::new();
+        
+        // Extract path parameters like :id, {id}, <id>
+        let patterns = [(':', ' '), ('{', '}'), ('<', '>')];
+        
+        for (start_char, end_char) in &patterns {
+            let mut chars = path.chars().peekable();
+            while let Some(ch) = chars.next() {
+                if ch == *start_char {
+                    let mut param = String::new();
+                    while let Some(&next_ch) = chars.peek() {
+                        if next_ch == *end_char || next_ch == '/' {
+                            break;
+                        }
+                        param.push(chars.next().unwrap());
+                    }
+                    if !param.is_empty() {
+                        params.push(param);
+                    }
+                }
+            }
+        }
+        
+        params
+    }
+
+    fn extract_pattern_details(&self, content: &str, keyword: &str) -> Vec<String> {
+        let mut details = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+        
+        for line in lines {
+            if line.to_lowercase().contains(keyword) {
+                details.push(line.trim().to_string());
+            }
+        }
+        
+        details
+    }
+
+    fn infer_dependency_purpose(&self, name: &str) -> String {
+        match name {
+            // Web frameworks
+            "express" => "Web application framework for Node.js".to_string(),
+            "fastapi" => "Modern web framework for building APIs with Python".to_string(),
+            "flask" => "Lightweight web application framework for Python".to_string(),
+            "spring-boot-starter-web" => "Spring Boot web starter for building web applications".to_string(),
+            
+            // Databases
+            "mongoose" => "MongoDB object modeling for Node.js".to_string(),
+            "sequelize" => "Promise-based Node.js ORM for SQL databases".to_string(),
+            "sqlalchemy" => "Python SQL toolkit and Object Relational Mapping".to_string(),
+            
+            // HTTP clients
+            "axios" => "Promise-based HTTP client for JavaScript".to_string(),
+            "requests" => "HTTP library for Python".to_string(),
+            "reqwest" => "HTTP client for Rust".to_string(),
+            
+            // Testing
+            "jest" => "JavaScript testing framework".to_string(),
+            "pytest" => "Testing framework for Python".to_string(),
+            "junit" => "Unit testing framework for Java".to_string(),
+            
+            // Build tools
+            "webpack" => "Module bundler for JavaScript applications".to_string(),
+            "babel" => "JavaScript compiler for modern syntax".to_string(),
+            
+            // Default
+            _ => format!("Dependency for {}", name),
+        }
     }
 }
 
