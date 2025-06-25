@@ -2623,25 +2623,65 @@ impl BrainAIOrchestrator {
                 
                 sources_count += learning_result.files_processed;
                 
+                // Extract architectural patterns specifically from key insights
+                let architectural_patterns = self.extract_architectural_patterns_from_insights(&learning_result.key_insights);
+                let design_patterns = self.extract_design_patterns_from_insights(&learning_result.key_insights);
+                let framework_patterns = self.extract_framework_patterns_from_insights(&learning_result.key_insights);
+                
                 // Create detailed analysis from learning result
-                let detailed_analysis = format!(
-                    "Repository '{}' Analysis: Processed {} files ({} bytes total) in {}ms. Discovered {} concepts and created {} memory entries. Key insights: {}. Summary: {}",
+                let mut detailed_analysis = format!(
+                    "Repository '{}' Analysis: Processed {} files ({} bytes total) in {}ms. Discovered {} concepts and created {} memory entries.",
                     learning_result.repository,
                     learning_result.files_processed,
                     learning_result.total_content_size,
                     learning_result.learning_time_ms,
                     learning_result.concepts_discovered,
-                    learning_result.memory_entries_created,
-                    learning_result.key_insights.join("; "),
-                    learning_result.summary
+                    learning_result.memory_entries_created
                 );
+                
+                // Add architectural patterns information
+                if !architectural_patterns.is_empty() {
+                    detailed_analysis.push_str(&format!(" Architectural patterns identified: {}.", architectural_patterns.join(", ")));
+                    
+                    // Store each architectural pattern as a separate memory entry for better retrieval
+                    for pattern in &architectural_patterns {
+                        let pattern_memory = format!(
+                            "Architectural Pattern in {}: {} - This pattern was identified through code analysis and README documentation review.",
+                            learning_result.repository,
+                            pattern
+                        );
+                        if let Err(e) = memory_system.learn(pattern_memory, crate::memory::Priority::High) {
+                            println!("Warning: Failed to store architectural pattern: {}", e);
+                        }
+                    }
+                }
+                
+                if !design_patterns.is_empty() {
+                    detailed_analysis.push_str(&format!(" Design patterns found: {}.", design_patterns.join(", ")));
+                }
+                
+                if !framework_patterns.is_empty() {
+                    detailed_analysis.push_str(&format!(" Framework patterns detected: {}.", framework_patterns.join(", ")));
+                }
+                
+                detailed_analysis.push_str(&format!(" Summary: {}", learning_result.summary));
                 
                 analysis_content.push(detailed_analysis);
                 
-                // Convert key insights to Brain insights
+                // Convert key insights to Brain insights with special handling for patterns
                 for (i, insight) in learning_result.key_insights.iter().enumerate() {
+                    let insight_type = if insight.contains("Architecture patterns:") || insight.contains("Pattern '") {
+                        "architectural_pattern".to_string()
+                    } else if insight.contains("Design patterns") {
+                        "design_pattern".to_string()
+                    } else if insight.contains("Framework patterns") {
+                        "framework_pattern".to_string()
+                    } else {
+                        "repository_insight".to_string()
+                    };
+                    
                     all_insights.push(BrainInsight {
-                        insight_type: "repository_insight".to_string(),
+                        insight_type,
                         content: insight.clone(),
                         confidence: 0.8 + (i as f64 * 0.05).min(0.95), // Higher confidence for first insights
                         evidence: vec![format!("Analyzed {} files from {}", learning_result.files_processed, learning_result.repository)],
@@ -2653,6 +2693,11 @@ impl BrainAIOrchestrator {
                 if learning_result.concepts_discovered > 0 {
                     all_concepts.push(format!("{}_concepts", learning_result.repository.replace('/', "_")));
                 }
+                
+                // Add pattern concepts
+                all_concepts.extend(architectural_patterns);
+                all_concepts.extend(design_patterns);
+                all_concepts.extend(framework_patterns);
             }
         }
         
@@ -3639,6 +3684,39 @@ impl BrainAIOrchestrator {
         concepts.sort();
         concepts.dedup();
         concepts
+    }
+
+    /// Extract architectural patterns from insights
+    fn extract_architectural_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
+        insights.iter()
+            .filter(|insight| insight.contains("Architecture patterns:") || insight.contains("Pattern '"))
+            .map(|insight| {
+                let pattern_name = insight.split("Architecture patterns:").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
+                pattern_name
+            })
+            .collect()
+    }
+
+    /// Extract design patterns from insights
+    fn extract_design_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
+        insights.iter()
+            .filter(|insight| insight.contains("Design patterns"))
+            .map(|insight| {
+                let pattern_name = insight.split("Design patterns").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
+                pattern_name
+            })
+            .collect()
+    }
+
+    /// Extract framework patterns from insights
+    fn extract_framework_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
+        insights.iter()
+            .filter(|insight| insight.contains("Framework patterns"))
+            .map(|insight| {
+                let pattern_name = insight.split("Framework patterns").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
+                pattern_name
+            })
+            .collect()
     }
 }
 
