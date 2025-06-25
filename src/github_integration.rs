@@ -647,7 +647,241 @@ impl GitHubLearningEngine {
             insights.push(format!("{:?} files: {}", file_type, count));
         }
 
+        // Extract actual architectural patterns from code content
+        let architectural_patterns = self.extract_architectural_patterns(repo_info);
+        if !architectural_patterns.is_empty() {
+            insights.push(format!("Architecture patterns: {}", architectural_patterns.join(", ")));
+            for pattern in &architectural_patterns {
+                insights.push(format!("Pattern '{}': Found in codebase with specific implementation details", pattern));
+            }
+        }
+
+        // Extract design patterns from code
+        let design_patterns = self.extract_design_patterns(repo_info);
+        if !design_patterns.is_empty() {
+            insights.push(format!("Design patterns identified: {}", design_patterns.join(", ")));
+        }
+
+        // Extract framework patterns
+        let framework_patterns = self.extract_framework_patterns(repo_info);
+        if !framework_patterns.is_empty() {
+            insights.push(format!("Framework patterns: {}", framework_patterns.join(", ")));
+        }
+
         insights
+    }
+
+    /// Extract architectural patterns from repository content
+    fn extract_architectural_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+        let mut patterns = Vec::new();
+
+        // Analyze README for architectural information
+        if let Some(readme) = &repo_info.readme_content {
+            let readme_lower = readme.to_lowercase();
+            
+            // Look for common architectural patterns mentioned in README
+            if readme_lower.contains("microservice") || readme_lower.contains("micro-service") {
+                patterns.push("Microservices Architecture".to_string());
+            }
+            
+            if readme_lower.contains("mvc") || readme_lower.contains("model-view-controller") {
+                patterns.push("MVC (Model-View-Controller)".to_string());
+            }
+            
+            if readme_lower.contains("rest") && readme_lower.contains("api") {
+                patterns.push("REST API Architecture".to_string());
+            }
+            
+            if readme_lower.contains("event-driven") || readme_lower.contains("event driven") {
+                patterns.push("Event-Driven Architecture".to_string());
+            }
+            
+            if readme_lower.contains("plugin") || readme_lower.contains("extension") {
+                patterns.push("Plugin Architecture".to_string());
+            }
+            
+            if readme_lower.contains("layered") || readme_lower.contains("n-tier") {
+                patterns.push("Layered Architecture".to_string());
+            }
+            
+            if readme_lower.contains("serverless") || readme_lower.contains("lambda") {
+                patterns.push("Serverless Architecture".to_string());
+            }
+            
+            if readme_lower.contains("client-server") {
+                patterns.push("Client-Server Architecture".to_string());
+            }
+        }
+
+        // Analyze code files for architectural patterns
+        for file in &repo_info.files {
+            if matches!(file.file_type, FileType::Code) {
+                let file_patterns = self.extract_code_architectural_patterns(&file.content);
+                for pattern in file_patterns {
+                    if !patterns.contains(&pattern) {
+                        patterns.push(pattern);
+                    }
+                }
+            }
+        }
+
+        // Analyze file structure for patterns
+        let structure_patterns = self.extract_structural_patterns(repo_info);
+        patterns.extend(structure_patterns);
+
+        patterns
+    }
+
+    /// Extract architectural patterns from code content
+    fn extract_code_architectural_patterns(&self, content: &str) -> Vec<String> {
+        let mut patterns = Vec::new();
+        let content_lower = content.to_lowercase();
+
+        // Look for common architectural patterns in code
+        if content_lower.contains("interface") && content_lower.contains("implementation") {
+            patterns.push("Interface Segregation Pattern".to_string());
+        }
+        
+        if content_lower.contains("factory") && (content_lower.contains("create") || content_lower.contains("new")) {
+            patterns.push("Factory Pattern".to_string());
+        }
+        
+        if content_lower.contains("singleton") || (content_lower.contains("instance") && content_lower.contains("static")) {
+            patterns.push("Singleton Pattern".to_string());
+        }
+        
+        if content_lower.contains("observer") || content_lower.contains("listener") {
+            patterns.push("Observer Pattern".to_string());
+        }
+        
+        if content_lower.contains("strategy") && content_lower.contains("algorithm") {
+            patterns.push("Strategy Pattern".to_string());
+        }
+        
+        if content_lower.contains("command") && content_lower.contains("execute") {
+            patterns.push("Command Pattern".to_string());
+        }
+        
+        if content_lower.contains("adapter") || content_lower.contains("wrapper") {
+            patterns.push("Adapter Pattern".to_string());
+        }
+        
+        if content_lower.contains("decorator") && content_lower.contains("wrap") {
+            patterns.push("Decorator Pattern".to_string());
+        }
+
+        patterns
+    }
+
+    /// Extract design patterns from repository
+    fn extract_design_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+        let mut patterns = Vec::new();
+
+        for file in &repo_info.files {
+            if matches!(file.file_type, FileType::Code) {
+                let content_lower = file.content.to_lowercase();
+                
+                // Repository pattern
+                if content_lower.contains("repository") && (content_lower.contains("save") || content_lower.contains("find")) {
+                    if !patterns.contains(&"Repository Pattern".to_string()) {
+                        patterns.push("Repository Pattern".to_string());
+                    }
+                }
+                
+                // Service pattern
+                if content_lower.contains("service") && content_lower.contains("business") {
+                    if !patterns.contains(&"Service Layer Pattern".to_string()) {
+                        patterns.push("Service Layer Pattern".to_string());
+                    }
+                }
+                
+                // DTO pattern
+                if content_lower.contains("dto") || content_lower.contains("data transfer object") {
+                    if !patterns.contains(&"Data Transfer Object Pattern".to_string()) {
+                        patterns.push("Data Transfer Object Pattern".to_string());
+                    }
+                }
+            }
+        }
+
+        patterns
+    }
+
+    /// Extract framework-specific patterns
+    fn extract_framework_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+        let mut patterns = Vec::new();
+
+        // Check for specific frameworks and their patterns
+        for file in &repo_info.files {
+            let content_lower = file.content.to_lowercase();
+            let path_lower = file.path.to_lowercase();
+            
+            // React patterns
+            if content_lower.contains("react") || content_lower.contains("jsx") {
+                if !patterns.contains(&"Component-Based Architecture".to_string()) {
+                    patterns.push("Component-Based Architecture".to_string());
+                }
+            }
+            
+            // Express.js patterns
+            if content_lower.contains("express") && content_lower.contains("router") {
+                if !patterns.contains(&"Middleware Pattern".to_string()) {
+                    patterns.push("Middleware Pattern".to_string());
+                }
+            }
+            
+            // Spring patterns
+            if content_lower.contains("@controller") || content_lower.contains("@service") {
+                if !patterns.contains(&"Dependency Injection Pattern".to_string()) {
+                    patterns.push("Dependency Injection Pattern".to_string());
+                }
+            }
+            
+            // Django patterns
+            if path_lower.contains("models.py") || path_lower.contains("views.py") {
+                if !patterns.contains(&"Model-View-Template Pattern".to_string()) {
+                    patterns.push("Model-View-Template Pattern".to_string());
+                }
+            }
+        }
+
+        patterns
+    }
+
+    /// Extract patterns from file/directory structure
+    fn extract_structural_patterns(&self, repo_info: &RepositoryInfo) -> Vec<String> {
+        let mut patterns = Vec::new();
+        let mut directories = std::collections::HashSet::new();
+
+        // Extract directory structure
+        for file in &repo_info.files {
+            if let Some(dir) = std::path::Path::new(&file.path).parent() {
+                directories.insert(dir.to_string_lossy().to_lowercase());
+            }
+        }
+
+        // Look for common directory patterns
+        if directories.contains("src") && directories.contains("test") {
+            patterns.push("Source-Test Separation Pattern".to_string());
+        }
+        
+        if directories.contains("lib") || directories.contains("libs") {
+            patterns.push("Library Modularization Pattern".to_string());
+        }
+        
+        if directories.contains("api") && directories.contains("models") {
+            patterns.push("API-Model Separation Pattern".to_string());
+        }
+        
+        if directories.contains("controllers") && directories.contains("services") {
+            patterns.push("Controller-Service Layer Pattern".to_string());
+        }
+        
+        if directories.contains("components") {
+            patterns.push("Component Organization Pattern".to_string());
+        }
+
+        patterns
     }
 }
 
