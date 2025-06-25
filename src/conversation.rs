@@ -2351,6 +2351,103 @@ impl RagOrchestrator {
             PerformanceTrends::default()
         }
     }
+
+    fn is_github_related(&self, query: &str) -> bool {
+        let query_lower = query.to_lowercase();
+        
+        // Check for explicit GitHub-related keywords
+        if query_lower.contains("github") ||
+           query_lower.contains("repository") ||
+           query_lower.contains("repo") ||
+           query_lower.contains("codebase") {
+            return true;
+        }
+        
+        // Use enhanced GitHub reference extraction to detect any repository mentions
+        let github_refs = self.extract_github_references_simple(query);
+        !github_refs.is_empty()
+    }
+
+    /// Extract GitHub references from query (simplified version)
+    fn extract_github_references_simple(&self, query: &str) -> Vec<String> {
+        let mut github_refs = Vec::new();
+        
+        // Look for GitHub URLs (various formats)
+        if query.contains("github.com/") {
+            // Extract GitHub URLs using simple pattern matching
+            let words: Vec<&str> = query.split_whitespace().collect();
+            for word in words {
+                if word.contains("github.com/") {
+                    // Clean up the URL (remove trailing punctuation)
+                    let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.');
+                    github_refs.push(clean_url.to_string());
+                }
+            }
+        }
+
+        // Common repositories that users might mention
+        let known_repos = vec![
+            ("react", "facebook/react"),
+            ("vue", "vuejs/vue"),
+            ("angular", "angular/angular"),
+            ("typescript", "microsoft/TypeScript"),
+            ("nodejs", "nodejs/node"),
+            ("express", "expressjs/express"),
+            ("nextjs", "vercel/next.js"),
+            ("nuxt", "nuxt/nuxt.js"),
+            ("svelte", "sveltejs/svelte"),
+            ("webpack", "webpack/webpack"),
+            ("vite", "vitejs/vite"),
+            ("tailwind", "tailwindlabs/tailwindcss"),
+            ("bootstrap", "twbs/bootstrap"),
+            ("django", "django/django"),
+            ("flask", "pallets/flask"),
+            ("fastapi", "tiangolo/fastapi"),
+            ("spring", "spring-projects/spring-framework"),
+            ("laravel", "laravel/laravel"),
+            ("rails", "rails/rails"),
+            ("rust", "rust-lang/rust"),
+            ("golang", "golang/go"),
+            ("python", "python/cpython"),
+            ("java", "openjdk/jdk"),
+            ("kotlin", "JetBrains/kotlin"),
+            ("swift", "apple/swift"),
+            ("flutter", "flutter/flutter"),
+            ("react-native", "facebook/react-native"),
+            ("electron", "electron/electron"),
+            ("docker", "docker/docker-ce"),
+            ("kubernetes", "kubernetes/kubernetes"),
+            ("tensorflow", "tensorflow/tensorflow"),
+            ("pytorch", "pytorch/pytorch"),
+            ("scikit-learn", "scikit-learn/scikit-learn"),
+            ("pandas", "pandas-dev/pandas"),
+            ("numpy", "numpy/numpy"),
+        ];
+
+        // Check for repository mentions in the query
+        let query_lower = query.to_lowercase();
+        let words: Vec<&str> = query_lower.split_whitespace().collect();
+        
+        for (keyword, repo_path) in known_repos {
+            if words.iter().any(|&word| {
+                let word_clean = word.trim_matches(|c: char| !c.is_alphanumeric());
+                word_clean == keyword || 
+                word_clean.contains(keyword) ||
+                // Handle variations like "reactjs", "react.js", etc.
+                (keyword.len() > 3 && word_clean.starts_with(keyword))
+            }) {
+                github_refs.push(format!("https://github.com/{}", repo_path));
+                
+                // Also add common variations
+                github_refs.push(format!("github.com/{}", repo_path));
+                github_refs.push(repo_path.to_string());
+            }
+        }
+
+        github_refs.sort();
+        github_refs.dedup();
+        github_refs
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -2362,1366 +2459,6 @@ struct ExpandedConcept {
     depth: usize,
 }
 
-/// Brain AI Orchestrator - True delegation to Brain AI's actual capabilities
-pub struct BrainAIOrchestrator {
-    /// GitHub learning engine for repository analysis
-    github_learning_engine: GitHubLearningEngine,
-    /// Pattern detector for insight extraction
-    pattern_detector: PatternDetector,
-    /// BPE segmenter for text analysis
-    #[allow(dead_code)]
-    bpe_segmenter: BpeSegmenter,
-    /// Configuration for analysis depth
-    analysis_config: BrainAnalysisConfig,
-    /// Enhanced LLM training integration system
-    learning_orchestrator: BrainLearningOrchestrator,
-}
-
-/// Configuration for Brain AI analysis depth
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainAnalysisConfig {
-    /// Enable deep GitHub repository analysis
-    pub enable_github_analysis: bool,
-    /// Enable pattern extraction and insight generation
-    pub enable_pattern_analysis: bool,
-    /// Enable concept graph traversal and relationship discovery
-    pub enable_concept_analysis: bool,
-    /// Enable semantic memory analysis
-    pub enable_semantic_analysis: bool,
-    /// Maximum analysis depth
-    pub max_analysis_depth: usize,
-    /// Minimum confidence threshold for results
-    pub min_confidence_threshold: f64,
-}
-
-impl Default for BrainAnalysisConfig {
-    fn default() -> Self {
-        Self {
-            enable_github_analysis: true,
-            enable_pattern_analysis: true,
-            enable_concept_analysis: true,
-            enable_semantic_analysis: true,
-            max_analysis_depth: 3,
-            min_confidence_threshold: 0.3,
-        }
-    }
-}
-
-/// Rich analysis result from Brain AI
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainAnalysisResult {
-    /// Detailed analysis content
-    pub analysis: String,
-    /// Structured insights discovered
-    pub insights: Vec<BrainInsight>,
-    /// Confidence in the analysis
-    pub confidence: f64,
-    /// Analysis metadata
-    pub metadata: BrainAnalysisMetadata,
-    /// Related concepts discovered
-    pub related_concepts: Vec<String>,
-    /// Patterns identified
-    pub patterns: Vec<String>,
-}
-
-/// Individual insight from Brain AI analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainInsight {
-    /// Type of insight
-    pub insight_type: String,
-    /// Insight content
-    pub content: String,
-    /// Confidence in this insight
-    pub confidence: f64,
-    /// Supporting evidence
-    pub evidence: Vec<String>,
-}
-
-/// Metadata about Brain AI analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainAnalysisMetadata {
-    /// Analysis method used
-    pub method: String,
-    /// Processing time in milliseconds
-    pub processing_time_ms: u64,
-    /// Number of sources analyzed
-    pub sources_analyzed: usize,
-    /// Complexity score of the analysis
-    pub complexity_score: f64,
-    /// Quality assessment
-    pub quality_score: f64,
-}
-
-impl BrainAIOrchestrator {
-    /// Create new Brain AI orchestrator
-    pub fn new() -> Result<Self, BrainError> {
-        let github_token = env::var("GITHUB_TOKEN").ok();
-        let github_config = GitHubLearningConfig::default();
-        let github_learning_engine = GitHubLearningEngine::new(github_token, Some(github_config));
-        
-        let pattern_detector = PatternDetector::new();
-        
-        let bpe_config = BpeConfig::default();
-        let bpe_segmenter = BpeSegmenter::new(bpe_config);
-        
-        let analysis_config = BrainAnalysisConfig::default();
-        
-        Ok(Self {
-            github_learning_engine,
-            pattern_detector,
-            bpe_segmenter,
-            analysis_config,
-            learning_orchestrator: BrainLearningOrchestrator::new(),
-        })
-    }
-    
-    /// Perform comprehensive Brain AI analysis of a query
-    pub async fn analyze_query(
-        &mut self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-        concept_graph: &mut ConceptGraphManager,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        let start_time = std::time::Instant::now();
-        println!("🧠 Brain AI Orchestrator: Starting comprehensive analysis of '{}'", query);
-        
-        let mut insights = Vec::new();
-        let mut related_concepts = Vec::new();
-        let mut patterns = Vec::new();
-        let mut sources_analyzed = 0;
-        let mut analysis_parts = Vec::new();
-        
-        // 1. GitHub Repository Analysis (if query mentions GitHub/repos)
-        if self.analysis_config.enable_github_analysis && self.is_github_related(query) {
-            if let Ok(github_analysis) = self.perform_github_analysis(query, memory_system).await {
-                analysis_parts.push(format!("GitHub Repository Analysis: {}", github_analysis.analysis));
-                insights.extend(github_analysis.insights);
-                related_concepts.extend(github_analysis.related_concepts);
-                sources_analyzed += github_analysis.metadata.sources_analyzed;
-            }
-        }
-        
-        // 2. Pattern Analysis and Insight Extraction
-        if self.analysis_config.enable_pattern_analysis {
-            if let Ok(pattern_analysis) = self.perform_pattern_analysis(query, memory_system).await {
-                analysis_parts.push(format!("Pattern Analysis: {}", pattern_analysis.analysis));
-                insights.extend(pattern_analysis.insights);
-                patterns.extend(pattern_analysis.patterns);
-                sources_analyzed += pattern_analysis.metadata.sources_analyzed;
-            }
-        }
-        
-        // 3. Concept Graph Analysis
-        if self.analysis_config.enable_concept_analysis {
-            if let Ok(concept_analysis) = self.perform_concept_analysis(query, concept_graph).await {
-                analysis_parts.push(format!("Concept Analysis: {}", concept_analysis.analysis));
-                insights.extend(concept_analysis.insights);
-                related_concepts.extend(concept_analysis.related_concepts);
-                sources_analyzed += concept_analysis.metadata.sources_analyzed;
-            }
-        }
-        
-        // 4. Semantic Memory Analysis
-        if self.analysis_config.enable_semantic_analysis {
-            if let Ok(semantic_analysis) = self.perform_semantic_analysis(query, memory_system).await {
-                analysis_parts.push(format!("Semantic Analysis: {}", semantic_analysis.analysis));
-                insights.extend(semantic_analysis.insights);
-                sources_analyzed += semantic_analysis.metadata.sources_analyzed;
-            }
-        }
-        
-        // 5. Combine and synthesize results
-        let mut combined_analysis = if analysis_parts.is_empty() {
-            format!("Based on my analysis of '{}', I need to gather more information from my knowledge systems.", query)
-        } else {
-            format!("Comprehensive Analysis of '{}': {}", query, analysis_parts.join(" "))
-        };
-        
-        let processing_time = start_time.elapsed().as_millis() as u64;
-        
-        // Calculate overall confidence and quality
-        let confidence = if insights.is_empty() { 0.3 } else {
-            insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64
-        };
-        
-        let complexity_score = self.calculate_complexity_score(query, &insights);
-        let quality_score = self.calculate_quality_score(&insights, sources_analyzed);
-        
-        println!("✅ Brain AI Analysis completed in {}ms", processing_time);
-        println!("  - Insights generated: {}", insights.len());
-        println!("  - Related concepts: {}", related_concepts.len());
-        println!("  - Sources analyzed: {}", sources_analyzed);
-        println!("  - Confidence: {:.3}", confidence);
-        
-        // Enhanced LLM Training Integration - Process query for learning
-        let learning_opportunities = self.learning_orchestrator
-            .process_query_for_learning(query, confidence, quality_score, sources_analyzed)
-            .await
-            .unwrap_or_else(|_| LearningOpportunities {
-                identified_gaps: Vec::new(),
-                follow_up_questions: Vec::new(),
-                suggested_improvements: Vec::new(),
-                learning_recommendations: Vec::new(),
-            });
-
-        // If learning opportunities were identified, enhance the analysis
-        if !learning_opportunities.identified_gaps.is_empty() || !learning_opportunities.follow_up_questions.is_empty() {
-            let mut enhanced_analysis = combined_analysis.clone();
-            
-            if !learning_opportunities.identified_gaps.is_empty() {
-                enhanced_analysis.push_str(&format!("\n\n🧠 **Learning Opportunities Identified:** {} knowledge gaps detected for deeper understanding.", learning_opportunities.identified_gaps.len()));
-            }
-            
-            if !learning_opportunities.follow_up_questions.is_empty() {
-                enhanced_analysis.push_str(&format!("\n\n❓ **Follow-up Questions Generated:** {} clarifying questions to enhance knowledge.", learning_opportunities.follow_up_questions.len()));
-            }
-            
-            combined_analysis = enhanced_analysis;
-        }
-
-        Ok(BrainAnalysisResult {
-            analysis: combined_analysis,
-            insights,
-            confidence,
-            metadata: BrainAnalysisMetadata {
-                method: "Brain AI Comprehensive Analysis with Enhanced Learning".to_string(),
-                processing_time_ms: processing_time,
-                sources_analyzed,
-                complexity_score,
-                quality_score,
-            },
-            related_concepts,
-            patterns,
-        })
-    }
-    
-    /// Perform GitHub repository analysis
-    async fn perform_github_analysis(
-        &self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  🔍 Performing GitHub analysis...");
-        
-        // Extract GitHub URLs or repository names from query
-        let github_urls = self.extract_github_references(query);
-        
-        if github_urls.is_empty() {
-            // Search for GitHub-related content in memory
-            return self.analyze_github_memory_content(query, memory_system).await;
-        }
-        
-        let mut all_insights = Vec::new();
-        let mut all_concepts = Vec::new();
-        let mut sources_count = 0;
-        let mut analysis_content = Vec::new();
-        
-        // Analyze each GitHub reference
-        for github_url in github_urls {
-            if let Ok(learning_result) = self.github_learning_engine
-                .learn_from_repository(memory_system, &github_url).await {
-                
-                sources_count += learning_result.files_processed;
-                
-                // Extract architectural patterns specifically from key insights
-                let architectural_patterns = self.extract_architectural_patterns_from_insights(&learning_result.key_insights);
-                let design_patterns = self.extract_design_patterns_from_insights(&learning_result.key_insights);
-                let framework_patterns = self.extract_framework_patterns_from_insights(&learning_result.key_insights);
-                
-                // Create detailed analysis from learning result
-                let mut detailed_analysis = format!(
-                    "Repository '{}' Analysis: Processed {} files ({} bytes total) in {}ms. Discovered {} concepts and created {} memory entries.",
-                    learning_result.repository,
-                    learning_result.files_processed,
-                    learning_result.total_content_size,
-                    learning_result.learning_time_ms,
-                    learning_result.concepts_discovered,
-                    learning_result.memory_entries_created
-                );
-                
-                // Add architectural patterns information
-                if !architectural_patterns.is_empty() {
-                    detailed_analysis.push_str(&format!(" Architectural patterns identified: {}.", architectural_patterns.join(", ")));
-                    
-                    // Store each architectural pattern as a separate memory entry for better retrieval
-                    for pattern in &architectural_patterns {
-                        let pattern_memory = format!(
-                            "Architectural Pattern in {}: {} - This pattern was identified through code analysis and README documentation review.",
-                            learning_result.repository,
-                            pattern
-                        );
-                        if let Err(e) = memory_system.learn(pattern_memory, crate::memory::Priority::High) {
-                            println!("Warning: Failed to store architectural pattern: {}", e);
-                        }
-                    }
-                }
-                
-                if !design_patterns.is_empty() {
-                    detailed_analysis.push_str(&format!(" Design patterns found: {}.", design_patterns.join(", ")));
-                }
-                
-                if !framework_patterns.is_empty() {
-                    detailed_analysis.push_str(&format!(" Framework patterns detected: {}.", framework_patterns.join(", ")));
-                }
-                
-                detailed_analysis.push_str(&format!(" Summary: {}", learning_result.summary));
-                
-                analysis_content.push(detailed_analysis);
-                
-                // Convert key insights to Brain insights with special handling for patterns
-                for (i, insight) in learning_result.key_insights.iter().enumerate() {
-                    let insight_type = if insight.contains("Architecture patterns:") || insight.contains("Pattern '") {
-                        "architectural_pattern".to_string()
-                    } else if insight.contains("Design patterns") {
-                        "design_pattern".to_string()
-                    } else if insight.contains("Framework patterns") {
-                        "framework_pattern".to_string()
-                    } else {
-                        "repository_insight".to_string()
-                    };
-                    
-                    all_insights.push(BrainInsight {
-                        insight_type,
-                        content: insight.clone(),
-                        confidence: 0.8 + (i as f64 * 0.05).min(0.95), // Higher confidence for first insights
-                        evidence: vec![format!("Analyzed {} files from {}", learning_result.files_processed, learning_result.repository)],
-                    });
-                }
-                
-                // Extract concepts from repository name and description
-                all_concepts.push(learning_result.repository.clone());
-                if learning_result.concepts_discovered > 0 {
-                    all_concepts.push(format!("{}_concepts", learning_result.repository.replace('/', "_")));
-                }
-                
-                // Add pattern concepts
-                all_concepts.extend(architectural_patterns);
-                all_concepts.extend(design_patterns);
-                all_concepts.extend(framework_patterns);
-            }
-        }
-        
-        let combined_analysis = if analysis_content.is_empty() {
-            "No GitHub repositories found to analyze in the query.".to_string()
-        } else {
-            analysis_content.join(" ")
-        };
-        
-        Ok(BrainAnalysisResult {
-            analysis: combined_analysis,
-            insights: all_insights.clone(),
-            confidence: if sources_count > 0 { 0.85 } else { 0.3 },
-            metadata: BrainAnalysisMetadata {
-                method: "GitHub Repository Analysis".to_string(),
-                processing_time_ms: 0, // Will be calculated by caller
-                sources_analyzed: sources_count,
-                complexity_score: (sources_count as f64 / 50.0).min(1.0),
-                quality_score: if all_insights.is_empty() { 0.3 } else { 0.8 },
-            },
-            related_concepts: all_concepts,
-            patterns: vec!["repository_structure".to_string(), "code_patterns".to_string()],
-        })
-    }
-    
-    /// Analyze GitHub-related content in memory
-    async fn analyze_github_memory_content(
-        &self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  📚 Analyzing GitHub-related memory content...");
-        
-        let mut insights = Vec::new();
-        let mut concepts = Vec::new();
-        let mut sources_count = 0;
-        
-        // Search for GitHub-related memories
-        let github_keywords = vec!["github", "repository", "repo", "code", "project"];
-        
-        for keyword in github_keywords {
-            let working_query = WorkingMemoryQuery {
-                content_pattern: Some(keyword.to_string()),
-                limit: Some(10),
-                min_importance: Some(0.1),
-                ..Default::default()
-            };
-            
-            if let Ok(working_items) = memory_system.query_working(&working_query) {
-                for item in working_items {
-                    if self.is_relevant_to_query(&item.content, query) {
-                        sources_count += 1;
-                        
-                        insights.push(BrainInsight {
-                            insight_type: "memory_insight".to_string(),
-                            content: item.content.clone(),
-                            confidence: (item.priority as u8 as f64) / 4.0,
-                            evidence: vec![format!("Retrieved from working memory with keyword '{}'", keyword)],
-                        });
-                        
-                        // Extract concepts from content
-                        let item_concepts = self.extract_concepts_from_text(&item.content);
-                        concepts.extend(item_concepts);
-                    }
-                }
-            }
-        }
-        
-        let analysis = if insights.is_empty() {
-            "No GitHub-related content found in memory systems.".to_string()
-        } else {
-            format!("Found {} GitHub-related memories in my knowledge systems: {}", 
-                   insights.len(),
-                   insights.iter().take(3).map(|i| i.content.as_str()).collect::<Vec<_>>().join("; "))
-        };
-        
-        Ok(BrainAnalysisResult {
-            analysis,
-            insights: insights.clone(),
-            confidence: if sources_count > 0 { 0.7 } else { 0.2 },
-            metadata: BrainAnalysisMetadata {
-                method: "GitHub Memory Analysis".to_string(),
-                processing_time_ms: 0,
-                sources_analyzed: sources_count,
-                complexity_score: (sources_count as f64 / 20.0).min(1.0),
-                quality_score: if insights.is_empty() { 0.2 } else { 0.6 },
-            },
-            related_concepts: concepts,
-            patterns: vec!["memory_patterns".to_string()],
-        })
-    }
-    
-    /// Perform pattern analysis using Brain AI's pattern detector
-    async fn perform_pattern_analysis(
-        &mut self,
-        _query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  🔍 Performing pattern analysis...");
-        
-        let mut insights = Vec::new();
-        let mut patterns = Vec::new();
-        let mut sources_count = 0;
-        
-        // Get recent memories for pattern analysis
-        let working_query = WorkingMemoryQuery {
-            content_pattern: None,
-            limit: Some(50),
-            min_importance: Some(0.1),
-            ..Default::default()
-        };
-        
-        if let Ok(working_items) = memory_system.query_working(&working_query) {
-            sources_count = working_items.len();
-            
-            // Convert to text for pattern detection
-            let _memory_texts: Vec<String> = working_items.iter()
-                .map(|item| item.content.clone())
-                .collect();
-            
-            // Detect patterns in memory content
-            if let Ok(pattern_result) = self.pattern_detector.detect_patterns_from_memory(memory_system).await {
-                for pattern in pattern_result.detected_patterns {
-                    patterns.push(format!("{:?}", pattern.pattern_type));
-                    
-                    insights.push(BrainInsight {
-                        insight_type: "pattern_insight".to_string(),
-                        content: format!("Detected pattern '{:?}' with confidence {:.3}: {}", 
-                                       pattern.pattern_type, pattern.confidence, pattern.elements.join(", ")),
-                        confidence: pattern.confidence,
-                        evidence: vec![format!("Found {} evidence items", pattern.evidence.len())],
-                    });
-                }
-            }
-        }
-        
-        let analysis = if patterns.is_empty() {
-            "No significant patterns detected in current memory systems.".to_string()
-        } else {
-            format!("Detected {} patterns in memory systems: {}", 
-                   patterns.len(), patterns.join(", "))
-        };
-        
-        Ok(BrainAnalysisResult {
-            analysis,
-            insights: insights.clone(),
-            confidence: if patterns.is_empty() { 0.3 } else { 0.75 },
-            metadata: BrainAnalysisMetadata {
-                method: "Brain AI Pattern Detection".to_string(),
-                processing_time_ms: 0,
-                sources_analyzed: sources_count,
-                complexity_score: (patterns.len() as f64 / 10.0).min(1.0),
-                quality_score: if insights.is_empty() { 0.3 } else { 0.7 },
-            },
-            related_concepts: patterns.clone(),
-            patterns,
-        })
-    }
-    
-    /// Perform concept graph analysis
-    async fn perform_concept_analysis(
-        &self,
-        query: &str,
-        concept_graph: &mut ConceptGraphManager,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  🕸️ Performing concept graph analysis...");
-        
-        let mut insights = Vec::new();
-        let mut related_concepts = Vec::new();
-        let mut sources_count = 0;
-        
-        // Extract key terms from query
-        let query_terms = self.extract_key_terms(query);
-        
-        for term in query_terms {
-            // Search for concepts related to this term
-            let concept_query = ConceptQuery {
-                content_pattern: Some(term.clone()),
-                concept_type: None,
-                min_confidence: Some(0.1),
-                limit: Some(10),
-                ..Default::default()
-            };
-            
-            if let Ok(concepts) = concept_graph.query_concepts(&concept_query).await {
-                sources_count += concepts.len();
-                
-                for concept in concepts {
-                    related_concepts.push(concept.content.clone());
-                    
-                    insights.push(BrainInsight {
-                        insight_type: "concept_insight".to_string(),
-                        content: format!("Concept '{}' (type: {:?}, confidence: {:.3}): {}", 
-                                       concept.content, concept.concept_type, concept.confidence_score,
-                                       concept.description.as_ref().unwrap_or(&"No description".to_string())),
-                        confidence: concept.confidence_score,
-                        evidence: vec![format!("Found in concept graph with {} metadata entries", concept.metadata.len())],
-                    });
-                    
-                    // Get related concepts through graph traversal
-                    let traversal_config = TraversalConfig {
-                        max_depth: 2,
-                        max_nodes: 5,
-                        min_relationship_weight: 0.3,
-                        activation_spread_factor: 0.8,
-                        activation_decay_factor: 0.9,
-                        follow_relationship_types: vec![],
-                    };
-                    
-                    if let Ok(traversal_result) = concept_graph.traverse_graph(concept.id, TraversalAlgorithm::BreadthFirst, Some(traversal_config)).await {
-                        for concept_id in traversal_result.visited_concepts {
-                            if let Ok(Some(related_concept)) = concept_graph.get_concept(concept_id).await {
-                                if !related_concepts.contains(&related_concept.content) {
-                                    related_concepts.push(related_concept.content);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        let analysis = if related_concepts.is_empty() {
-            "No related concepts found in the concept graph.".to_string()
-        } else {
-            format!("Found {} related concepts in the knowledge graph: {}", 
-                   related_concepts.len(), 
-                   related_concepts.iter().take(5).cloned().collect::<Vec<_>>().join(", "))
-        };
-        
-        Ok(BrainAnalysisResult {
-            analysis,
-            insights: insights.clone(),
-            confidence: if sources_count > 0 { 0.8 } else { 0.2 },
-            metadata: BrainAnalysisMetadata {
-                method: "Concept Graph Analysis".to_string(),
-                processing_time_ms: 0,
-                sources_analyzed: sources_count,
-                complexity_score: (related_concepts.len() as f64 / 20.0).min(1.0),
-                quality_score: if insights.is_empty() { 0.2 } else { 0.75 },
-            },
-            related_concepts,
-            patterns: vec!["concept_relationships".to_string()],
-        })
-    }
-    
-    /// Perform semantic memory analysis using DoTA-RAG inspired multi-stage retrieval
-    async fn perform_semantic_analysis(
-        &self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<BrainAnalysisResult, BrainError> {
-        println!("  🧩 Performing DoTA-RAG inspired semantic memory analysis...");
-        
-        let mut insights = Vec::new();
-        let mut concepts = Vec::new();
-        let mut sources_count = 0;
-        let mut all_retrieved_content = Vec::new();
-        
-        // Stage 1: Query Rewriting and Expansion (inspired by DoTA-RAG)
-        let expanded_queries = self.rewrite_and_expand_query(query);
-        println!("  📝 Generated {} expanded queries from original", expanded_queries.len());
-        
-        // Stage 2: Dynamic Routing to Specialized Search Strategies
-        for (strategy_name, search_query) in expanded_queries {
-            println!("  🔄 Executing strategy '{}' with query: '{}'", strategy_name, search_query);
-            
-            let strategy_results = match strategy_name.as_str() {
-                "direct_exact" => self.search_exact_matches(memory_system, &search_query).await,
-                "semantic_fuzzy" => self.search_semantic_fuzzy(memory_system, &search_query).await,
-                "architectural_patterns" => self.search_architectural_patterns(memory_system, &search_query).await,
-                "conceptual_synonyms" => self.search_conceptual_synonyms(memory_system, &search_query).await,
-                "contextual_embedding" => self.search_contextual_embeddings(memory_system, &search_query).await,
-                _ => Vec::new(),
-            };
-            
-            all_retrieved_content.extend(strategy_results);
-        }
-        
-        // Stage 3: Multi-stage Retrieval and Ranking (DoTA-RAG approach)
-        let ranked_results = self.rank_and_deduplicate_results(query, all_retrieved_content);
-        println!("  📊 Ranked and deduplicated to {} high-quality results", ranked_results.len());
-        
-        // Stage 4: Generate insights from ranked results
-        for (rank, content) in ranked_results.iter().enumerate() {
-            sources_count += 1;
-            
-            let confidence = self.calculate_dynamic_confidence(query, content, rank);
-            let insight_type = self.classify_insight_type(content);
-            
-            insights.push(BrainInsight {
-                insight_type,
-                content: content.clone(),
-                confidence,
-                evidence: vec![format!("Multi-stage retrieval rank {}, confidence {:.3}", rank + 1, confidence)],
-            });
-            
-            // Extract concepts from high-quality content
-            concepts.extend(self.extract_advanced_concepts(content));
-        }
-        
-        let insights_empty = insights.is_empty();
-        let insights_len = insights.len();
-        let confidence = self.calculate_overall_confidence(&insights, sources_count);
-        
-        let final_analysis = if insights_empty {
-            "DoTA-RAG inspired analysis found no relevant semantic knowledge in memory systems.".to_string()
-        } else {
-            format!("DoTA-RAG multi-stage analysis found {} high-confidence insights from {} sources. Top insights: {}",
-                insights_len,
-                sources_count,
-                insights.iter().take(2).map(|i| &i.content[..i.content.len().min(100)]).collect::<Vec<_>>().join("; "))
-        };
-        
-        println!("  ✅ DoTA-RAG analysis complete: {} insights, {:.3} confidence", insights_len, confidence);
-        
-        Ok(BrainAnalysisResult {
-            analysis: final_analysis,
-            insights,
-            confidence,
-            metadata: BrainAnalysisMetadata {
-                method: "DoTA-RAG Multi-Stage Semantic Analysis".to_string(),
-                processing_time_ms: 0,
-                sources_analyzed: sources_count,
-                complexity_score: (sources_count as f64 / 10.0).min(1.0),
-                quality_score: if insights_empty { 0.3 } else { 0.9 },
-            },
-            related_concepts: concepts,
-            patterns: vec!["multi_stage_retrieval".to_string(), "dynamic_routing".to_string()],
-        })
-    }
-
-    /// Stage 1: Query rewriting and expansion (DoTA-RAG inspired)
-    fn rewrite_and_expand_query(&self, query: &str) -> Vec<(String, String)> {
-        let mut expanded_queries = Vec::new();
-        
-        // Direct exact match
-        expanded_queries.push(("direct_exact".to_string(), query.to_string()));
-        
-        // Architectural pattern specific rewrites
-        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
-            expanded_queries.extend(vec![
-                ("architectural_patterns".to_string(), "Node-Flow Architecture".to_string()),
-                ("architectural_patterns".to_string(), "Async Parallel Processing".to_string()),
-                ("architectural_patterns".to_string(), "Batch Optimization Framework".to_string()),
-                ("architectural_patterns".to_string(), "BaseNode pattern".to_string()),
-                ("architectural_patterns".to_string(), "Flow orchestration".to_string()),
-            ]);
-        }
-        
-        // PocketFlow specific rewrites
-        if query.to_lowercase().contains("pocketflow") {
-            expanded_queries.extend(vec![
-                ("semantic_fuzzy".to_string(), "PocketFlow framework".to_string()),
-                ("semantic_fuzzy".to_string(), "100-line LLM framework".to_string()),
-                ("semantic_fuzzy".to_string(), "Agents build Agents".to_string()),
-                ("contextual_embedding".to_string(), "The-Pocket/PocketFlow".to_string()),
-            ]);
-        }
-        
-        // Conceptual synonym expansion
-        let conceptual_terms = self.generate_conceptual_synonyms(query);
-        for term in conceptual_terms {
-            expanded_queries.push(("conceptual_synonyms".to_string(), term));
-        }
-        
-        // Component-based queries
-        if query.to_lowercase().contains("component") || query.to_lowercase().contains("class") {
-            expanded_queries.extend(vec![
-                ("semantic_fuzzy".to_string(), "BaseNode class".to_string()),
-                ("semantic_fuzzy".to_string(), "Flow class".to_string()),
-                ("semantic_fuzzy".to_string(), "BatchNode ParallelBatchNode".to_string()),
-            ]);
-        }
-        
-        expanded_queries
-    }
-
-    /// Generate conceptual synonyms and related terms
-    fn generate_conceptual_synonyms(&self, query: &str) -> Vec<String> {
-        let mut synonyms = Vec::new();
-        let query_lower = query.to_lowercase();
-        
-        // Architecture synonyms
-        if query_lower.contains("architecture") {
-            synonyms.extend(vec![
-                "design pattern".to_string(),
-                "framework structure".to_string(),
-                "system design".to_string(),
-                "architectural approach".to_string(),
-                "implementation pattern".to_string(),
-            ]);
-        }
-        
-        // Pattern synonyms
-        if query_lower.contains("pattern") {
-            synonyms.extend(vec![
-                "design approach".to_string(),
-                "implementation strategy".to_string(),
-                "architectural style".to_string(),
-                "framework paradigm".to_string(),
-            ]);
-        }
-        
-        // Component synonyms
-        if query_lower.contains("component") || query_lower.contains("class") {
-            synonyms.extend(vec![
-                "building block".to_string(),
-                "module".to_string(),
-                "element".to_string(),
-                "unit".to_string(),
-            ]);
-        }
-        
-        synonyms
-    }
-
-    /// Stage 2a: Search for exact matches
-    async fn search_exact_matches(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
-        let mut results = Vec::new();
-        
-        // Try working memory exact match
-        let working_query = WorkingMemoryQuery {
-            content_pattern: Some(query.to_string()),
-            priority: None,
-            min_importance: None,
-            created_after: None,
-            limit: Some(5),
-        };
-        
-        if let Ok(items) = memory_system.query_working(&working_query) {
-            for item in items {
-                results.push(item.content);
-            }
-        }
-        
-        results
-    }
-
-    /// Stage 2b: Semantic fuzzy search with embedding-like behavior
-    async fn search_semantic_fuzzy(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
-        let mut results = Vec::new();
-        
-        // Use find_related_memories for semantic search
-        if let Ok(related_results) = memory_system.find_related_memories(query, 5) {
-            for item in related_results.working_results {
-                results.push(item.content);
-            }
-            for concept in related_results.semantic_results {
-                results.push(format!("Semantic concept '{}': {}", concept.name, concept.description));
-            }
-        }
-        
-        // Also try keyword-based fuzzy matching
-        let keywords = self.extract_advanced_keywords(query);
-        for keyword in keywords {
-            let keyword_query = WorkingMemoryQuery {
-                content_pattern: Some(keyword),
-                priority: None,
-                min_importance: None,
-                created_after: None,
-                limit: Some(3),
-            };
-            
-            if let Ok(items) = memory_system.query_working(&keyword_query) {
-                for item in items {
-                    if !results.contains(&item.content) {
-                        results.push(item.content);
-                    }
-                }
-            }
-        }
-        
-        results
-    }
-
-    /// Stage 2c: Architectural pattern specific search
-    async fn search_architectural_patterns(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
-        let mut results = Vec::new();
-        
-        // Search for architectural terms in stored content
-        let arch_terms = vec![
-            "BaseNode", "Flow", "AsyncFlow", "BatchNode", "ParallelBatchNode",
-            "architecture", "pattern", "framework", "design", "orchestration",
-            "workflow", "agent", "pipeline", "processing"
-        ];
-        
-        for term in arch_terms {
-            let term_query = WorkingMemoryQuery {
-                content_pattern: Some(term.to_string()),
-                priority: None,
-                min_importance: None,
-                created_after: None,
-                limit: Some(2),
-            };
-            
-            if let Ok(items) = memory_system.query_working(&term_query) {
-                for item in items {
-                    if !results.contains(&item.content) && self.is_architecturally_relevant(&item.content, query) {
-                        results.push(item.content);
-                    }
-                }
-            }
-        }
-        
-        results
-    }
-
-    /// Stage 2d: Conceptual synonym search
-    async fn search_conceptual_synonyms(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
-        let mut results = Vec::new();
-        
-        // Use semantic memory for conceptual search
-        let semantic_query = SemanticQuery {
-            name_pattern: Some(query.to_string()),
-            min_confidence: Some(0.2),
-            limit: Some(5),
-            ..Default::default()
-        };
-        
-        if let Ok(concepts) = memory_system.query_semantic(&semantic_query) {
-            for concept in concepts {
-                results.push(format!("Conceptual match '{}' (confidence: {:.3}): {}", 
-                    concept.name, concept.confidence, concept.description));
-            }
-        }
-        
-        results
-    }
-
-    /// Stage 2e: Contextual embedding search (simulated)
-    async fn search_contextual_embeddings(&self, memory_system: &MemorySystem, query: &str) -> Vec<String> {
-        let mut results = Vec::new();
-        
-        // Simulate embedding-based search by looking for contextual matches
-        let context_terms = self.extract_contextual_terms(query);
-        
-        for term in context_terms {
-            let context_query = WorkingMemoryQuery {
-                content_pattern: Some(term),
-                priority: None,
-                min_importance: None,
-                created_after: None,
-                limit: Some(2),
-            };
-            
-            if let Ok(items) = memory_system.query_working(&context_query) {
-                for item in items {
-                    if !results.contains(&item.content) && self.calculate_contextual_relevance(&item.content, query) > 0.5 {
-                        results.push(item.content);
-                    }
-                }
-            }
-        }
-        
-        results
-    }
-
-    /// Stage 3: Rank and deduplicate results (DoTA-RAG inspired)
-    fn rank_and_deduplicate_results(&self, query: &str, mut results: Vec<String>) -> Vec<String> {
-        // Remove duplicates
-        results.sort();
-        results.dedup();
-        
-        // Score and rank results
-        let mut scored_results: Vec<(f64, String)> = results
-            .into_iter()
-            .map(|content| {
-                let score = self.calculate_comprehensive_relevance_score(query, &content);
-                (score, content)
-            })
-            .collect();
-        
-        // Sort by score (highest first)
-        scored_results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-        
-        // Return top-ranked results
-        scored_results.into_iter()
-            .take(10) // Limit to top 10 results
-            .map(|(_, content)| content)
-            .collect()
-    }
-
-    /// Calculate comprehensive relevance score (DoTA-RAG inspired ranking)
-    fn calculate_comprehensive_relevance_score(&self, query: &str, content: &str) -> f64 {
-        let mut score = 0.0;
-        
-        // Exact match bonus
-        if content.to_lowercase().contains(&query.to_lowercase()) {
-            score += 1.0;
-        }
-        
-        // Keyword overlap scoring
-        let query_keywords = self.extract_advanced_keywords(query);
-        let content_lower = content.to_lowercase();
-        let keyword_matches = query_keywords.iter()
-            .filter(|keyword| content_lower.contains(&keyword.to_lowercase()))
-            .count();
-        score += (keyword_matches as f64 / query_keywords.len().max(1) as f64) * 0.8;
-        
-        // Architectural relevance bonus
-        if self.is_architecturally_relevant(content, query) {
-            score += 0.6;
-        }
-        
-        // Content quality scoring (longer, structured content gets higher scores)
-        if content.len() > 100 {
-            score += 0.3;
-        }
-        if content.contains("class ") || content.contains("def ") || content.contains("import ") {
-            score += 0.4; // Code content bonus
-        }
-        if content.contains("README") || content.contains("documentation") {
-            score += 0.5; // Documentation bonus
-        }
-        
-        // PocketFlow specific bonuses
-        if content.to_lowercase().contains("pocketflow") {
-            score += 0.7;
-        }
-        if content.to_lowercase().contains("basenode") || content.to_lowercase().contains("flow") {
-            score += 0.5;
-        }
-        
-        score
-    }
-
-    /// Extract advanced keywords with stemming and expansion
-    fn extract_advanced_keywords(&self, text: &str) -> Vec<String> {
-        let mut keywords = Vec::new();
-        
-        // Basic word extraction
-        for word in text.split_whitespace() {
-            let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
-            if clean_word.len() > 2 && !self.is_stop_word(&clean_word) {
-                keywords.push(clean_word.clone());
-                keywords.push(word.to_string()); // Also keep original case
-            }
-        }
-        
-        // Add technical term variations
-        if text.to_lowercase().contains("architecture") {
-            keywords.extend(vec!["arch".to_string(), "design".to_string(), "pattern".to_string()]);
-        }
-        if text.to_lowercase().contains("pattern") {
-            keywords.extend(vec!["approach".to_string(), "style".to_string(), "method".to_string()]);
-        }
-        
-        keywords.sort();
-        keywords.dedup();
-        keywords
-    }
-
-    /// Check if a word is a stop word
-    fn is_stop_word(&self, word: &str) -> bool {
-        let stop_words = vec![
-            "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by",
-            "is", "are", "was", "were", "be", "been", "have", "has", "had", "do", "does", "did",
-            "will", "would", "could", "should", "may", "might", "can", "a", "an", "what", "how",
-            "where", "when", "why", "who", "which", "that", "this", "these", "those", "about",
-            "tell", "me", "you", "your", "my", "his", "her", "its", "our", "their"
-        ];
-        stop_words.contains(&word)
-    }
-
-    /// Extract contextual terms for embedding-like search
-    fn extract_contextual_terms(&self, query: &str) -> Vec<String> {
-        let mut terms = Vec::new();
-        
-        // Add the full query
-        terms.push(query.to_string());
-        
-        // Add domain-specific context terms
-        terms.extend(vec![
-            "framework".to_string(),
-            "python".to_string(),
-            "llm".to_string(),
-            "agent".to_string(),
-            "workflow".to_string(),
-            "orchestration".to_string(),
-            "processing".to_string(),
-            "async".to_string(),
-            "parallel".to_string(),
-            "batch".to_string(),
-        ]);
-        
-        terms
-    }
-
-    /// Check if content is architecturally relevant
-    fn is_architecturally_relevant(&self, content: &str, query: &str) -> bool {
-        let content_lower = content.to_lowercase();
-        let query_lower = query.to_lowercase();
-        
-        // Check for architectural keywords
-        let arch_keywords = vec![
-            "architecture", "pattern", "design", "framework", "structure",
-            "basenode", "flow", "batch", "parallel", "async", "orchestration",
-            "workflow", "agent", "pipeline", "processing", "class", "component"
-        ];
-        
-        let has_arch_keywords = arch_keywords.iter()
-            .any(|keyword| content_lower.contains(keyword) || query_lower.contains(keyword));
-        
-        // Check for code patterns
-        let has_code_patterns = content_lower.contains("class ") || 
-                               content_lower.contains("def ") || 
-                               content_lower.contains("import ");
-        
-        has_arch_keywords || has_code_patterns
-    }
-
-    /// Calculate contextual relevance
-    fn calculate_contextual_relevance(&self, content: &str, query: &str) -> f64 {
-        let content_lower = content.to_lowercase();
-        let query_lower = query.to_lowercase();
-        
-        let mut relevance = 0.0;
-        
-        // Direct mention bonus
-        if content_lower.contains(&query_lower) {
-            relevance += 0.8;
-        }
-        
-        // Keyword overlap
-        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-        let matching_words = query_words.iter()
-            .filter(|word| content_lower.contains(*word))
-            .count();
-        
-        relevance += (matching_words as f64 / query_words.len().max(1) as f64) * 0.6;
-        
-        // Context bonus for PocketFlow
-        if content_lower.contains("pocketflow") && query_lower.contains("pocketflow") {
-            relevance += 0.5;
-        }
-        
-        relevance.min(1.0)
-    }
-
-    /// Calculate dynamic confidence based on rank and content quality
-    fn calculate_dynamic_confidence(&self, query: &str, content: &str, rank: usize) -> f64 {
-        let base_confidence = 0.9 - (rank as f64 * 0.1); // Decrease confidence with rank
-        let relevance_bonus = self.calculate_contextual_relevance(content, query) * 0.3;
-        let quality_bonus = if content.len() > 200 { 0.1 } else { 0.0 };
-        
-        (base_confidence + relevance_bonus + quality_bonus).min(1.0).max(0.1)
-    }
-
-    /// Classify insight type based on content
-    fn classify_insight_type(&self, content: &str) -> String {
-        let content_lower = content.to_lowercase();
-        
-        if content_lower.contains("class ") || content_lower.contains("def ") {
-            "code_analysis".to_string()
-        } else if content_lower.contains("readme") || content_lower.contains("documentation") {
-            "documentation_insight".to_string()
-        } else if content_lower.contains("architecture") || content_lower.contains("pattern") {
-            "architectural_insight".to_string()
-        } else if content_lower.contains("semantic concept") {
-            "semantic_concept".to_string()
-        } else {
-            "general_knowledge".to_string()
-        }
-    }
-
-    /// Extract advanced concepts from content
-    fn extract_advanced_concepts(&self, content: &str) -> Vec<String> {
-        let mut concepts = Vec::new();
-        
-        // Extract capitalized terms (likely proper nouns/concepts)
-        for word in content.split_whitespace() {
-            if word.len() > 2 && word.chars().next().unwrap().is_uppercase() {
-                concepts.push(word.to_string());
-            }
-        }
-        
-        // Extract technical terms
-        let content_lower = content.to_lowercase();
-        if content_lower.contains("basenode") {
-            concepts.push("BaseNode".to_string());
-        }
-        if content_lower.contains("flow") {
-            concepts.push("Flow".to_string());
-        }
-        if content_lower.contains("batch") {
-            concepts.push("Batch Processing".to_string());
-        }
-        if content_lower.contains("async") {
-            concepts.push("Asynchronous Processing".to_string());
-        }
-        
-        concepts.sort();
-        concepts.dedup();
-        concepts
-    }
-
-    /// Calculate overall confidence based on insights and sources
-    fn calculate_overall_confidence(&self, insights: &[BrainInsight], sources_count: usize) -> f64 {
-        if insights.is_empty() {
-            return if sources_count > 0 { 0.3 } else { 0.1 };
-        }
-
-        let insight_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
-        let source_bonus = (sources_count as f64 / 20.0).min(0.2);
-        
-        (insight_confidence + source_bonus).min(1.0)
-    }
-
-    /// Check if query is GitHub related
-    fn is_github_related(&self, query: &str) -> bool {
-        let query_lower = query.to_lowercase();
-        query_lower.contains("github") ||
-        query_lower.contains("repository") ||
-        query_lower.contains("repo") ||
-        query_lower.contains("pocketflow") ||
-        query_lower.contains("the-pocket")
-    }
-
-    /// Calculate complexity score based on query and insights
-    fn calculate_complexity_score(&self, _query: &str, insights: &[BrainInsight]) -> f64 {
-        if insights.is_empty() {
-            0.1
-        } else {
-            // Base complexity on number of insights and their types
-            let base_score = (insights.len() as f64 / 10.0).min(1.0);
-            let type_diversity = insights.iter()
-                .map(|i| &i.insight_type)
-                .collect::<std::collections::HashSet<_>>()
-                .len() as f64 / 5.0; // Normalize by expected max types
-            
-            (base_score + type_diversity * 0.3).min(1.0)
-        }
-    }
-
-    /// Calculate quality score based on insights and sources
-    fn calculate_quality_score(&self, insights: &[BrainInsight], sources_analyzed: usize) -> f64 {
-        if insights.is_empty() {
-            0.2
-        } else {
-            let avg_confidence = insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64;
-            let source_factor = (sources_analyzed as f64 / 20.0).min(0.3); // Bonus for more sources
-            let completeness_factor = if insights.len() >= 3 { 0.2 } else { 0.0 };
-            
-            (avg_confidence + source_factor + completeness_factor).min(1.0)
-        }
-    }
-
-    /// Extract GitHub references from query
-    fn extract_github_references(&self, query: &str) -> Vec<String> {
-        let mut github_refs = Vec::new();
-        
-        // Look for GitHub URLs
-        if query.contains("github.com/") {
-            // Extract GitHub URLs using simple pattern matching
-            let words: Vec<&str> = query.split_whitespace().collect();
-            for word in words {
-                if word.contains("github.com/") {
-                    github_refs.push(word.to_string());
-                }
-            }
-        }
-        
-        // Look for repository patterns
-        if query.to_lowercase().contains("pocketflow") {
-            github_refs.push("The-Pocket/PocketFlow".to_string());
-        }
-        
-        github_refs
-    }
-
-    /// Extract key terms from query for search
-    fn extract_key_terms(&self, query: &str) -> Vec<String> {
-        let mut terms = Vec::new();
-        
-        // Add the full query
-        terms.push(query.to_string());
-        
-        // Extract important words (longer than 3 characters, not stop words)
-        for word in query.split_whitespace() {
-            let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric());
-            if clean_word.len() > 3 && !self.is_stop_word(&clean_word.to_lowercase()) {
-                terms.push(clean_word.to_string());
-                terms.push(clean_word.to_lowercase());
-            }
-        }
-        
-        // Add domain-specific terms for PocketFlow
-        if query.to_lowercase().contains("pocketflow") {
-            terms.extend(vec![
-                "PocketFlow".to_string(),
-                "BaseNode".to_string(),
-                "Flow".to_string(),
-                "BatchNode".to_string(),
-                "ParallelBatchNode".to_string(),
-                "README".to_string(),
-                "framework".to_string(),
-                "architecture".to_string(),
-            ]);
-        }
-        
-        // Add architectural terms
-        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
-            terms.extend(vec![
-                "architecture".to_string(),
-                "pattern".to_string(),
-                "design".to_string(),
-                "framework".to_string(),
-                "Node-Flow".to_string(),
-                "Async".to_string(),
-                "Parallel".to_string(),
-                "Batch".to_string(),
-                "Optimization".to_string(),
-            ]);
-        }
-        
-        terms.sort();
-        terms.dedup();
-        terms
-    }
-
-    /// Check if content is relevant to the query
-    fn is_content_relevant(&self, content: &str, query: &str) -> bool {
-        let content_lower = content.to_lowercase();
-        let query_lower = query.to_lowercase();
-        
-        // Direct mention
-        if content_lower.contains(&query_lower) {
-            return true;
-        }
-        
-        // Check for key terms
-        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-        let matching_words = query_words.iter()
-            .filter(|word| word.len() > 3 && content_lower.contains(*word))
-            .count();
-        
-        // Require at least 2 matching words for relevance
-        matching_words >= 2 || content_lower.len() > 500 // Long content is likely to be comprehensive
-    }
-
-    /// Check if content is relevant to query
-    fn is_relevant_to_query(&self, content: &str, query: &str) -> bool {
-        self.is_content_relevant(content, query)
-    }
-
-    /// Extract concepts from text content
-    fn extract_concepts_from_text(&self, content: &str) -> Vec<String> {
-        let mut concepts = Vec::new();
-        
-        // Extract capitalized words (likely concepts)
-        for word in content.split_whitespace() {
-            if word.len() > 2 && word.chars().next().unwrap().is_uppercase() {
-                let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric());
-                if clean_word.len() > 2 {
-                    concepts.push(clean_word.to_string());
-                }
-            }
-        }
-        
-        // Extract technical terms
-        let content_lower = content.to_lowercase();
-        let tech_terms = vec![
-            ("basenode", "BaseNode"),
-            ("flow", "Flow"),
-            ("async", "Async"),
-            ("parallel", "Parallel"),
-            ("batch", "Batch"),
-            ("framework", "Framework"),
-            ("architecture", "Architecture"),
-            ("pattern", "Pattern"),
-            ("orchestration", "Orchestration"),
-            ("workflow", "Workflow"),
-            ("agent", "Agent"),
-            ("pipeline", "Pipeline"),
-        ];
-        
-        for (search_term, concept_name) in tech_terms {
-            if content_lower.contains(search_term) {
-                concepts.push(concept_name.to_string());
-            }
-        }
-        
-        concepts.sort();
-        concepts.dedup();
-        concepts
-    }
-
-    /// Extract architectural patterns from insights
-    fn extract_architectural_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
-        insights.iter()
-            .filter(|insight| insight.contains("Architecture patterns:") || insight.contains("Pattern '"))
-            .map(|insight| {
-                let pattern_name = insight.split("Architecture patterns:").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
-                pattern_name
-            })
-            .collect()
-    }
-
-    /// Extract design patterns from insights
-    fn extract_design_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
-        insights.iter()
-            .filter(|insight| insight.contains("Design patterns"))
-            .map(|insight| {
-                let pattern_name = insight.split("Design patterns").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
-                pattern_name
-            })
-            .collect()
-    }
-
-    /// Extract framework patterns from insights
-    fn extract_framework_patterns_from_insights(&self, insights: &[String]) -> Vec<String> {
-        insights.iter()
-            .filter(|insight| insight.contains("Framework patterns"))
-            .map(|insight| {
-                let pattern_name = insight.split("Framework patterns").last().unwrap_or(insight).split("'").next().unwrap_or(insight).trim().to_string();
-                pattern_name
-            })
-            .collect()
-    }
-}
-
-/// Enhanced LLM Training Integration System
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrainLearningOrchestrator {
     /// Active learning component
     pub active_learner: ActiveLearningSystem,
@@ -4969,4 +3706,459 @@ impl Default for LearningAnalytics {
             learning_efficiency: 0.0,
         }
     }
+}
+
+/// Brain AI Orchestrator - True AI delegation system
+#[derive(Debug)]
+pub struct BrainAIOrchestrator {
+    github_learning_engine: GitHubLearningEngine,
+    pattern_detector: PatternDetector,
+    bpe_segmenter: BpeSegmenter,
+    analysis_config: BrainAnalysisConfig,
+}
+
+/// Configuration for Brain AI analysis
+#[derive(Debug, Clone)]
+pub struct BrainAnalysisConfig {
+    pub enable_github_analysis: bool,
+    pub enable_pattern_analysis: bool,
+    pub enable_concept_analysis: bool,
+    pub enable_semantic_analysis: bool,
+    pub max_analysis_depth: usize,
+    pub min_confidence_threshold: f64,
+}
+
+/// Brain AI analysis result
+#[derive(Debug, Clone)]
+pub struct BrainAnalysisResult {
+    pub analysis: String,
+    pub insights: Vec<BrainInsight>,
+    pub confidence: f64,
+    pub metadata: BrainAnalysisMetadata,
+}
+
+/// Individual insight from Brain AI analysis
+#[derive(Debug, Clone)]
+pub struct BrainInsight {
+    pub content: String,
+    pub insight_type: String,
+    pub confidence: f64,
+    pub source: String,
+}
+
+/// Metadata about the Brain AI analysis
+#[derive(Debug, Clone)]
+pub struct BrainAnalysisMetadata {
+    pub method: String,
+    pub sources_analyzed: usize,
+    pub quality_score: f64,
+    pub processing_time_ms: u64,
+}
+
+impl Default for BrainAnalysisConfig {
+    fn default() -> Self {
+        Self {
+            enable_github_analysis: true,
+            enable_pattern_analysis: true,
+            enable_concept_analysis: true,
+            enable_semantic_analysis: true,
+            max_analysis_depth: 3,
+            min_confidence_threshold: 0.3,
+        }
+    }
+}
+
+impl BrainAIOrchestrator {
+    /// Create a new Brain AI Orchestrator
+    pub fn new() -> Result<Self, BrainError> {
+        let github_config = GitHubLearningConfig::default();
+        let github_learning_engine = GitHubLearningEngine::new(github_config)?;
+        let pattern_detector = PatternDetector::new();
+        let bpe_segmenter = BpeSegmenter::new(Default::default())?;
+        let analysis_config = BrainAnalysisConfig::default();
+
+        Ok(Self {
+            github_learning_engine,
+            pattern_detector,
+            bpe_segmenter,
+            analysis_config,
+        })
+    }
+
+    /// Analyze a query using Brain AI's full capabilities
+    pub async fn analyze_query(
+        &mut self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+        concept_graph: &mut ConceptGraphManager,
+    ) -> Result<BrainAnalysisResult, BrainError> {
+        let start_time = std::time::Instant::now();
+        let mut insights = Vec::new();
+        let mut sources_analyzed = 0;
+
+        println!("🧠 Brain AI Orchestrator: Starting comprehensive analysis of '{}'", query);
+
+        // 1. GitHub Analysis (if GitHub-related)
+        if self.analysis_config.enable_github_analysis && self.is_github_related(query) {
+            println!("  🔍 Performing GitHub repository analysis...");
+            match self.perform_github_analysis(query, memory_system).await {
+                Ok(github_insights) => {
+                    sources_analyzed += github_insights.len();
+                    for insight in github_insights {
+                        insights.push(BrainInsight {
+                            content: insight,
+                            insight_type: "github_analysis".to_string(),
+                            confidence: 0.8,
+                            source: "GitHub Learning Engine".to_string(),
+                        });
+                    }
+                }
+                Err(e) => println!("  ⚠️ GitHub analysis failed: {}", e),
+            }
+        }
+
+        // 2. Pattern Analysis
+        if self.analysis_config.enable_pattern_analysis {
+            println!("  🕸️ Performing concept graph analysis...");
+            match self.perform_pattern_analysis(query, memory_system).await {
+                Ok(pattern_insights) => {
+                    sources_analyzed += pattern_insights.len();
+                    for insight in pattern_insights {
+                        insights.push(BrainInsight {
+                            content: insight,
+                            insight_type: "pattern_analysis".to_string(),
+                            confidence: 0.7,
+                            source: "Pattern Detector".to_string(),
+                        });
+                    }
+                }
+                Err(e) => println!("  ⚠️ Pattern analysis failed: {}", e),
+            }
+        }
+
+        // 3. DoTA-RAG inspired semantic memory analysis
+        if self.analysis_config.enable_semantic_analysis {
+            println!("  🧩 Performing DoTA-RAG inspired semantic memory analysis...");
+            match self.perform_semantic_analysis(query, memory_system).await {
+                Ok(semantic_insights) => {
+                    sources_analyzed += semantic_insights.len();
+                    for insight in semantic_insights {
+                        insights.push(BrainInsight {
+                            content: insight.content,
+                            insight_type: "semantic_analysis".to_string(),
+                            confidence: insight.confidence,
+                            source: "Semantic Memory".to_string(),
+                        });
+                    }
+                }
+                Err(e) => println!("  ⚠️ Semantic analysis failed: {}", e),
+            }
+        }
+
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        let confidence = if insights.is_empty() { 0.3 } else { 
+            insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64 
+        };
+
+        let analysis = if insights.is_empty() {
+            "I don't have specific information about this topic in my current knowledge base.".to_string()
+        } else {
+            format!("Based on my analysis of {} sources, I found {} insights about your query.", sources_analyzed, insights.len())
+        };
+
+        println!("✅ Brain AI Analysis completed in {}ms", processing_time);
+        println!("  - Insights generated: {}", insights.len());
+        println!("  - Related concepts: 0");
+        println!("  - Sources analyzed: {}", sources_analyzed);
+        println!("  - Confidence: {:.3}", confidence);
+
+        Ok(BrainAnalysisResult {
+            analysis,
+            insights,
+            confidence,
+            metadata: BrainAnalysisMetadata {
+                method: "Brain AI Comprehensive Analysis with Enhanced Learning".to_string(),
+                sources_analyzed,
+                quality_score: confidence,
+                processing_time_ms: processing_time,
+            },
+        })
+    }
+
+    /// Check if query is GitHub-related
+    fn is_github_related(&self, query: &str) -> bool {
+        let query_lower = query.to_lowercase();
+        
+        // Check for explicit GitHub-related keywords
+        if query_lower.contains("github") ||
+           query_lower.contains("repository") ||
+           query_lower.contains("repo") ||
+           query_lower.contains("codebase") {
+            return true;
+        }
+        
+        // Use the enhanced GitHub reference extraction to detect any repository mentions
+        let github_refs = self.extract_github_references(query);
+        !github_refs.is_empty()
+    }
+
+    /// Extract GitHub references from query
+    fn extract_github_references(&self, query: &str) -> Vec<String> {
+        let mut github_refs = Vec::new();
+        
+        // Look for GitHub URLs (various formats)
+        if query.contains("github.com/") {
+            // Extract GitHub URLs using simple pattern matching
+            let words: Vec<&str> = query.split_whitespace().collect();
+            for word in words {
+                if word.contains("github.com/") {
+                    // Clean up the URL (remove trailing punctuation)
+                    let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.');
+                    github_refs.push(clean_url.to_string());
+                }
+            }
+        }
+
+        // Common repositories that users might mention
+        let known_repos = vec![
+            ("react", "facebook/react"),
+            ("vue", "vuejs/vue"),
+            ("angular", "angular/angular"),
+            ("typescript", "microsoft/TypeScript"),
+            ("nodejs", "nodejs/node"),
+            ("express", "expressjs/express"),
+            ("nextjs", "vercel/next.js"),
+            ("nuxt", "nuxt/nuxt.js"),
+            ("svelte", "sveltejs/svelte"),
+            ("webpack", "webpack/webpack"),
+            ("vite", "vitejs/vite"),
+            ("tailwind", "tailwindlabs/tailwindcss"),
+            ("bootstrap", "twbs/bootstrap"),
+            ("django", "django/django"),
+            ("flask", "pallets/flask"),
+            ("fastapi", "tiangolo/fastapi"),
+            ("spring", "spring-projects/spring-framework"),
+            ("laravel", "laravel/laravel"),
+            ("rails", "rails/rails"),
+            ("rust", "rust-lang/rust"),
+            ("golang", "golang/go"),
+            ("python", "python/cpython"),
+            ("java", "openjdk/jdk"),
+            ("kotlin", "JetBrains/kotlin"),
+            ("swift", "apple/swift"),
+            ("flutter", "flutter/flutter"),
+            ("react-native", "facebook/react-native"),
+            ("electron", "electron/electron"),
+            ("docker", "docker/docker-ce"),
+            ("kubernetes", "kubernetes/kubernetes"),
+            ("tensorflow", "tensorflow/tensorflow"),
+            ("pytorch", "pytorch/pytorch"),
+            ("scikit-learn", "scikit-learn/scikit-learn"),
+            ("pandas", "pandas-dev/pandas"),
+            ("numpy", "numpy/numpy"),
+        ];
+
+        // Check for repository mentions in the query
+        let query_lower = query.to_lowercase();
+        let words: Vec<&str> = query_lower.split_whitespace().collect();
+        
+        for (keyword, repo_path) in known_repos {
+            if words.iter().any(|&word| {
+                let word_clean = word.trim_matches(|c: char| !c.is_alphanumeric());
+                word_clean == keyword || 
+                word_clean.contains(keyword) ||
+                // Handle variations like "reactjs", "react.js", etc.
+                (keyword.len() > 3 && word_clean.starts_with(keyword))
+            }) {
+                github_refs.push(format!("https://github.com/{}", repo_path));
+                
+                // Also add common variations
+                github_refs.push(format!("github.com/{}", repo_path));
+                github_refs.push(repo_path.to_string());
+            }
+        }
+
+        // Use regex to find potential GitHub repository patterns
+        if let Ok(repo_regex) = Regex::new(r"(?i)\b([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)\b") {
+            for cap in repo_regex.captures_iter(query) {
+                if let (Some(owner), Some(repo)) = (cap.get(1), cap.get(2)) {
+                    let potential_repo = format!("{}/{}", owner.as_str(), repo.as_str());
+                    // Only add if it looks like a valid GitHub repo (not generic patterns)
+                    if !potential_repo.contains("http") && !potential_repo.contains("www") {
+                        github_refs.push(format!("https://github.com/{}", potential_repo));
+                    }
+                }
+            }
+        }
+
+        github_refs.sort();
+        github_refs.dedup();
+        github_refs
+    }
+
+    /// Perform GitHub analysis
+    async fn perform_github_analysis(
+        &mut self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<String>, BrainError> {
+        let github_refs = self.extract_github_references(query);
+        let mut insights = Vec::new();
+
+        for github_ref in github_refs {
+            println!("  📚 Analyzing GitHub reference: {}", github_ref);
+            
+            match self.github_learning_engine.learn_from_repository(&github_ref, memory_system).await {
+                Ok(learning_result) => {
+                    println!("  ✅ GitHub learning completed for {}", github_ref);
+                    
+                    // Extract insights from the learning result
+                    for insight in learning_result.key_insights {
+                        insights.push(insight);
+                    }
+                }
+                Err(e) => {
+                    println!("  ⚠️ Failed to learn from {}: {}", github_ref, e);
+                }
+            }
+        }
+
+        Ok(insights)
+    }
+
+    /// Perform pattern analysis
+    async fn perform_pattern_analysis(
+        &mut self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<String>, BrainError> {
+        let mut insights = Vec::new();
+
+        // Get memories from the memory system
+        let memories = memory_system.get_all_memories();
+        
+        // Analyze patterns in the memories related to the query
+        for memory in memories {
+            if memory.content.to_lowercase().contains(&query.to_lowercase()) ||
+               self.calculate_relevance(&memory.content, query, &memory) > 0.5 {
+                
+                // Extract patterns from this memory
+                if let Ok(patterns) = self.pattern_detector.detect_patterns(&memory.content).await {
+                    for pattern in patterns {
+                        insights.push(format!("Pattern: {} (confidence: {:.2})", pattern.pattern_type, pattern.confidence));
+                    }
+                }
+            }
+        }
+
+        Ok(insights)
+    }
+
+    /// Perform semantic analysis with DoTA-RAG inspiration
+    async fn perform_semantic_analysis(
+        &mut self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<SemanticInsight>, BrainError> {
+        let mut insights = Vec::new();
+
+        // Generate expanded queries (DoTA-RAG inspired)
+        let expanded_queries = self.generate_expanded_queries(query);
+        println!("  📝 Generated {} expanded queries from original", expanded_queries.len());
+
+        // Execute each query strategy
+        for (strategy, expanded_query) in expanded_queries {
+            println!("  🔄 Executing strategy '{}' with query: '{}'", strategy, expanded_query);
+            
+            let memories = memory_system.search_memories(&expanded_query, 0.3, 10);
+            for memory in memories {
+                let relevance = self.calculate_relevance(&memory.content, &expanded_query, &memory);
+                if relevance > 0.5 {
+                    insights.push(SemanticInsight {
+                        content: memory.content.clone(),
+                        confidence: relevance,
+                    });
+                }
+            }
+        }
+
+        // Deduplicate and rank insights
+        insights.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+        insights.truncate(10); // Limit to top 10 insights
+
+        println!("  📊 Ranked and deduplicated to {} high-quality results", insights.len());
+
+        Ok(insights)
+    }
+
+    /// Generate expanded queries for DoTA-RAG inspired analysis
+    fn generate_expanded_queries(&self, query: &str) -> Vec<(String, String)> {
+        let mut expanded = Vec::new();
+
+        // Direct exact match
+        expanded.push(("direct_exact".to_string(), query.to_string()));
+
+        // If query mentions architectural patterns, expand with specific patterns
+        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
+            let patterns = vec![
+                "Node-Flow Architecture",
+                "Async Parallel Processing", 
+                "Batch Optimization Framework",
+                "BaseNode pattern",
+                "Flow orchestration"
+            ];
+            for pattern in patterns {
+                expanded.push(("architectural_patterns".to_string(), pattern.to_string()));
+            }
+        }
+
+        // Conceptual synonyms
+        if query.to_lowercase().contains("pattern") || query.to_lowercase().contains("architecture") {
+            let synonyms = vec![
+                "design pattern",
+                "framework structure",
+                "system design",
+                "architectural approach",
+                "implementation pattern",
+                "design approach",
+                "implementation strategy",
+                "architectural style",
+                "framework paradigm"
+            ];
+            for synonym in synonyms {
+                expanded.push(("conceptual_synonyms".to_string(), synonym.to_string()));
+            }
+        }
+
+        expanded
+    }
+
+    /// Calculate relevance between content and query
+    fn calculate_relevance(&self, content: &str, query: &str, _item: &WorkingMemoryItem) -> f64 {
+        let content_lower = content.to_lowercase();
+        let query_lower = query.to_lowercase();
+        
+        // Simple relevance calculation based on word overlap
+        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
+        let mut matches = 0;
+        
+        for word in query_words.iter() {
+            if content_lower.contains(word) {
+                matches += 1;
+            }
+        }
+        
+        if query_words.is_empty() {
+            0.0
+        } else {
+            matches as f64 / query_words.len() as f64
+        }
+    }
+}
+
+/// Semantic insight from analysis
+#[derive(Debug, Clone)]
+pub struct SemanticInsight {
+    pub content: String,
+    pub confidence: f64,
 }
