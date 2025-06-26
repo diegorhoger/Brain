@@ -1,0 +1,31 @@
+[package]
+name = "brain-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+brain-types = { path = "../brain-types" }
+brain-core = { path = "../brain-core" }
+brain-infra = { path = "../brain-infra" }
+brain-cognitive = { path = "../brain-cognitive" }
+brain-analysis = { path = "../brain-analysis" }
+
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# Web framework
+warp.workspace = true
+axum.workspace = true
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+
+# Authentication & Security
+jsonwebtoken = "9.0"
+governor = "0.6"
+sha2 = "0.10" 

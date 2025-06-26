@@ -1,0 +1,34 @@
+[package]
+name = "brain-infra"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+brain-types = { path = "../brain-types" }
+brain-core = { path = "../brain-core" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+reqwest.workspace = true
+async-trait.workspace = true
+
+# Database
+sqlx.workspace = true
+rusqlite = { version = "0.30", features = ["bundled"] }
+neo4rs = "0.8"
+
+# External APIs
+octocrab.workspace = true
+base64 = "0.22"
+
+# File system
+tempfile = "3.10"
+
+# Configuration
+toml = "0.8" 

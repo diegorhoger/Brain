@@ -1,10 +1,11 @@
 use crate::error::BrainError;
 use crate::github_integration::{GitHubLearningEngine, GitHubClient};
 use crate::memory::{MemorySystem, Priority, WorkingMemoryQuery, SemanticQuery, EpisodicQuery, EpisodicEvent, SemanticConcept};
-use crate::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType};
+use crate::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, RelationshipType};
 use crate::insight_extraction::PatternDetector;
 use crate::segment_discovery::{BpeSegmenter, BpeConfig};
-use crate::conversation::{RagOrchestrator, RagRequest};
+use crate::conversation::{RagOrchestrator, RagRequest, BrainAIOrchestrator};
+use crate::code_pattern_analyzer::CodePatternAnalyzer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -49,6 +50,97 @@ pub struct ChatResponse {
     pub suggestions: Vec<String>,
 }
 
+// New simplified chat structures
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SimpleChatLearnRequest {
+    pub content: String,
+    #[serde(default = "default_true")]
+    pub extract_insights: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SimpleChatConverseRequest {
+    pub message: String,
+    #[serde(default)]
+    pub history: Vec<ChatMessage>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SimpleChatResponse {
+    pub response: String,
+    #[serde(default)]
+    pub insights_learned: Vec<String>,
+    #[serde(default)]
+    pub context_used: bool,
+}
+
+// Code Pattern Recognition API structures
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CodePatternAnalysisRequest {
+    pub code_content: String,
+    pub file_path: Option<String>,
+    pub language: Option<String>,
+    #[serde(default = "default_true")]
+    pub store_patterns: bool,
+    #[serde(default)]
+    pub analysis_depth: PatternAnalysisDepth,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum PatternAnalysisDepth {
+    Basic,      // Function signatures, class names
+    Detailed,   // Include method bodies, relationships
+    Deep,       // Full analysis with architectural patterns
+}
+
+impl Default for PatternAnalysisDepth {
+    fn default() -> Self {
+        PatternAnalysisDepth::Detailed
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CodePatternAnalysisResponse {
+    pub success: bool,
+    pub patterns_found: Vec<CodePattern>,
+    pub concepts_created: usize,
+    pub relationships_formed: usize,
+    pub analysis_time_ms: u64,
+    pub confidence_score: f64,
+    pub language_detected: Option<String>,
+    pub architectural_insights: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CodePattern {
+    pub pattern_type: CodePatternType,
+    pub name: String,
+    pub description: String,
+    pub code_snippet: Option<String>,
+    pub file_location: Option<String>,
+    pub confidence: f64,
+    pub related_patterns: Vec<String>,
+    pub concept_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CodePatternType {
+    DataStructure,      // Classes, structs, interfaces
+    Function,           // Functions, methods
+    APIEndpoint,        // REST endpoints, routes
+    DesignPattern,      // Singleton, Factory, etc.
+    ArchitecturalPattern, // MVC, microservices, etc.
+    ImportPattern,      // Dependencies, modules
+    NamingConvention,   // Camel case, snake case, etc.
+    ErrorHandling,      // Try-catch, Result types
+    ConfigurationPattern, // Environment variables, config files
+    TestPattern,        // Unit tests, integration tests
+}
+
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProcessResponse {
     pub success: bool,
@@ -82,12 +174,88 @@ pub struct HealthResponse {
     pub last_backup: String,
 }
 
+// Development Context API structures
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DevelopmentContextRequest {
+    pub session_id: Option<String>,
+    pub files_accessed: Vec<FileAccess>,
+    pub current_intent: Option<String>,
+    pub development_goal: Option<String>,
+    pub project_context: Option<ProjectContext>,
+    #[serde(default = "default_true")]
+    pub auto_save: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FileAccess {
+    pub file_path: String,
+    pub access_type: FileAccessType,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+    pub line_numbers: Option<Vec<u32>>,
+    pub content_preview: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum FileAccessType {
+    Read,
+    Write,
+    Create,
+    Delete,
+    Execute,
+    Navigate,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectContext {
+    pub project_root: String,
+    pub current_branch: Option<String>,
+    pub active_features: Vec<String>,
+    pub technology_stack: Vec<String>,
+    pub recent_commits: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevelopmentContextResponse {
+    pub success: bool,
+    pub session_id: String,
+    pub context_preserved: bool,
+    pub insights_generated: Vec<String>,
+    pub recommendations: Vec<String>,
+    pub processing_time_ms: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DevelopmentSession {
+    pub session_id: String,
+    pub start_time: chrono::DateTime<chrono::Utc>,
+    pub last_updated: chrono::DateTime<chrono::Utc>,
+    pub files_accessed: Vec<FileAccess>,
+    pub development_intent: Option<String>,
+    pub development_goal: Option<String>,
+    pub project_context: Option<ProjectContext>,
+    pub insights: Vec<String>,
+    pub patterns_discovered: Vec<String>,
+    pub confidence_score: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevelopmentContextQueryResponse {
+    pub success: bool,
+    pub session_found: bool,
+    pub session: Option<DevelopmentSession>,
+    pub related_sessions: Vec<String>,
+    pub context_summary: Option<String>,
+    pub processing_time_ms: u64,
+}
+
 pub struct WebServer {
     port: u16,
     memory_system: Arc<Mutex<MemorySystem>>,
     concept_graph: Arc<Mutex<ConceptGraphManager>>,
     pattern_detector: Arc<Mutex<PatternDetector>>,
     rag_orchestrator: Arc<Mutex<RagOrchestrator>>,
+    brain_ai_orchestrator: Arc<Mutex<BrainAIOrchestrator>>,
+    development_sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
 }
 
 impl WebServer {
@@ -98,6 +266,8 @@ impl WebServer {
         ));
         let pattern_detector = Arc::new(Mutex::new(PatternDetector::new()));
         let rag_orchestrator = Arc::new(Mutex::new(RagOrchestrator::new()?));
+        let brain_ai_orchestrator = Arc::new(Mutex::new(BrainAIOrchestrator::new()?));
+        let development_sessions = Arc::new(Mutex::new(HashMap::new()));
         
         Ok(Self { 
             port,
@@ -105,6 +275,8 @@ impl WebServer {
             concept_graph,
             pattern_detector,
             rag_orchestrator,
+            brain_ai_orchestrator,
+            development_sessions,
         })
     }
 
@@ -284,30 +456,114 @@ impl WebServer {
             .and(warp::get())
             .and_then(Self::handle_performance_trends);
 
-        // Combine all routes
-        let routes = static_files
-            .or(status)
+        // New simplified chat endpoints
+        let memory_system_chat_learn = self.memory_system.clone();
+        let concept_graph_chat_learn = self.concept_graph.clone();
+        let brain_ai_orchestrator_learn = self.brain_ai_orchestrator.clone();
+        let chat_learn = api
+            .and(warp::path("chat"))
+            .and(warp::path("learn"))
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_chat_learn.clone()))
+            .and(warp::any().map(move || concept_graph_chat_learn.clone()))
+            .and(warp::any().map(move || brain_ai_orchestrator_learn.clone()))
+            .and_then(Self::handle_simple_chat_learn);
+
+        let memory_system_chat_converse = self.memory_system.clone();
+        let concept_graph_chat_converse = self.concept_graph.clone();
+        let brain_ai_orchestrator_converse = self.brain_ai_orchestrator.clone();
+        let chat_converse = api
+            .and(warp::path("chat"))
+            .and(warp::path("converse"))
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_chat_converse.clone()))
+            .and(warp::any().map(move || concept_graph_chat_converse.clone()))
+            .and(warp::any().map(move || brain_ai_orchestrator_converse.clone()))
+            .and_then(Self::handle_simple_chat_converse);
+
+        // Code Pattern Recognition API endpoint
+        let memory_system_code_patterns = self.memory_system.clone();
+        let concept_graph_code_patterns = self.concept_graph.clone();
+        let code_patterns = api
+            .and(warp::path("code"))
+            .and(warp::path("analyze-patterns"))
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_code_patterns.clone()))
+            .and(warp::any().map(move || concept_graph_code_patterns.clone()))
+            .and_then(Self::handle_code_pattern_analysis);
+
+        // Development Context API endpoints
+        let memory_system_dev_context = self.memory_system.clone();
+        let concept_graph_dev_context = self.concept_graph.clone();
+        let sessions_dev_context = self.development_sessions.clone();
+        let dev_context_create = api
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map(move || memory_system_dev_context.clone()))
+            .and(warp::any().map(move || concept_graph_dev_context.clone()))
+            .and(warp::any().map(move || sessions_dev_context.clone()))
+            .and_then(Self::handle_development_context_create);
+
+        let sessions_dev_context_get = self.development_sessions.clone();
+        let dev_context_get = api
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path::param())
+            .and(warp::path::end())
+            .and(warp::get())
+            .and(warp::any().map(move || sessions_dev_context_get.clone()))
+            .and_then(Self::handle_development_context_get);
+
+        // Group routes to reduce recursion depth
+        let basic_routes = status
             .or(stats)
             .or(health)
             .or(learn)
             .or(memory_query)
             .or(segment)
             .or(simulate)
-            .or(concepts_analyze)
-            .or(chat)
+            .or(concepts_analyze);
+
+        let chat_routes = chat
             .or(rag_chat)
             .or(rag_stats)
-            .or(export)
-            .or(learning_analytics)
+            .or(chat_learn)
+            .or(chat_converse);
+
+        let learning_routes = learning_analytics
             .or(start_learning_session)
             .or(end_learning_session)
             .or(knowledge_gaps)
             .or(learning_recommendations)
-            .or(performance_trends)
+            .or(performance_trends);
+
+        let dev_routes = code_patterns
+            .or(dev_context_create)
+            .or(dev_context_get);
+
+        // Combine grouped routes
+        let api_routes = basic_routes
+            .or(chat_routes)
+            .or(learning_routes)
+            .or(dev_routes)
+            .or(export);
+
+        let routes = static_files
+            .or(api_routes)
             .with(cors);
 
         println!("🚀 Brain AI Web Server starting on http://localhost:{}", self.port);
         println!("📱 Interface available at: http://localhost:{}/brain-interface.html", self.port);
+        println!("💬 Simple Chat Interface: http://localhost:{}/chat.html", self.port);
         println!("📊 Concept Graph: http://localhost:{}/concept_graph.html", self.port);
         println!("⏰ Memory Timeline: http://localhost:{}/memory_timeline.html", self.port);
         println!("🎮 Simulation Dashboard: http://localhost:{}/simulation_dashboard.html", self.port);
@@ -1338,6 +1594,34 @@ impl WebServer {
         }
     }
 
+    /// Clean response text by removing internal system identifiers and improving formatting
+    fn clean_response_text(text: &str) -> String {
+        text
+            // Remove internal system identifiers
+            .replace("web_content_ai:", "")
+            .replace("pattern_analysis:", "")
+            .replace("semantic_analysis:", "")
+            .replace("github_analysis:", "")
+            .replace("code_analysis:", "")
+            .replace("document_analysis:", "")
+            
+            // Clean up multiple spaces and newlines
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
+            
+            // Add better formatting
+            .replace("Complex query with", "**🔍 Analysis:** Complex query with")
+            .replace("Pattern:", "**🔄 Pattern detected:**")
+            .replace("URL pattern detected", "**🔗 Web content detected**")
+            .replace("Code pattern detected", "**💻 Code analysis completed**")
+            .replace("Long text pattern detected", "**📄 Document content analyzed**")
+            .replace("Query contains", "**📊 Text analysis:** Contains")
+            .replace("Technical content detected:", "**🔧 Technical content identified:**")
+    }
+
     // Enhanced LLM Training Integration handlers
     async fn handle_learning_analytics() -> Result<impl warp::Reply, warp::Rejection> {
         // For now, return a placeholder response
@@ -1430,6 +1714,824 @@ impl WebServer {
             "recent_performance_summary": "No data available"
         });
         Ok(warp::reply::json(&trends))
+    }
+
+    async fn handle_simple_chat_learn(
+        request: SimpleChatLearnRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        brain_ai_orchestrator: Arc<Mutex<BrainAIOrchestrator>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        println!("📚 Processing learning request for {} characters", request.content.len());
+        
+        let start_time = std::time::Instant::now();
+        
+        match Self::process_learning_content(&request.content, memory_system, concept_graph, brain_ai_orchestrator).await {
+            Ok(insights) => {
+                let processing_time = start_time.elapsed().as_millis() as u64;
+                
+                let response = SimpleChatResponse {
+                    response: format!(
+                        "✅ I've successfully learned from your content! Here's what I discovered:\n\n{}",
+                        insights.iter()
+                            .enumerate()
+                            .map(|(i, insight)| format!("{}. {}", i + 1, insight))
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    ),
+                    insights_learned: insights,
+                    context_used: true,
+                };
+                
+                println!("✅ Learning completed in {}ms", processing_time);
+                Ok(warp::reply::json(&response))
+            }
+            Err(e) => {
+                println!("❌ Learning failed: {}", e);
+                let error_response = SimpleChatResponse {
+                    response: format!("I encountered an error while learning from your content: {}", e),
+                    insights_learned: vec![],
+                    context_used: false,
+                };
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    async fn handle_simple_chat_converse(
+        request: SimpleChatConverseRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        brain_ai_orchestrator: Arc<Mutex<BrainAIOrchestrator>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        println!("💬 Processing conversation request: {}", request.message);
+        
+        let start_time = std::time::Instant::now();
+        
+        match Self::process_conversation(&request.message, &request.history, memory_system, concept_graph, brain_ai_orchestrator).await {
+            Ok(response) => {
+                let processing_time = start_time.elapsed().as_millis() as u64;
+                
+                println!("✅ Conversation response generated in {}ms", processing_time);
+                Ok(warp::reply::json(&response))
+            }
+            Err(e) => {
+                println!("❌ Conversation failed: {}", e);
+                let error_response = SimpleChatResponse {
+                    response: format!("I'm sorry, I encountered an error: {}", e),
+                    insights_learned: vec![],
+                    context_used: false,
+                };
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    async fn process_learning_content(
+        content: &str,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        brain_ai_orchestrator: Arc<Mutex<BrainAIOrchestrator>>,
+    ) -> Result<Vec<String>, BrainError> {
+        let mut memory_guard = memory_system.lock().await;
+        let mut concept_guard = concept_graph.lock().await;
+        let mut brain_guard = brain_ai_orchestrator.lock().await;
+        
+        // Use BrainAIOrchestrator to analyze and learn from the content
+        let analysis_result = brain_guard.analyze_query(content, &mut *memory_guard, &mut *concept_guard).await?;
+        
+        // Extract insights from the analysis results, cleaning up internal identifiers
+        let mut insights = vec![Self::clean_response_text(&analysis_result.analysis)];
+        
+        for insight in analysis_result.insights {
+            insights.push(Self::clean_response_text(&insight.content));
+        }
+        
+        Ok(insights)
+    }
+
+    async fn process_conversation(
+        message: &str,
+        _history: &[ChatMessage], // For future use in context-aware conversations
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        brain_ai_orchestrator: Arc<Mutex<BrainAIOrchestrator>>,
+    ) -> Result<SimpleChatResponse, BrainError> {
+        let mut memory_guard = memory_system.lock().await;
+        let mut concept_guard = concept_graph.lock().await;
+        let mut brain_guard = brain_ai_orchestrator.lock().await;
+        
+        // Use BrainAIOrchestrator to analyze the query and generate response
+        let analysis_result = brain_guard.analyze_query(message, &mut *memory_guard, &mut *concept_guard).await?;
+        
+        // Create a comprehensive response based on the analysis, cleaning up internal identifiers
+        let mut response = Self::clean_response_text(&analysis_result.analysis);
+        
+        if !analysis_result.insights.is_empty() {
+            response.push_str("\n\n**Key insights:**\n");
+            for (i, insight) in analysis_result.insights.iter().enumerate() {
+                let clean_content = Self::clean_response_text(&insight.content);
+                response.push_str(&format!("{}. {}\n", i + 1, clean_content));
+            }
+        }
+        
+        // Check if relevant context was found based on confidence and insights
+        let context_used = analysis_result.confidence > 0.3 || !analysis_result.insights.is_empty();
+        
+        Ok(SimpleChatResponse {
+            response,
+            insights_learned: vec![], // Only relevant for learning requests
+            context_used,
+        })
+    }
+
+    /// Handle code pattern analysis requests
+    async fn handle_code_pattern_analysis(
+        request: CodePatternAnalysisRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        
+        // Create code pattern analyzer
+        let analyzer = CodePatternAnalyzer::new();
+        
+        // Detect language if not provided
+        let detected_language = if let Some(lang) = &request.language {
+            Some(lang.clone())
+        } else {
+            analyzer.detect_language(&request.code_content, request.file_path.as_deref())
+        };
+        
+        // Analyze code patterns
+        let analysis_result = analyzer.analyze_patterns(
+            &request.code_content,
+            request.file_path.as_deref(),
+            detected_language.as_deref(),
+            request.analysis_depth,
+        );
+        
+        let mut concepts_created = 0;
+        let mut relationships_formed = 0;
+        let mut patterns_with_concepts = Vec::new();
+        
+        // Store patterns in concept graph if requested
+        if request.store_patterns {
+            let mut cg = concept_graph.lock().await;
+            let mut mem = memory_system.lock().await;
+            
+            for pattern in analysis_result.patterns {
+                let concept_id = match Self::store_pattern_as_concept(&mut cg, &mut mem, &pattern).await {
+                    Ok(id) => {
+                        concepts_created += 1;
+                        Some(id.to_string())
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to store pattern as concept: {}", e);
+                        None
+                    }
+                };
+                
+                let mut pattern_with_concept = pattern;
+                pattern_with_concept.concept_id = concept_id;
+                patterns_with_concepts.push(pattern_with_concept);
+            }
+            
+            // Form relationships between related patterns
+            relationships_formed = Self::form_pattern_relationships(&mut cg, &patterns_with_concepts).await;
+        } else {
+            patterns_with_concepts = analysis_result.patterns;
+        }
+        
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = CodePatternAnalysisResponse {
+            success: true,
+            patterns_found: patterns_with_concepts,
+            concepts_created,
+            relationships_formed,
+            analysis_time_ms: processing_time,
+            confidence_score: analysis_result.overall_confidence,
+            language_detected: detected_language,
+            architectural_insights: analysis_result.architectural_insights,
+        };
+        
+        Ok(warp::reply::json(&response))
+    }
+    
+    /// Store a code pattern as a concept in the concept graph
+    async fn store_pattern_as_concept(
+        concept_graph: &mut ConceptGraphManager,
+        _memory_system: &mut MemorySystem,
+        pattern: &CodePattern,
+    ) -> Result<uuid::Uuid, BrainError> {
+        // Convert pattern type to concept type
+        let concept_type = match pattern.pattern_type {
+            CodePatternType::DataStructure => ConceptType::Entity,
+            CodePatternType::Function => ConceptType::Action,
+            CodePatternType::APIEndpoint => ConceptType::Action,
+            CodePatternType::DesignPattern => ConceptType::Abstract,
+            CodePatternType::ArchitecturalPattern => ConceptType::Abstract,
+            CodePatternType::ImportPattern => ConceptType::Relation,
+            CodePatternType::NamingConvention => ConceptType::Attribute,
+            CodePatternType::ErrorHandling => ConceptType::Action,
+            CodePatternType::ConfigurationPattern => ConceptType::Entity,
+            CodePatternType::TestPattern => ConceptType::Action,
+        };
+        
+        // Create concept node
+        let mut concept = ConceptNode::new(
+            concept_type,
+            pattern.name.clone(),
+            pattern.confidence,
+            pattern.file_location.clone(),
+        );
+        
+        // Add metadata
+        concept.set_metadata("pattern_type".to_string(), format!("{:?}", pattern.pattern_type));
+        concept.set_metadata("description".to_string(), pattern.description.clone());
+        if let Some(snippet) = &pattern.code_snippet {
+            concept.set_metadata("code_snippet".to_string(), snippet.clone());
+        }
+        
+        let concept_id = concept_graph.create_concept(concept).await
+            .map_err(|e| BrainError::DatabaseError(format!("Failed to create concept: {}", e)))?;
+        
+        // Store in episodic memory for context
+        let event_content = format!("Code pattern discovered: {} ({})", pattern.name, pattern.description);
+        let mut context = HashMap::new();
+        context.insert("pattern_type".to_string(), format!("{:?}", pattern.pattern_type));
+        if let Some(file_path) = &pattern.file_location {
+            context.insert("file_path".to_string(), file_path.clone());
+        }
+        context.insert("concept_id".to_string(), concept_id.to_string());
+        
+        let _episodic_event = EpisodicEvent::new(
+            event_content,
+            context,
+            0.7, // importance
+            "code_pattern_analysis".to_string(),
+        );
+        
+        // For now, we'll skip episodic storage since the MemorySystem API doesn't expose it
+        // In a production system, we'd add a method to MemorySystem to handle this
+        // memory_system.store_episodic_event(episodic_event)?;
+        
+        Ok(concept_id)
+    }
+    
+    /// Form relationships between related code patterns
+    async fn form_pattern_relationships(
+        concept_graph: &mut ConceptGraphManager,
+        patterns: &[CodePattern],
+    ) -> usize {
+        let mut relationships_formed = 0;
+        
+        for (i, pattern1) in patterns.iter().enumerate() {
+            if let Some(concept_id1_str) = &pattern1.concept_id {
+                if let Ok(concept_id1) = uuid::Uuid::parse_str(concept_id1_str) {
+                    // Look for related patterns
+                    for pattern2 in patterns.iter().skip(i + 1) {
+                        if let Some(concept_id2_str) = &pattern2.concept_id {
+                            if let Ok(concept_id2) = uuid::Uuid::parse_str(concept_id2_str) {
+                                // Determine relationship type based on pattern types
+                                let relationship_type = Self::determine_pattern_relationship(pattern1, pattern2);
+                                
+                                if let Some(rel_type) = relationship_type {
+                                    match concept_graph.create_relationship(
+                                        concept_id1,
+                                        concept_id2,
+                                        rel_type,
+                                        0.5, // Initial weight
+                                    ).await {
+                                        Ok(_) => relationships_formed += 1,
+                                        Err(e) => eprintln!("Failed to create relationship: {}", e),
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        relationships_formed
+    }
+    
+    /// Determine the appropriate relationship type between two patterns
+    fn determine_pattern_relationship(pattern1: &CodePattern, pattern2: &CodePattern) -> Option<RelationshipType> {
+        use CodePatternType::*;
+        
+        match (&pattern1.pattern_type, &pattern2.pattern_type) {
+            (Function, DataStructure) | (DataStructure, Function) => Some(RelationshipType::Uses),
+            (APIEndpoint, Function) | (Function, APIEndpoint) => Some(RelationshipType::Uses),
+            (DesignPattern, ArchitecturalPattern) | (ArchitecturalPattern, DesignPattern) => Some(RelationshipType::PartOf),
+            (TestPattern, Function) | (Function, TestPattern) => Some(RelationshipType::AssociatedWith),
+            (ErrorHandling, Function) | (Function, ErrorHandling) => Some(RelationshipType::PartOf),
+            (ConfigurationPattern, _) | (_, ConfigurationPattern) => Some(RelationshipType::AssociatedWith),
+            (ImportPattern, _) | (_, ImportPattern) => Some(RelationshipType::Uses),
+            _ => {
+                // Check for naming similarity or location proximity
+                if Self::patterns_are_related(pattern1, pattern2) {
+                    Some(RelationshipType::SimilarTo)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+    
+    /// Check if two patterns are related based on naming or location
+    fn patterns_are_related(pattern1: &CodePattern, pattern2: &CodePattern) -> bool {
+        // Check if patterns are in the same file
+        if let (Some(file1), Some(file2)) = (&pattern1.file_location, &pattern2.file_location) {
+            if file1 == file2 {
+                return true;
+            }
+        }
+        
+        // Check naming similarity (simple heuristic)
+        let name1 = pattern1.name.to_lowercase();
+        let name2 = pattern2.name.to_lowercase();
+        
+        // If one name contains the other or they share significant prefix/suffix
+        name1.contains(&name2) || name2.contains(&name1) ||
+        (name1.len() > 3 && name2.len() > 3 && 
+         (name1.starts_with(&name2[..3]) || name2.starts_with(&name1[..3])))
+    }
+
+    // Development Context API Handlers
+
+    /// Handle POST /api/dev/context - Create or update development context
+    async fn handle_development_context_create(
+        request: DevelopmentContextRequest,
+        memory_system: Arc<Mutex<MemorySystem>>,
+        concept_graph: Arc<Mutex<ConceptGraphManager>>,
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        
+        // Generate or use existing session ID
+        let session_id = request.session_id.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        
+        let insights = Self::analyze_development_context(&request, &memory_system, &concept_graph).await?;
+        let recommendations = Self::generate_development_recommendations(&request, &insights).await;
+        
+        // Create or update session
+        let mut sessions_lock = sessions.lock().await;
+        let session = if let Some(existing_session) = sessions_lock.get_mut(&session_id) {
+            // Update existing session
+            existing_session.last_updated = chrono::Utc::now();
+            existing_session.files_accessed.extend(request.files_accessed);
+            if let Some(intent) = request.current_intent {
+                existing_session.development_intent = Some(intent);
+            }
+            if let Some(goal) = request.development_goal {
+                existing_session.development_goal = Some(goal);
+            }
+            if let Some(project_ctx) = request.project_context {
+                existing_session.project_context = Some(project_ctx);
+            }
+            existing_session.insights.extend(insights.clone());
+            existing_session.confidence_score = Self::calculate_session_confidence(&existing_session);
+            existing_session.clone()
+        } else {
+            // Create new session
+            let new_session = DevelopmentSession {
+                session_id: session_id.clone(),
+                start_time: chrono::Utc::now(),
+                last_updated: chrono::Utc::now(),
+                files_accessed: request.files_accessed,
+                development_intent: request.current_intent,
+                development_goal: request.development_goal,
+                project_context: request.project_context,
+                insights: insights.clone(),
+                patterns_discovered: Vec::new(),
+                confidence_score: 0.8, // Default confidence for new sessions
+            };
+            sessions_lock.insert(session_id.clone(), new_session.clone());
+            new_session
+        };
+        drop(sessions_lock);
+
+        // Store context in Brain's memory systems if auto_save is enabled
+        if request.auto_save {
+            match Self::store_context_in_brain_memory(&session, &memory_system, &concept_graph).await {
+                Ok(()) => {},
+                Err(_) => {
+                    // Log error but don't fail the request
+                    println!("Warning: Failed to store context in brain memory");
+                }
+            }
+        }
+
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = DevelopmentContextResponse {
+            success: true,
+            session_id,
+            context_preserved: request.auto_save,
+            insights_generated: insights,
+            recommendations,
+            processing_time_ms: processing_time,
+        };
+        
+        Ok(warp::reply::json(&response))
+    }
+
+    /// Handle GET /api/dev/context/{session_id} - Retrieve development context
+    async fn handle_development_context_get(
+        session_id: String,
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+    ) -> Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        
+        let sessions_lock = sessions.lock().await;
+        let session = sessions_lock.get(&session_id).cloned();
+        let related_sessions = Self::find_related_sessions(&session_id, &sessions_lock).await;
+        drop(sessions_lock);
+        
+        let context_summary = if let Some(ref sess) = session {
+            Some(Self::generate_context_summary(sess))
+        } else {
+            None
+        };
+        
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = DevelopmentContextQueryResponse {
+            success: true,
+            session_found: session.is_some(),
+            session,
+            related_sessions,
+            context_summary,
+            processing_time_ms: processing_time,
+        };
+        
+        Ok(warp::reply::json(&response))
+    }
+
+    /// Analyze development context and extract insights
+    async fn analyze_development_context(
+        request: &DevelopmentContextRequest,
+        memory_system: &Arc<Mutex<MemorySystem>>,
+        concept_graph: &Arc<Mutex<ConceptGraphManager>>,
+    ) -> Result<Vec<String>, warp::Rejection> {
+        let mut insights = Vec::new();
+        
+        // Analyze file access patterns
+        if !request.files_accessed.is_empty() {
+            let file_patterns = Self::analyze_file_access_patterns(&request.files_accessed);
+            insights.extend(file_patterns);
+        }
+        
+        // Analyze development intent
+        if let Some(ref intent) = request.current_intent {
+            let intent_insights = Self::analyze_development_intent(intent, concept_graph).await
+                .map_err(|_| warp::reject())?;
+            insights.extend(intent_insights);
+        }
+        
+        // Analyze project context
+        if let Some(ref project_ctx) = request.project_context {
+            let project_insights = Self::analyze_project_context(project_ctx);
+            insights.extend(project_insights);
+        }
+        
+        // Query Brain's memory for relevant patterns
+        let memory_insights = Self::query_memory_for_context(request, memory_system).await
+            .map_err(|_| warp::reject())?;
+        insights.extend(memory_insights);
+        
+        Ok(insights)
+    }
+
+    /// Generate development recommendations based on context and insights
+    async fn generate_development_recommendations(
+        request: &DevelopmentContextRequest,
+        insights: &[String],
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        
+        // File-based recommendations
+        if !request.files_accessed.is_empty() {
+            recommendations.extend(Self::recommend_based_on_files(&request.files_accessed));
+        }
+        
+        // Intent-based recommendations
+        if let Some(ref intent) = request.current_intent {
+            recommendations.extend(Self::recommend_based_on_intent(intent));
+        }
+        
+        // Insight-based recommendations
+        recommendations.extend(Self::recommend_based_on_insights(insights));
+        
+        // Limit to top 5 recommendations
+        recommendations.truncate(5);
+        recommendations
+    }
+
+    /// Store development context in Brain's memory systems
+    async fn store_context_in_brain_memory(
+        session: &DevelopmentSession,
+        memory_system: &Arc<Mutex<MemorySystem>>,
+        concept_graph: &Arc<Mutex<ConceptGraphManager>>,
+    ) -> Result<(), BrainError> {
+        let mut memory = memory_system.lock().await;
+        let mut cg = concept_graph.lock().await;
+        
+        // Store in episodic memory
+        let event_content = format!(
+            "Development session: {} - Intent: {:?}, Files: {}", 
+            session.session_id,
+            session.development_intent,
+            session.files_accessed.len()
+        );
+        
+        let mut context = HashMap::new();
+        context.insert("session_id".to_string(), session.session_id.clone());
+        context.insert("file_count".to_string(), session.files_accessed.len().to_string());
+        if let Some(ref intent) = session.development_intent {
+            context.insert("intent".to_string(), intent.clone());
+        }
+        if let Some(ref goal) = session.development_goal {
+            context.insert("goal".to_string(), goal.clone());
+        }
+        
+        let _episodic_event = EpisodicEvent::new(
+            event_content,
+            context,
+            0.8, // importance
+            "development_session".to_string(),
+        );
+        
+        // Note: In a production system, we'd expose episodic storage in MemorySystem API
+        // For now, we'll store it as working memory
+        let working_memory_content = format!("Dev Session: {}", serde_json::to_string(session).unwrap_or_default());
+        let _memory_id = memory.learn(working_memory_content, Priority::High)?;
+        
+        // Create concepts for development patterns
+        if let Some(ref intent) = session.development_intent {
+            let concept = crate::concept_graph::ConceptNode::new(
+                crate::concept_graph::ConceptType::Action,
+                format!("dev_intent_{}", intent),
+                0.7,
+                Some(format!("session:{}", session.session_id)),
+            );
+            let _concept_id = cg.create_concept(concept).await?;
+        }
+        
+        Ok(())
+    }
+
+    /// Calculate confidence score for a development session
+    fn calculate_session_confidence(session: &DevelopmentSession) -> f64 {
+        let mut score = 0.5; // Base score
+        
+        // File access patterns contribute to confidence
+        if !session.files_accessed.is_empty() {
+            score += 0.2;
+        }
+        
+        // Having clear intent increases confidence
+        if session.development_intent.is_some() {
+            score += 0.2;
+        }
+        
+        // Having a goal increases confidence
+        if session.development_goal.is_some() {
+            score += 0.1;
+        }
+        
+        // Project context adds confidence
+        if session.project_context.is_some() {
+            score += 0.1;
+        }
+        
+        // Insights and patterns add confidence
+        score += (session.insights.len() as f64 * 0.05).min(0.2);
+        
+        score.min(1.0) // Cap at 1.0
+    }
+
+    /// Find related development sessions
+    async fn find_related_sessions(
+        session_id: &str,
+        sessions: &HashMap<String, DevelopmentSession>,
+    ) -> Vec<String> {
+        let mut related = Vec::new();
+        
+        if let Some(current_session) = sessions.get(session_id) {
+            for (other_id, other_session) in sessions.iter() {
+                if other_id != session_id {
+                    if Self::sessions_are_related(current_session, other_session) {
+                        related.push(other_id.clone());
+                    }
+                }
+            }
+        }
+        
+        related.truncate(3); // Limit to top 3 related sessions
+        related
+    }
+
+    /// Check if two sessions are related
+    fn sessions_are_related(session1: &DevelopmentSession, session2: &DevelopmentSession) -> bool {
+        // Check if they share similar file paths
+        let files1: std::collections::HashSet<_> = session1.files_accessed.iter()
+            .map(|f| &f.file_path).collect();
+        let files2: std::collections::HashSet<_> = session2.files_accessed.iter()
+            .map(|f| &f.file_path).collect();
+        
+        let common_files = files1.intersection(&files2).count();
+        if common_files > 0 {
+            return true;
+        }
+        
+        // Check if they have similar development intents
+        if let (Some(intent1), Some(intent2)) = (&session1.development_intent, &session2.development_intent) {
+            if intent1.to_lowercase().contains(&intent2.to_lowercase()) || 
+               intent2.to_lowercase().contains(&intent1.to_lowercase()) {
+                return true;
+            }
+        }
+        
+        false
+    }
+
+    /// Generate a summary of the development context
+    fn generate_context_summary(session: &DevelopmentSession) -> String {
+        let mut summary = format!("Session {} started {}", 
+            session.session_id, 
+            session.start_time.format("%Y-%m-%d %H:%M"));
+        
+        if !session.files_accessed.is_empty() {
+            summary.push_str(&format!(", {} files accessed", session.files_accessed.len()));
+        }
+        
+        if let Some(ref intent) = session.development_intent {
+            summary.push_str(&format!(", Intent: {}", intent));
+        }
+        
+        if !session.insights.is_empty() {
+            summary.push_str(&format!(", {} insights generated", session.insights.len()));
+        }
+        
+        summary
+    }
+
+    // Helper functions for analysis
+
+    fn analyze_file_access_patterns(files: &[FileAccess]) -> Vec<String> {
+        let mut insights = Vec::new();
+        
+        // Analyze file types
+        let mut extensions = std::collections::HashMap::new();
+        for file in files {
+            if let Some(ext) = std::path::Path::new(&file.file_path).extension() {
+                if let Some(ext_str) = ext.to_str() {
+                    *extensions.entry(ext_str.to_string()).or_insert(0) += 1;
+                }
+            }
+        }
+        
+        if let Some((most_common_ext, count)) = extensions.iter().max_by_key(|(_, &v)| v) {
+            insights.push(format!("Primary file type: {} ({} files)", most_common_ext, count));
+        }
+        
+        // Analyze access patterns
+        let write_count = files.iter().filter(|f| matches!(f.access_type, FileAccessType::Write)).count();
+        let read_count = files.iter().filter(|f| matches!(f.access_type, FileAccessType::Read)).count();
+        
+        if write_count > read_count {
+            insights.push("Active development pattern detected (more writes than reads)".to_string());
+        } else if read_count > write_count * 2 {
+            insights.push("Research/exploration pattern detected (high read ratio)".to_string());
+        }
+        
+        insights
+    }
+
+    async fn analyze_development_intent(
+        intent: &str,
+        concept_graph: &Arc<Mutex<ConceptGraphManager>>,
+    ) -> Result<Vec<String>, BrainError> {
+        let mut insights = Vec::new();
+        
+        // Simple intent categorization
+        let intent_lower = intent.to_lowercase();
+        if intent_lower.contains("debug") || intent_lower.contains("fix") {
+            insights.push("Debugging/fixing activity detected".to_string());
+        } else if intent_lower.contains("implement") || intent_lower.contains("add") {
+            insights.push("Feature implementation activity detected".to_string());
+        } else if intent_lower.contains("refactor") || intent_lower.contains("improve") {
+            insights.push("Code improvement activity detected".to_string());
+        } else if intent_lower.contains("test") {
+            insights.push("Testing activity detected".to_string());
+        }
+        
+        // Try to find related concepts in the concept graph
+        let _cg = concept_graph.lock().await;
+        // In a full implementation, we'd search for related concepts
+        // For now, just add a general insight
+        insights.push(format!("Development intent registered: {}", intent));
+        
+        Ok(insights)
+    }
+
+    fn analyze_project_context(project_ctx: &ProjectContext) -> Vec<String> {
+        let mut insights = Vec::new();
+        
+        if let Some(ref branch) = project_ctx.current_branch {
+            if branch != "main" && branch != "master" {
+                insights.push(format!("Working on feature branch: {}", branch));
+            }
+        }
+        
+        if !project_ctx.technology_stack.is_empty() {
+            insights.push(format!("Technology stack: {}", project_ctx.technology_stack.join(", ")));
+        }
+        
+        if !project_ctx.active_features.is_empty() {
+            insights.push(format!("Active features: {}", project_ctx.active_features.join(", ")));
+        }
+        
+        insights
+    }
+
+    async fn query_memory_for_context(
+        _request: &DevelopmentContextRequest,
+        memory_system: &Arc<Mutex<MemorySystem>>,
+    ) -> Result<Vec<String>, BrainError> {
+        let mut insights = Vec::new();
+        let memory = memory_system.lock().await;
+        
+        // Query working memory for related development activities
+        let working_memory_items = memory.query_working(&WorkingMemoryQuery {
+            content_pattern: Some("dev session".to_string()),
+            priority: Some(Priority::Medium),
+            min_importance: None,
+            created_after: None,
+            limit: Some(5),
+        })?;
+        
+        if !working_memory_items.is_empty() {
+            insights.push(format!("Found {} related development activities in recent memory", working_memory_items.len()));
+        }
+        
+        // In a full implementation, we'd also query episodic and semantic memory
+        
+        Ok(insights)
+    }
+
+    fn recommend_based_on_files(files: &[FileAccess]) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        
+        let rust_files = files.iter().filter(|f| f.file_path.ends_with(".rs")).count();
+        let js_files = files.iter().filter(|f| f.file_path.ends_with(".js") || f.file_path.ends_with(".ts")).count();
+        
+        if rust_files > 0 {
+            recommendations.push("Consider running `cargo check` to verify Rust code".to_string());
+        }
+        
+        if js_files > 0 {
+            recommendations.push("Consider running linter on JavaScript/TypeScript files".to_string());
+        }
+        
+        if files.len() > 10 {
+            recommendations.push("Many files accessed - consider organizing work into smaller sessions".to_string());
+        }
+        
+        recommendations
+    }
+
+    fn recommend_based_on_intent(intent: &str) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        let intent_lower = intent.to_lowercase();
+        
+        if intent_lower.contains("debug") {
+            recommendations.push("Consider adding logging statements for better debugging".to_string());
+        } else if intent_lower.contains("implement") {
+            recommendations.push("Consider writing tests for the new implementation".to_string());
+        } else if intent_lower.contains("refactor") {
+            recommendations.push("Consider running full test suite after refactoring".to_string());
+        }
+        
+        recommendations
+    }
+
+    fn recommend_based_on_insights(insights: &[String]) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        
+        for insight in insights {
+            if insight.contains("debugging") {
+                recommendations.push("Use systematic debugging approach: reproduce, isolate, fix, verify".to_string());
+            } else if insight.contains("implementation") {
+                recommendations.push("Follow TDD: write test first, implement, refactor".to_string());
+            }
+        }
+        
+        recommendations
     }
 }
 

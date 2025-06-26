@@ -214,4 +214,6 @@ pub use independent_intelligence::{
 };
 
 /// Current version of the Brain architecture
-pub const VERSION: &str = env!("CARGO_PKG_VERSION"); 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub mod code_pattern_analyzer; 

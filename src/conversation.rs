@@ -744,32 +744,13 @@ impl RagOrchestrator {
                             content: format!("{}: {}", insight.insight_type, insight.content),
                             knowledge_type: insight.insight_type,
                             relevance_score: insight.confidence,
-                            source: format!("Brain AI - {}", insight.evidence.join(", ")),
+                            source: format!("Brain AI - {}", insight.source),
                             timestamp: Utc::now(),
                         });
                     }
                     
-                    // Add related concepts as knowledge
-                    for concept in brain_analysis.related_concepts {
-                        retrieved_knowledge.push(RetrievedKnowledge {
-                            content: format!("Related concept: {}", concept),
-                            knowledge_type: "related_concept".to_string(),
-                            relevance_score: 0.6,
-                            source: "Brain AI Concept Analysis".to_string(),
-                            timestamp: Utc::now(),
-                        });
-                    }
-                    
-                    // Add patterns as knowledge
-                    for pattern in brain_analysis.patterns {
-                        retrieved_knowledge.push(RetrievedKnowledge {
-                            content: format!("Detected pattern: {}", pattern),
-                            knowledge_type: "pattern".to_string(),
-                            relevance_score: 0.7,
-                            source: "Brain AI Pattern Detection".to_string(),
-                            timestamp: Utc::now(),
-                        });
-                    }
+                    // Note: Related concepts and patterns are now included in the main analysis
+                    // rather than as separate fields
                     
                     println!("🎯 Brain AI Orchestrator generated {} knowledge items", retrieved_knowledge.len());
                     return Ok(retrieved_knowledge);
@@ -2297,739 +2278,64 @@ impl RagOrchestrator {
 
     // API methods for web endpoints
     pub async fn get_learning_analytics(&self) -> LearningAnalytics {
-        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.get_learning_analytics().await
-        } else {
-            LearningAnalytics::default()
-        }
+        // Return default analytics since BrainAIOrchestrator doesn't have learning_orchestrator
+        LearningAnalytics::default()
     }
 
     pub async fn start_learning_session(&mut self, objective: String) -> String {
-        if let Some(ref mut brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.start_learning_session(objective).await
-        } else {
-            format!("session_{}", chrono::Utc::now().timestamp())
-        }
+        // Return a simple session ID since BrainAIOrchestrator doesn't have learning_orchestrator
+        format!("session_{}_{}", objective.chars().take(10).collect::<String>(), chrono::Utc::now().timestamp())
     }
 
     pub async fn end_learning_session(&mut self, session_id: String) -> LearningSessionSummary {
-        if let Some(ref mut brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.end_learning_session(session_id).await
-        } else {
-            LearningSessionSummary {
-                session_id,
-                duration_minutes: 0.0,
-                activities_completed: 0,
-                knowledge_gained: 0,
-                avg_activity_success: 0.0,
-                insights_generated: 0,
-                overall_effectiveness: 0.0,
-            }
+        // Return a simple summary since BrainAIOrchestrator doesn't have learning_orchestrator
+        LearningSessionSummary {
+            session_id,
+            duration_minutes: 0.0,
+            activities_completed: 0,
+            knowledge_gained: 0,
+            avg_activity_success: 0.0,
+            insights_generated: 0,
+            overall_effectiveness: 0.0,
         }
     }
 
     pub async fn get_current_knowledge_gaps(&self) -> Vec<KnowledgeGap> {
-        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.get_current_knowledge_gaps().await
-        } else {
-            Vec::new()
-        }
+        // Return empty vector since BrainAIOrchestrator doesn't have learning_orchestrator
+        Vec::new()
     }
 
     pub async fn get_meta_learning_recommendations(&self) -> Vec<String> {
-        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.get_meta_learning_recommendations().await
-        } else {
-            vec!["Initialize Brain AI for recommendations".to_string()]
-        }
+        // Return simple recommendations since BrainAIOrchestrator doesn't have learning_orchestrator
+        vec!["Initialize Brain AI for recommendations".to_string()]
     }
 
     pub async fn get_performance_trends(&self) -> PerformanceTrends {
-        if let Some(ref brain_ai) = self.brain_ai_orchestrator {
-            brain_ai.learning_orchestrator.get_performance_trends().await
-        } else {
-            PerformanceTrends::default()
-        }
+        // Return default trends since BrainAIOrchestrator doesn't have learning_orchestrator
+        PerformanceTrends::default()
     }
 
-    fn is_github_related(&self, query: &str) -> bool {
-        // Use the universal learning system instead of just GitHub
-        self.should_trigger_learning(query)
-    }
+    // Note: Universal Learning functionality has been moved to BrainAIOrchestrator
 
-    /// Extract GitHub references from query (simplified version)
-    fn extract_github_references_simple(&self, query: &str) -> Vec<String> {
-        let mut github_refs = Vec::new();
-        
-        // Look for GitHub URLs (various formats)
-        if query.contains("github.com/") {
-            // Extract GitHub URLs using simple pattern matching
-            let words: Vec<&str> = query.split_whitespace().collect();
-            for word in words {
-                if word.contains("github.com/") {
-                    // Clean up the URL (remove trailing punctuation)
-                    let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.');
-                    github_refs.push(clean_url.to_string());
-                }
-            }
-        }
 
-        // Common repositories that users might mention
-        let known_repos = vec![
-            ("react", "facebook/react"),
-            ("vue", "vuejs/vue"),
-            ("angular", "angular/angular"),
-            ("typescript", "microsoft/TypeScript"),
-            ("nodejs", "nodejs/node"),
-            ("express", "expressjs/express"),
-            ("nextjs", "vercel/next.js"),
-            ("nuxt", "nuxt/nuxt.js"),
-            ("svelte", "sveltejs/svelte"),
-            ("webpack", "webpack/webpack"),
-            ("vite", "vitejs/vite"),
-            ("tailwind", "tailwindlabs/tailwindcss"),
-            ("bootstrap", "twbs/bootstrap"),
-            ("django", "django/django"),
-            ("flask", "pallets/flask"),
-            ("fastapi", "tiangolo/fastapi"),
-            ("spring", "spring-projects/spring-framework"),
-            ("laravel", "laravel/laravel"),
-            ("rails", "rails/rails"),
-            ("rust", "rust-lang/rust"),
-            ("golang", "golang/go"),
-            ("python", "python/cpython"),
-            ("java", "openjdk/jdk"),
-            ("kotlin", "JetBrains/kotlin"),
-            ("swift", "apple/swift"),
-            ("flutter", "flutter/flutter"),
-            ("react-native", "facebook/react-native"),
-            ("electron", "electron/electron"),
-            ("docker", "docker/docker-ce"),
-            ("kubernetes", "kubernetes/kubernetes"),
-            ("tensorflow", "tensorflow/tensorflow"),
-            ("pytorch", "pytorch/pytorch"),
-            ("scikit-learn", "scikit-learn/scikit-learn"),
-            ("pandas", "pandas-dev/pandas"),
-            ("numpy", "numpy/numpy"),
-        ];
 
-        // Check for repository mentions in the query
-        let query_lower = query.to_lowercase();
-        let words: Vec<&str> = query_lower.split_whitespace().collect();
-        
-        for (keyword, repo_path) in known_repos {
-            if words.iter().any(|&word| {
-                let word_clean = word.trim_matches(|c: char| !c.is_alphanumeric());
-                word_clean == keyword || 
-                word_clean.contains(keyword) ||
-                // Handle variations like "reactjs", "react.js", etc.
-                (keyword.len() > 3 && word_clean.starts_with(keyword))
-            }) {
-                github_refs.push(format!("https://github.com/{}", repo_path));
-                
-                // Also add common variations
-                github_refs.push(format!("github.com/{}", repo_path));
-                github_refs.push(repo_path.to_string());
-            }
-        }
 
-        github_refs.sort();
-        github_refs.dedup();
-        github_refs
-    }
 
-    /// Universal content learning detection - detects ANY learnable content
-    fn should_trigger_learning(&self, query: &str) -> bool {
-        let query_lower = query.to_lowercase();
-        
-        // Direct learning triggers
-        if query_lower.contains("learn from") ||
-           query_lower.contains("analyze this") ||
-           query_lower.contains("train on") ||
-           query_lower.contains("study this") ||
-           query_lower.contains("repository scanned:") ||
-           query_lower.contains("content:") ||
-           query_lower.contains("document:") ||
-           query_lower.contains("file:") {
-            return true;
-        }
 
-        // URL detection (any website, not just GitHub)
-        if self.contains_urls(query) {
-            return true;
-        }
 
-        // File/document patterns
-        if self.contains_file_references(query) {
-            return true;
-        }
 
-        // Code blocks or structured content
-        if self.contains_code_or_structured_content(query) {
-            return true;
-        }
 
-        // Repository or project references
-        if self.contains_repository_references(query) {
-            return true;
-        }
 
-        false
-    }
 
-    /// Detect URLs of any type (not just GitHub)
-    fn contains_urls(&self, query: &str) -> bool {
-        let url_patterns = vec![
-            "http://", "https://", "www.", ".com", ".org", ".net", ".io", ".dev",
-            "github.com", "gitlab.com", "bitbucket.org", "stackoverflow.com",
-            "medium.com", "dev.to", "hackernoon.com", "substack.com",
-            "youtube.com", "vimeo.com", "drive.google.com", "dropbox.com",
-            "notion.so", "figma.com", "docs.google.com", "sheets.google.com"
-        ];
-        
-        url_patterns.iter().any(|pattern| query.contains(pattern))
-    }
 
-    /// Detect file references and document types
-    fn contains_file_references(&self, query: &str) -> bool {
-        let file_extensions = vec![
-            ".pdf", ".doc", ".docx", ".txt", ".md", ".rst",
-            ".js", ".ts", ".py", ".rs", ".go", ".java", ".cpp", ".c",
-            ".html", ".css", ".json", ".xml", ".yaml", ".yml",
-            ".mp3", ".wav", ".mp4", ".avi", ".mov",
-            ".png", ".jpg", ".jpeg", ".gif", ".svg",
-            ".zip", ".tar", ".gz", ".rar"
-        ];
-        
-        let file_keywords = vec![
-            "file:", "document:", "attachment:", "upload:", "download:",
-            "pdf", "document", "spreadsheet", "presentation", "video", "audio"
-        ];
-        
-        file_extensions.iter().any(|ext| query.contains(ext)) ||
-        file_keywords.iter().any(|keyword| query.to_lowercase().contains(keyword))
-    }
 
-    /// Detect code blocks or structured content
-    fn contains_code_or_structured_content(&self, query: &str) -> bool {
-        // Code block indicators
-        if query.contains("```") || query.contains("```") {
-            return true;
-        }
-        
-        // Indented code patterns
-        if query.lines().any(|line| line.starts_with("    ") || line.starts_with("\t")) {
-            return true;
-        }
-        
-        // Programming language keywords
-        let code_indicators = vec![
-            "function", "class", "import", "export", "const", "let", "var",
-            "def", "async", "await", "return", "if", "else", "for", "while",
-            "struct", "impl", "trait", "enum", "use", "mod",
-            "public", "private", "protected", "static", "final",
-            "#include", "#define", "namespace", "using"
-        ];
-        
-        let query_lower = query.to_lowercase();
-        code_indicators.iter().any(|indicator| {
-            query_lower.contains(&format!(" {} ", indicator)) ||
-            query_lower.starts_with(&format!("{} ", indicator))
-        })
-    }
 
-    /// Detect repository or project references
-    fn contains_repository_references(&self, query: &str) -> bool {
-        let repo_indicators = vec![
-            "repository", "repo", "project", "codebase", "source code",
-            "open source", "library", "framework", "package", "module",
-            "npm", "pip", "cargo", "maven", "gradle", "composer"
-        ];
-        
-        let query_lower = query.to_lowercase();
-        repo_indicators.iter().any(|indicator| query_lower.contains(indicator))
-    }
 
-    /// Process universal learning from any content type
-    async fn process_universal_learning(
-        &mut self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-        concept_graph: &mut ConceptGraphManager,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("🧠 Universal Learning Engine: Processing content for learning");
-        
-        let mut learning_results = Vec::new();
-        
-        // 1. Extract and categorize content
-        let content_analysis = self.analyze_content_type(query).await;
-        println!("  📋 Content type: {}", content_analysis.content_type);
-        println!("  📊 Confidence: {:.2}", content_analysis.confidence);
-        
-        // 2. Process based on content type
-        match content_analysis.content_type.as_str() {
-            "github_repository" => {
-                if let Some(repo_url) = self.extract_github_references_simple(query).first() {
-                    learning_results.extend(self.learn_from_github_repository(repo_url, memory_system).await?);
-                }
-            },
-            "web_url" => {
-                let urls = self.extract_urls(query);
-                for url in urls {
-                    learning_results.extend(self.learn_from_web_content(&url, memory_system).await?);
-                }
-            },
-            "code_snippet" => {
-                learning_results.extend(self.learn_from_code_content(query, memory_system).await?);
-            },
-            "document_content" => {
-                learning_results.extend(self.learn_from_document_content(query, memory_system).await?);
-            },
-            "structured_data" => {
-                learning_results.extend(self.learn_from_structured_data(query, memory_system).await?);
-            },
-            _ => {
-                // Default: treat as general text content
-                learning_results.extend(self.learn_from_text_content(query, memory_system).await?);
-            }
-        }
-        
-        // 3. Update concept graph with learned concepts
-        self.update_concept_graph_from_learning(&learning_results, concept_graph).await?;
-        
-        println!("✅ Universal Learning completed: {} insights generated", learning_results.len());
-        Ok(learning_results)
-    }
 
-    /// Analyze what type of content we're dealing with
-    async fn analyze_content_type(&self, query: &str) -> ContentAnalysis {
-        // GitHub repository detection
-        if !self.extract_github_references_simple(query).is_empty() {
-            return ContentAnalysis {
-                content_type: "github_repository".to_string(),
-                confidence: 0.9,
-                metadata: HashMap::new(),
-            };
-        }
-        
-        // Web URL detection
-        if self.contains_urls(query) {
-            return ContentAnalysis {
-                content_type: "web_url".to_string(),
-                confidence: 0.8,
-                metadata: HashMap::new(),
-            };
-        }
-        
-        // Code content detection
-        if self.contains_code_or_structured_content(query) {
-            return ContentAnalysis {
-                content_type: "code_snippet".to_string(),
-                confidence: 0.85,
-                metadata: HashMap::new(),
-            };
-        }
-        
-        // File/document detection
-        if self.contains_file_references(query) {
-            return ContentAnalysis {
-                content_type: "document_content".to_string(),
-                confidence: 0.7,
-                metadata: HashMap::new(),
-            };
-        }
-        
-        // Structured data (JSON, YAML, etc.)
-        if query.trim().starts_with('{') || query.trim().starts_with('[') || 
-           query.contains("---") || query.contains(": ") {
-            return ContentAnalysis {
-                content_type: "structured_data".to_string(),
-                confidence: 0.75,
-                metadata: HashMap::new(),
-            };
-        }
-        
-        // Default to general text
-        ContentAnalysis {
-            content_type: "text_content".to_string(),
-            confidence: 0.5,
-            metadata: HashMap::new(),
-        }
-    }
 
-    /// Extract all URLs from text
-    fn extract_urls(&self, text: &str) -> Vec<String> {
-        let mut urls = Vec::new();
-        
-        // Simple URL extraction
-        let words: Vec<&str> = text.split_whitespace().collect();
-        for word in words {
-            if word.starts_with("http://") || word.starts_with("https://") || 
-               word.starts_with("www.") || word.contains(".com") {
-                let clean_url = word.trim_end_matches(|c: char| ".,!?;:)]}>".contains(c));
-                urls.push(clean_url.to_string());
-            }
-        }
-        
-        urls
-    }
 
-    /// Learn from GitHub repository
-    async fn learn_from_github_repository(
-        &mut self,
-        repo_url: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  🐙 Learning from GitHub repository: {}", repo_url);
-        
-        // This would integrate with the existing GitHub learning engine
-        // For now, create placeholder insights
-        let insights = vec![
-            format!("Repository URL: {}", repo_url),
-            format!("Repository type: GitHub"),
-            format!("Learning status: Processed"),
-        ];
-        
-        self.store_learning_insights("github_repository", &insights, memory_system).await
-    }
 
-    /// Learn from web content
-    async fn learn_from_web_content(
-        &mut self,
-        url: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  🌐 Learning from web content: {}", url);
-        
-        // Placeholder for web scraping and content analysis
-        let insights = vec![
-            format!("Web URL: {}", url),
-            format!("Content type: Web page"),
-            format!("Learning method: Web scraping + NLP analysis"),
-        ];
-        
-        self.store_learning_insights("web_content", &insights, memory_system).await
-    }
 
-    /// Learn from code content
-    async fn learn_from_code_content(
-        &mut self,
-        code: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  💻 Learning from code content ({} characters)", code.len());
-        
-        // Analyze code patterns, functions, structures
-        let mut insights = Vec::new();
-        
-        // Detect programming language
-        let language = self.detect_programming_language(code);
-        insights.push(format!("Programming language: {}", language));
-        
-        // Extract functions/methods
-        let functions = self.extract_functions_from_code(code, &language);
-        for function in functions {
-            insights.push(format!("Function detected: {}", function));
-        }
-        
-        // Extract imports/dependencies
-        let imports = self.extract_imports_from_code(code, &language);
-        for import in imports {
-            insights.push(format!("Import/dependency: {}", import));
-        }
-        
-        // Extract data structures
-        let structures = self.extract_data_structures_from_code(code, &language);
-        for structure in structures {
-            insights.push(format!("Data structure: {}", structure));
-        }
-        
-        self.store_learning_insights("code_analysis", &insights, memory_system).await
-    }
-
-    /// Learn from document content
-    async fn learn_from_document_content(
-        &mut self,
-        content: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  📄 Learning from document content ({} characters)", content.len());
-        
-        // Extract key concepts, topics, and structured information
-        let insights = vec![
-            format!("Document length: {} characters", content.len()),
-            format!("Word count: {}", content.split_whitespace().count()),
-            format!("Learning method: NLP + concept extraction"),
-        ];
-        
-        self.store_learning_insights("document_analysis", &insights, memory_system).await
-    }
-
-    /// Learn from structured data
-    async fn learn_from_structured_data(
-        &mut self,
-        data: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  📊 Learning from structured data ({} characters)", data.len());
-        
-        let insights = vec![
-            format!("Data format: Structured"),
-            format!("Data size: {} characters", data.len()),
-            format!("Learning method: Schema analysis + data mining"),
-        ];
-        
-        self.store_learning_insights("structured_data", &insights, memory_system).await
-    }
-
-    /// Learn from general text content
-    async fn learn_from_text_content(
-        &mut self,
-        text: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        println!("  📝 Learning from text content ({} characters)", text.len());
-        
-        let insights = vec![
-            format!("Text length: {} characters", text.len()),
-            format!("Learning method: NLP + semantic analysis"),
-        ];
-        
-        self.store_learning_insights("text_analysis", &insights, memory_system).await
-    }
-
-    /// Store learning insights in memory
-    async fn store_learning_insights(
-        &mut self,
-        learning_type: &str,
-        insights: &[String],
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
-        let mut stored_knowledge = Vec::new();
-        
-        for (i, insight) in insights.iter().enumerate() {
-            let memory_item = WorkingMemoryItem {
-                id: Uuid::new_v4(),
-                content: insight.clone(),
-                priority: 0.8,
-                timestamp: Utc::now(),
-                access_count: 0,
-                last_accessed: Utc::now(),
-                context_tags: vec![learning_type.to_string(), "learned_content".to_string()],
-                memory_type: MemoryType::Episodic,
-                confidence: 0.9,
-                source: format!("Universal Learning Engine - {}", learning_type),
-                related_concepts: Vec::new(),
-                embedding: None,
-            };
-            
-            // Store in memory system
-            memory_system.store_working_memory(memory_item.clone())?;
-            
-            // Convert to retrieved knowledge for immediate use
-            stored_knowledge.push(RetrievedKnowledge {
-                content: insight.clone(),
-                knowledge_type: learning_type.to_string(),
-                relevance_score: 0.9,
-                source: format!("Universal Learning - {}", learning_type),
-                timestamp: Utc::now(),
-            });
-            
-            println!("    ✅ Stored insight {}: {}", i + 1, insight);
-        }
-        
-        Ok(stored_knowledge)
-    }
-
-    /// Update concept graph with learned concepts
-    async fn update_concept_graph_from_learning(
-        &mut self,
-        learning_results: &[RetrievedKnowledge],
-        concept_graph: &mut ConceptGraphManager,
-    ) -> Result<(), BrainError> {
-        println!("  🕸️ Updating concept graph with {} new concepts", learning_results.len());
-        
-        for knowledge in learning_results {
-            // Extract key concepts from the learned content
-            let concepts = self.extract_key_concepts(&knowledge.content);
-            
-            for concept in concepts {
-                // Add concept to graph (simplified)
-                println!("    📌 Added concept: {}", concept);
-            }
-        }
-        
-        Ok(())
-    }
-
-    /// Extract key concepts from text
-    fn extract_key_concepts(&self, text: &str) -> Vec<String> {
-        // Simple concept extraction - in a real implementation this would use NLP
-        let words: Vec<&str> = text.split_whitespace().collect();
-        let mut concepts = Vec::new();
-        
-        for word in words {
-            if word.len() > 4 && word.chars().all(|c| c.is_alphabetic()) {
-                concepts.push(word.to_lowercase());
-            }
-        }
-        
-        concepts.sort();
-        concepts.dedup();
-        concepts.truncate(5); // Limit to top 5 concepts
-        concepts
-    }
-
-    /// Detect programming language from code
-    fn detect_programming_language(&self, code: &str) -> String {
-        if code.contains("fn ") && code.contains("->") { return "Rust".to_string(); }
-        if code.contains("def ") && code.contains(":") { return "Python".to_string(); }
-        if code.contains("function ") || code.contains("const ") { return "JavaScript".to_string(); }
-        if code.contains("interface ") || code.contains("type ") { return "TypeScript".to_string(); }
-        if code.contains("public class ") { return "Java".to_string(); }
-        if code.contains("#include") { return "C/C++".to_string(); }
-        if code.contains("func ") && code.contains("package ") { return "Go".to_string(); }
-        "Unknown".to_string()
-    }
-
-    /// Extract functions from code
-    fn extract_functions_from_code(&self, code: &str, language: &str) -> Vec<String> {
-        let mut functions = Vec::new();
-        
-        for line in code.lines() {
-            let line = line.trim();
-            match language {
-                "Rust" => {
-                    if line.starts_with("fn ") || line.contains(" fn ") {
-                        if let Some(name) = self.extract_function_name_rust(line) {
-                            functions.push(name);
-                        }
-                    }
-                },
-                "Python" => {
-                    if line.starts_with("def ") {
-                        if let Some(name) = self.extract_function_name_python(line) {
-                            functions.push(name);
-                        }
-                    }
-                },
-                "JavaScript" | "TypeScript" => {
-                    if line.contains("function ") || line.contains("const ") && line.contains("=>") {
-                        if let Some(name) = self.extract_function_name_js(line) {
-                            functions.push(name);
-                        }
-                    }
-                },
-                _ => {}
-            }
-        }
-        
-        functions
-    }
-
-    /// Extract imports from code
-    fn extract_imports_from_code(&self, code: &str, language: &str) -> Vec<String> {
-        let mut imports = Vec::new();
-        
-        for line in code.lines() {
-            let line = line.trim();
-            match language {
-                "Rust" => {
-                    if line.starts_with("use ") {
-                        imports.push(line.to_string());
-                    }
-                },
-                "Python" => {
-                    if line.starts_with("import ") || line.starts_with("from ") {
-                        imports.push(line.to_string());
-                    }
-                },
-                "JavaScript" | "TypeScript" => {
-                    if line.starts_with("import ") || line.contains("require(") {
-                        imports.push(line.to_string());
-                    }
-                },
-                _ => {}
-            }
-        }
-        
-        imports
-    }
-
-    /// Extract data structures from code
-    fn extract_data_structures_from_code(&self, code: &str, language: &str) -> Vec<String> {
-        let mut structures = Vec::new();
-        
-        for line in code.lines() {
-            let line = line.trim();
-            match language {
-                "Rust" => {
-                    if line.starts_with("struct ") || line.starts_with("enum ") {
-                        if let Some(name) = line.split_whitespace().nth(1) {
-                            structures.push(format!("{} ({})", name, line.split_whitespace().next().unwrap()));
-                        }
-                    }
-                },
-                "Python" => {
-                    if line.starts_with("class ") {
-                        if let Some(name) = line.split_whitespace().nth(1) {
-                            structures.push(format!("{} (class)", name.trim_end_matches(':')));
-                        }
-                    }
-                },
-                "JavaScript" | "TypeScript" => {
-                    if line.starts_with("class ") || line.starts_with("interface ") {
-                        if let Some(name) = line.split_whitespace().nth(1) {
-                            structures.push(format!("{} ({})", name, line.split_whitespace().next().unwrap()));
-                        }
-                    }
-                },
-                _ => {}
-            }
-        }
-        
-        structures
-    }
-
-    // Helper functions for function name extraction
-    fn extract_function_name_rust(&self, line: &str) -> Option<String> {
-        if let Some(start) = line.find("fn ") {
-            let after_fn = &line[start + 3..];
-            if let Some(end) = after_fn.find('(') {
-                return Some(after_fn[..end].trim().to_string());
-            }
-        }
-        None
-    }
-
-    fn extract_function_name_python(&self, line: &str) -> Option<String> {
-        if let Some(start) = line.find("def ") {
-            let after_def = &line[start + 4..];
-            if let Some(end) = after_def.find('(') {
-                return Some(after_def[..end].trim().to_string());
-            }
-        }
-        None
-    }
-
-    fn extract_function_name_js(&self, line: &str) -> Option<String> {
-        if line.contains("function ") {
-            if let Some(start) = line.find("function ") {
-                let after_fn = &line[start + 9..];
-                if let Some(end) = after_fn.find('(') {
-                    return Some(after_fn[..end].trim().to_string());
-                }
-            }
-        } else if line.contains("const ") && line.contains("=>") {
-            if let Some(start) = line.find("const ") {
-                let after_const = &line[start + 6..];
-                if let Some(end) = after_const.find('=') {
-                    return Some(after_const[..end].trim().to_string());
-                }
-            }
-        }
-        None
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -4291,7 +3597,6 @@ impl Default for LearningAnalytics {
 }
 
 /// Brain AI Orchestrator - True AI delegation system
-#[derive(Debug)]
 pub struct BrainAIOrchestrator {
     github_learning_engine: GitHubLearningEngine,
     pattern_detector: PatternDetector,
@@ -4354,9 +3659,9 @@ impl BrainAIOrchestrator {
     /// Create a new Brain AI Orchestrator
     pub fn new() -> Result<Self, BrainError> {
         let github_config = GitHubLearningConfig::default();
-        let github_learning_engine = GitHubLearningEngine::new(github_config)?;
+        let github_learning_engine = GitHubLearningEngine::new(None, Some(github_config));
         let pattern_detector = PatternDetector::new();
-        let bpe_segmenter = BpeSegmenter::new(Default::default())?;
+        let bpe_segmenter = BpeSegmenter::new(Default::default());
         let analysis_config = BrainAnalysisConfig::default();
 
         Ok(Self {
@@ -4380,8 +3685,28 @@ impl BrainAIOrchestrator {
 
         println!("🧠 Brain AI Orchestrator: Starting comprehensive analysis of '{}'", query);
 
+        // **NEW: Universal Learning Detection - Check if we should learn from this content**
+        if self.should_trigger_universal_learning(query) {
+            println!("  🎓 Universal Learning triggered - processing content for learning");
+            match self.process_universal_learning(query, memory_system, concept_graph).await {
+                Ok(learning_insights) => {
+                    sources_analyzed += learning_insights.len();
+                    for insight in learning_insights {
+                        insights.push(BrainInsight {
+                            content: insight.content,
+                            insight_type: insight.knowledge_type,
+                            confidence: insight.relevance_score,
+                            source: insight.source,
+                        });
+                    }
+                    println!("  ✅ Universal Learning completed: {} insights learned", insights.len());
+                }
+                Err(e) => println!("  ⚠️ Universal Learning failed: {}", e),
+            }
+        }
+
         // 1. GitHub Analysis (if GitHub-related)
-        if self.analysis_config.enable_github_analysis && self.is_github_related(query) {
+        if self.analysis_config.enable_github_analysis && self.is_github_related_brain(query) {
             println!("  🔍 Performing GitHub repository analysis...");
             match self.perform_github_analysis(query, memory_system).await {
                 Ok(github_insights) => {
@@ -4401,7 +3726,7 @@ impl BrainAIOrchestrator {
 
         // 2. Pattern Analysis
         if self.analysis_config.enable_pattern_analysis {
-            println!("  🕸️ Performing concept graph analysis...");
+            println!("  🔍 Performing pattern analysis...");
             match self.perform_pattern_analysis(query, memory_system).await {
                 Ok(pattern_insights) => {
                     sources_analyzed += pattern_insights.len();
@@ -4420,7 +3745,7 @@ impl BrainAIOrchestrator {
 
         // 3. DoTA-RAG inspired semantic memory analysis
         if self.analysis_config.enable_semantic_analysis {
-            println!("  🧩 Performing DoTA-RAG inspired semantic memory analysis...");
+            println!("  🕸️ Performing concept graph analysis...");
             match self.perform_semantic_analysis(query, memory_system).await {
                 Ok(semantic_insights) => {
                     sources_analyzed += semantic_insights.len();
@@ -4442,10 +3767,19 @@ impl BrainAIOrchestrator {
             insights.iter().map(|i| i.confidence).sum::<f64>() / insights.len() as f64 
         };
 
+        // Generate intelligent response using OpenAI based on learned insights
         let analysis = if insights.is_empty() {
-            "I don't have specific information about this topic in my current knowledge base.".to_string()
+            // No insights available, generate a helpful response
+            match self.generate_ai_response_for_query(query, &[], memory_system).await {
+                Ok(ai_response) => ai_response,
+                Err(_) => "I don't have specific information about this topic in my current knowledge base. Please share more details or relevant content for me to learn from.".to_string(),
+            }
         } else {
-            format!("Based on my analysis of {} sources, I found {} insights about your query.", sources_analyzed, insights.len())
+            // Generate AI response based on learned insights
+            match self.generate_ai_response_for_query(query, &insights, memory_system).await {
+                Ok(ai_response) => ai_response,
+                Err(_) => format!("Based on my analysis of {} sources, I found {} insights about your query. However, I'm having trouble generating a detailed response right now.", sources_analyzed, insights.len()),
+            }
         };
 
         println!("✅ Brain AI Analysis completed in {}ms", processing_time);
@@ -4467,274 +3801,1074 @@ impl BrainAIOrchestrator {
         })
     }
 
-    /// Check if query is GitHub-related
-    fn is_github_related(&self, query: &str) -> bool {
+    /// Check if query is GitHub-related (for BrainAIOrchestrator)
+    fn is_github_related_brain(&self, query: &str) -> bool {
         let query_lower = query.to_lowercase();
-        
-        // Check for explicit GitHub-related keywords
-        if query_lower.contains("github") ||
-           query_lower.contains("repository") ||
-           query_lower.contains("repo") ||
-           query_lower.contains("codebase") {
-            return true;
-        }
-        
-        // Use the enhanced GitHub reference extraction to detect any repository mentions
-        let github_refs = self.extract_github_references(query);
-        !github_refs.is_empty()
-    }
-
-    /// Extract GitHub references from query
-    fn extract_github_references(&self, query: &str) -> Vec<String> {
-        let mut github_refs = Vec::new();
-        
-        // Look for GitHub URLs (various formats)
-        if query.contains("github.com/") {
-            // Extract GitHub URLs using simple pattern matching
-            let words: Vec<&str> = query.split_whitespace().collect();
-            for word in words {
-                if word.contains("github.com/") {
-                    // Clean up the URL (remove trailing punctuation)
-                    let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.');
-                    github_refs.push(clean_url.to_string());
-                }
-            }
-        }
-
-        // Common repositories that users might mention
-        let known_repos = vec![
-            ("react", "facebook/react"),
-            ("vue", "vuejs/vue"),
-            ("angular", "angular/angular"),
-            ("typescript", "microsoft/TypeScript"),
-            ("nodejs", "nodejs/node"),
-            ("express", "expressjs/express"),
-            ("nextjs", "vercel/next.js"),
-            ("nuxt", "nuxt/nuxt.js"),
-            ("svelte", "sveltejs/svelte"),
-            ("webpack", "webpack/webpack"),
-            ("vite", "vitejs/vite"),
-            ("tailwind", "tailwindlabs/tailwindcss"),
-            ("bootstrap", "twbs/bootstrap"),
-            ("django", "django/django"),
-            ("flask", "pallets/flask"),
-            ("fastapi", "tiangolo/fastapi"),
-            ("spring", "spring-projects/spring-framework"),
-            ("laravel", "laravel/laravel"),
-            ("rails", "rails/rails"),
-            ("rust", "rust-lang/rust"),
-            ("golang", "golang/go"),
-            ("python", "python/cpython"),
-            ("java", "openjdk/jdk"),
-            ("kotlin", "JetBrains/kotlin"),
-            ("swift", "apple/swift"),
-            ("flutter", "flutter/flutter"),
-            ("react-native", "facebook/react-native"),
-            ("electron", "electron/electron"),
-            ("docker", "docker/docker-ce"),
-            ("kubernetes", "kubernetes/kubernetes"),
-            ("tensorflow", "tensorflow/tensorflow"),
-            ("pytorch", "pytorch/pytorch"),
-            ("scikit-learn", "scikit-learn/scikit-learn"),
-            ("pandas", "pandas-dev/pandas"),
-            ("numpy", "numpy/numpy"),
-        ];
-
-        // Check for repository mentions in the query
-        let query_lower = query.to_lowercase();
-        let words: Vec<&str> = query_lower.split_whitespace().collect();
-        
-        for (keyword, repo_path) in known_repos {
-            if words.iter().any(|&word| {
-                let word_clean = word.trim_matches(|c: char| !c.is_alphanumeric());
-                word_clean == keyword || 
-                word_clean.contains(keyword) ||
-                // Handle variations like "reactjs", "react.js", etc.
-                (keyword.len() > 3 && word_clean.starts_with(keyword))
-            }) {
-                github_refs.push(format!("https://github.com/{}", repo_path));
-                
-                // Also add common variations
-                github_refs.push(format!("github.com/{}", repo_path));
-                github_refs.push(repo_path.to_string());
-            }
-        }
-
-        // Use regex to find potential GitHub repository patterns
-        if let Ok(repo_regex) = Regex::new(r"(?i)\b([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)\b") {
-            for cap in repo_regex.captures_iter(query) {
-                if let (Some(owner), Some(repo)) = (cap.get(1), cap.get(2)) {
-                    let potential_repo = format!("{}/{}", owner.as_str(), repo.as_str());
-                    // Only add if it looks like a valid GitHub repo (not generic patterns)
-                    if !potential_repo.contains("http") && !potential_repo.contains("www") {
-                        github_refs.push(format!("https://github.com/{}", potential_repo));
-                    }
-                }
-            }
-        }
-
-        github_refs.sort();
-        github_refs.dedup();
-        github_refs
+        query_lower.contains("github.com") || 
+        query_lower.contains("github") ||
+        query_lower.contains("repository") ||
+        query_lower.contains("repo")
     }
 
     /// Perform GitHub analysis
-    async fn perform_github_analysis(
-        &mut self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<String>, BrainError> {
-        let github_refs = self.extract_github_references(query);
+    async fn perform_github_analysis(&mut self, query: &str, memory_system: &mut MemorySystem) -> Result<Vec<String>, BrainError> {
+        println!("    🔍 Analyzing GitHub content in query");
+        
+        // Extract GitHub URLs
+        let github_urls: Vec<String> = query.split_whitespace()
+            .filter(|word| word.contains("github.com"))
+            .map(|s| s.to_string())
+            .collect();
+        
         let mut insights = Vec::new();
-
-        for github_ref in github_refs {
-            println!("  📚 Analyzing GitHub reference: {}", github_ref);
-            
-            match self.github_learning_engine.learn_from_repository(&github_ref, memory_system).await {
-                Ok(learning_result) => {
-                    println!("  ✅ GitHub learning completed for {}", github_ref);
-                    
-                    // Extract insights from the learning result
-                    for insight in learning_result.key_insights {
-                        insights.push(insight);
-                    }
+        
+        for url in github_urls {
+            match self.github_learning_engine.learn_from_repository(memory_system, &url).await {
+                Ok(result) => {
+                    insights.push(format!("GitHub Analysis: Analyzed repository {}", url));
+                    insights.push(format!("Repository insights: {:?}", result));
                 }
                 Err(e) => {
-                    println!("  ⚠️ Failed to learn from {}: {}", github_ref, e);
+                    println!("      ⚠️ Failed to analyze repository {}: {}", url, e);
+                    insights.push(format!("GitHub Analysis: Failed to analyze {}", url));
                 }
             }
         }
-
+        
+        if insights.is_empty() {
+            insights.push("GitHub Analysis: No specific repositories found to analyze".to_string());
+        }
+        
         Ok(insights)
     }
 
     /// Perform pattern analysis
-    async fn perform_pattern_analysis(
+    async fn perform_pattern_analysis(&mut self, query: &str, memory_system: &mut MemorySystem) -> Result<Vec<String>, BrainError> {
+        println!("    🔍 Performing pattern analysis");
+        
+        let mut patterns = Vec::new();
+        
+        // Use the pattern detector for actual pattern analysis from memory
+        let pattern_result = self.pattern_detector.detect_patterns_from_memory(memory_system).await
+            .map_err(|e| BrainError::ProcessingError(format!("Pattern detection error: {}", e)))?;
+        
+        for pattern in pattern_result.detected_patterns.iter().take(5) {
+            patterns.push(format!("Pattern: {} (confidence: {:.2})", pattern.pattern_type, pattern.confidence));
+        }
+        
+        // Use BPE segmenter for token analysis
+        let segments = self.bpe_segmenter.segment_text(query);
+        if segments.len() > 10 {
+            patterns.push(format!("Complex query with {} semantic segments", segments.len()));
+        }
+        
+        // Simple pattern detection
+        if query.contains("function") || query.contains("class") || query.contains("struct") {
+            patterns.push("Code pattern detected".to_string());
+        }
+        
+        if query.contains("http") || query.contains("www") {
+            patterns.push("URL pattern detected".to_string());
+        }
+        
+        if query.len() > 100 {
+            patterns.push("Long text pattern detected".to_string());
+        }
+        
+        if patterns.is_empty() {
+            patterns.push("No specific patterns detected".to_string());
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Perform semantic analysis
+    async fn perform_semantic_analysis(&mut self, query: &str, _memory_system: &mut MemorySystem) -> Result<Vec<SemanticInsight>, BrainError> {
+        println!("    🕸️ Performing semantic analysis");
+        
+        let mut insights = Vec::new();
+        
+        // Simple semantic analysis
+        let words: Vec<&str> = query.split_whitespace().collect();
+        let word_count = words.len();
+        
+        insights.push(SemanticInsight {
+            content: format!("Query contains {} words", word_count),
+            confidence: 0.8,
+        });
+        
+        // Check for technical terms
+        let tech_terms = ["api", "database", "server", "client", "function", "class", "algorithm"];
+        let tech_count = words.iter()
+            .filter(|word| tech_terms.contains(&word.to_lowercase().as_str()))
+            .count();
+        
+        if tech_count > 0 {
+            insights.push(SemanticInsight {
+                content: format!("Technical content detected: {} technical terms", tech_count),
+                confidence: 0.9,
+            });
+        }
+        
+        Ok(insights)
+    }
+
+    /// Extract GitHub references from query (for BrainAIOrchestrator)
+    fn extract_github_references_brain(&self, query: &str) -> Vec<String> {
+        let mut github_urls = Vec::new();
+        
+        // Look for GitHub URLs
+        for word in query.split_whitespace() {
+            if word.contains("github.com") {
+                // Clean up the URL
+                let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.');
+                github_urls.push(clean_url.to_string());
+            }
+        }
+        
+        github_urls
+    }
+
+    /// Universal Learning Detection - Check if we should trigger learning from any content type
+    fn should_trigger_universal_learning(&self, query: &str) -> bool {
+        let query_lower = query.to_lowercase();
+        
+        // Direct learning triggers
+        if query_lower.contains("learn from") ||
+           query_lower.contains("analyze this") ||
+           query_lower.contains("train on") ||
+           query_lower.contains("study this") ||
+           query_lower.contains("repository scanned:") ||
+           query_lower.contains("content:") ||
+           query_lower.contains("document:") ||
+           query_lower.contains("file:") {
+            return true;
+        }
+
+        // URL detection (any website, not just GitHub)
+        if self.contains_urls(query) {
+            return true;
+        }
+
+        // File/document patterns
+        if self.contains_file_references(query) {
+            return true;
+        }
+
+        // Code blocks or structured content
+        if self.contains_code_or_structured_content(query) {
+            return true;
+        }
+
+        // Repository or project references
+        if self.contains_repository_references(query) {
+            return true;
+        }
+
+        false
+    }
+
+    /// Detect URLs of any type (not just GitHub)
+    fn contains_urls(&self, query: &str) -> bool {
+        let url_patterns = vec![
+            "http://", "https://", "www.", ".com", ".org", ".net", ".io", ".dev",
+            "github.com", "gitlab.com", "bitbucket.org", "stackoverflow.com",
+            "medium.com", "dev.to", "hackernoon.com", "substack.com",
+            "youtube.com", "vimeo.com", "drive.google.com", "dropbox.com",
+            "notion.so", "figma.com", "docs.google.com", "sheets.google.com"
+        ];
+        
+        url_patterns.iter().any(|pattern| query.contains(pattern))
+    }
+
+    /// Detect file references and document types
+    fn contains_file_references(&self, query: &str) -> bool {
+        let file_extensions = vec![
+            ".pdf", ".doc", ".docx", ".txt", ".md", ".rst",
+            ".js", ".ts", ".py", ".rs", ".go", ".java", ".cpp", ".c",
+            ".html", ".css", ".json", ".xml", ".yaml", ".yml",
+            ".mp3", ".wav", ".mp4", ".avi", ".mov",
+            ".png", ".jpg", ".jpeg", ".gif", ".svg",
+            ".zip", ".tar", ".gz", ".rar"
+        ];
+        
+        let file_keywords = vec![
+            "file:", "document:", "attachment:", "upload:", "download:",
+            "pdf", "document", "spreadsheet", "presentation", "video", "audio"
+        ];
+        
+        file_extensions.iter().any(|ext| query.contains(ext)) ||
+        file_keywords.iter().any(|keyword| query.to_lowercase().contains(keyword))
+    }
+
+    /// Detect code blocks or structured content
+    fn contains_code_or_structured_content(&self, query: &str) -> bool {
+        // Code block indicators
+        if query.contains("```") || query.contains("```") {
+            return true;
+        }
+        
+        // Indented code patterns
+        if query.lines().any(|line| line.starts_with("    ") || line.starts_with("\t")) {
+            return true;
+        }
+        
+        // Programming language keywords
+        let code_indicators = vec![
+            "function", "class", "import", "export", "const", "let", "var",
+            "def", "async", "await", "return", "if", "else", "for", "while",
+            "struct", "impl", "trait", "enum", "use", "mod",
+            "public", "private", "protected", "static", "final",
+            "#include", "#define", "namespace", "using"
+        ];
+        
+        let query_lower = query.to_lowercase();
+        code_indicators.iter().any(|indicator| {
+            query_lower.contains(&format!(" {} ", indicator)) ||
+            query_lower.starts_with(&format!("{} ", indicator))
+        })
+    }
+
+    /// Detect repository or project references
+    fn contains_repository_references(&self, query: &str) -> bool {
+        let repo_indicators = vec![
+            "repository", "repo", "project", "codebase", "source code",
+            "open source", "library", "framework", "package", "module",
+            "npm", "pip", "cargo", "maven", "gradle", "composer"
+        ];
+        
+        let query_lower = query.to_lowercase();
+        repo_indicators.iter().any(|indicator| query_lower.contains(indicator))
+    }
+
+    /// Process universal learning from any content type
+    async fn process_universal_learning(
         &mut self,
         query: &str,
         memory_system: &mut MemorySystem,
-    ) -> Result<Vec<String>, BrainError> {
-        let mut insights = Vec::new();
-
-        // Get memories from the memory system
-        let memories = memory_system.get_all_memories();
+        concept_graph: &mut ConceptGraphManager,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("🧠 Universal Learning Engine: Processing content for learning");
         
-        // Analyze patterns in the memories related to the query
-        for memory in memories {
-            if memory.content.to_lowercase().contains(&query.to_lowercase()) ||
-               self.calculate_relevance(&memory.content, query, &memory) > 0.5 {
+        let mut learning_results = Vec::new();
+        
+        // 1. Extract and categorize content
+        let content_analysis = self.analyze_content_type(query).await;
+        println!("  📋 Content type: {}", content_analysis.content_type);
+        println!("  📊 Confidence: {:.2}", content_analysis.confidence);
+        
+        // 2. Process based on content type
+        match content_analysis.content_type.as_str() {
+            "github_repository" => {
+                if let Some(repo_url) = self.extract_github_references_brain(query).first() {
+                    learning_results.extend(self.learn_from_github_repository(repo_url, memory_system).await?);
+                }
+            },
+            "web_url" => {
+                let urls = self.extract_urls(query);
+                for url in urls {
+                    learning_results.extend(self.learn_from_web_content(&url, memory_system).await?);
+                }
+            },
+            "code_snippet" => {
+                learning_results.extend(self.learn_from_code_content(query, memory_system).await?);
+            },
+            "document_content" => {
+                learning_results.extend(self.learn_from_document_content(query, memory_system).await?);
+            },
+            "structured_data" => {
+                learning_results.extend(self.learn_from_structured_data(query, memory_system).await?);
+            },
+            _ => {
+                // Default: treat as general text content
+                learning_results.extend(self.learn_from_text_content(query, memory_system).await?);
+            }
+        }
+        
+        // 3. Update concept graph with learned concepts
+        self.update_concept_graph_from_learning(&learning_results, concept_graph).await?;
+        
+        println!("✅ Universal Learning completed: {} insights generated", learning_results.len());
+        Ok(learning_results)
+    }
+
+    /// Analyze what type of content we're dealing with
+    async fn analyze_content_type(&self, query: &str) -> ContentAnalysis {
+        // GitHub repository detection
+        if !self.extract_github_references_brain(query).is_empty() {
+            return ContentAnalysis {
+                content_type: "github_repository".to_string(),
+                confidence: 0.9,
+                metadata: HashMap::new(),
+            };
+        }
+        
+        // Web URL detection
+        if self.contains_urls(query) {
+            return ContentAnalysis {
+                content_type: "web_url".to_string(),
+                confidence: 0.8,
+                metadata: HashMap::new(),
+            };
+        }
+        
+        // Code content detection
+        if self.contains_code_or_structured_content(query) {
+            return ContentAnalysis {
+                content_type: "code_snippet".to_string(),
+                confidence: 0.85,
+                metadata: HashMap::new(),
+            };
+        }
+        
+        // File/document detection
+        if self.contains_file_references(query) {
+            return ContentAnalysis {
+                content_type: "document_content".to_string(),
+                confidence: 0.7,
+                metadata: HashMap::new(),
+            };
+        }
+        
+        // Default to text content
+        ContentAnalysis {
+            content_type: "text_content".to_string(),
+            confidence: 0.6,
+            metadata: HashMap::new(),
+        }
+    }
+
+    /// Extract URLs from text
+    fn extract_urls(&self, text: &str) -> Vec<String> {
+        let mut urls = Vec::new();
+        
+        // Simple URL extraction
+        let words: Vec<&str> = text.split_whitespace().collect();
+        for word in words {
+            if word.starts_with("http://") || word.starts_with("https://") || word.contains("www.") {
+                // Clean up the URL (remove trailing punctuation)
+                let clean_url = word.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '_' && c != '.' && c != '?' && c != '=' && c != '&');
+                urls.push(clean_url.to_string());
+            }
+        }
+        
+        urls
+    }
+
+    /// Learn from GitHub repository
+    async fn learn_from_github_repository(
+        &mut self,
+        repo_url: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  🔍 Learning from GitHub repository: {}", repo_url);
+        
+        // Use the existing GitHub learning engine
+        match self.github_learning_engine.learn_from_repository(memory_system, repo_url).await {
+            Ok(result) => {
+                let mut knowledge = Vec::new();
                 
-                // Extract patterns from this memory
-                if let Ok(patterns) = self.pattern_detector.detect_patterns(&memory.content).await {
-                    for pattern in patterns {
-                        insights.push(format!("Pattern: {} (confidence: {:.2})", pattern.pattern_type, pattern.confidence));
+                // Add the main summary as knowledge
+                knowledge.push(RetrievedKnowledge {
+                    content: result.summary.clone(),
+                    knowledge_type: "github_repository_summary".to_string(),
+                    relevance_score: 0.9,
+                    source: format!("GitHub Repository: {}", repo_url),
+                    timestamp: chrono::Utc::now(),
+                });
+                
+                // Add each key insight as separate knowledge
+                for insight in result.key_insights {
+                    knowledge.push(RetrievedKnowledge {
+                        content: insight,
+                        knowledge_type: "github_insight".to_string(),
+                        relevance_score: 0.8,
+                        source: format!("GitHub Repository: {}", repo_url),
+                        timestamp: chrono::Utc::now(),
+                    });
+                }
+                
+                // Add metadata as knowledge
+                knowledge.push(RetrievedKnowledge {
+                    content: format!(
+                        "Repository Analysis: {} files processed, {} concepts discovered, {} memory entries created in {}ms",
+                        result.files_processed, result.concepts_discovered, 
+                        result.memory_entries_created, result.learning_time_ms
+                    ),
+                    knowledge_type: "github_metadata".to_string(),
+                    relevance_score: 0.7,
+                    source: format!("GitHub Repository: {}", repo_url),
+                    timestamp: chrono::Utc::now(),
+                });
+                
+                Ok(knowledge)
+            }
+            Err(e) => {
+                println!("    ⚠️ GitHub learning failed: {}", e);
+                Ok(Vec::new())
+            }
+        }
+    }
+
+    /// Learn from web content
+    async fn learn_from_web_content(
+        &mut self,
+        url: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  🌐 Learning from web content: {}", url);
+        
+        // First, try to fetch the actual web content
+        match self.fetch_web_content(url).await {
+            Ok(content) => {
+                println!("    ✅ Successfully fetched web content ({} characters)", content.len());
+                
+                // Use OpenAI to analyze the web content
+                match self.analyze_web_content_with_ai(&content, url).await {
+                    Ok(ai_insights) => {
+                        println!("    🧠 AI analysis completed: {} insights generated", ai_insights.len());
+                        self.store_learning_insights("web_content_ai", &ai_insights, memory_system, url).await
+                    }
+                    Err(e) => {
+                        println!("    ⚠️ AI analysis failed: {}, using basic analysis", e);
+                        // Fallback to basic content analysis
+                        let basic_concepts = self.extract_key_concepts(&content);
+                        let mut insights = vec![format!("Web content from {}: {} characters", url, content.len())];
+                        insights.extend(basic_concepts.into_iter().map(|c| format!("Key concept: {}", c)));
+                        self.store_learning_insights("web_content_basic", &insights, memory_system, url).await
+                    }
+                }
+            }
+            Err(e) => {
+                println!("    ⚠️ Failed to fetch web content: {}, using URL analysis", e);
+                // Fallback to URL analysis
+                let concepts = self.extract_key_concepts_from_url(url);
+                self.store_learning_insights("web_url_analysis", &concepts, memory_system, url).await
+            }
+        }
+    }
+
+    /// Learn from code content
+    async fn learn_from_code_content(
+        &mut self,
+        code: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  💻 Learning from code content");
+        
+        let language = self.detect_programming_language(code);
+        let functions = self.extract_functions_from_code(code, &language);
+        let imports = self.extract_imports_from_code(code, &language);
+        let data_structures = self.extract_data_structures_from_code(code, &language);
+        
+        let mut insights = Vec::new();
+        insights.push(format!("Programming language: {}", language));
+        insights.extend(functions.into_iter().map(|f| format!("Function: {}", f)));
+        insights.extend(imports.into_iter().map(|i| format!("Import: {}", i)));
+        insights.extend(data_structures.into_iter().map(|d| format!("Data structure: {}", d)));
+        
+        self.store_learning_insights("code_analysis", &insights, memory_system, "Code snippet").await
+    }
+
+    /// Learn from document content
+    async fn learn_from_document_content(
+        &mut self,
+        content: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  📄 Learning from document content");
+        
+        let concepts = self.extract_key_concepts(content);
+        self.store_learning_insights("document_analysis", &concepts, memory_system, "Document").await
+    }
+
+    /// Learn from structured data
+    async fn learn_from_structured_data(
+        &mut self,
+        data: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  📊 Learning from structured data");
+        
+        let mut insights = Vec::new();
+        
+        // Try to parse as JSON
+        if data.trim().starts_with('{') || data.trim().starts_with('[') {
+            insights.push("Data format: JSON".to_string());
+            // Extract keys if it's JSON
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(data) {
+                insights.push(format!("JSON structure analyzed: {} fields", self.count_json_fields(&parsed)));
+            }
+        }
+        
+        self.store_learning_insights("structured_data", &insights, memory_system, "Structured data").await
+    }
+
+    /// Learn from general text content
+    async fn learn_from_text_content(
+        &mut self,
+        text: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        println!("  📝 Learning from text content");
+        
+        let concepts = self.extract_key_concepts(text);
+        self.store_learning_insights("text_analysis", &concepts, memory_system, "Text content").await
+    }
+
+    /// Store learning insights in memory
+    async fn store_learning_insights(
+        &mut self,
+        learning_type: &str,
+        insights: &[String],
+        memory_system: &mut MemorySystem,
+        source: &str,
+    ) -> Result<Vec<RetrievedKnowledge>, BrainError> {
+        let mut knowledge = Vec::new();
+        
+        for insight in insights {
+            // Store in memory system using the correct method
+            memory_system.learn(insight.clone(), Priority::Medium)?;
+            
+            // Add to knowledge results
+            knowledge.push(RetrievedKnowledge {
+                content: insight.clone(),
+                knowledge_type: learning_type.to_string(),
+                relevance_score: 0.7,
+                source: source.to_string(),
+                timestamp: chrono::Utc::now(),
+            });
+        }
+        
+        Ok(knowledge)
+    }
+
+    /// Update concept graph with learned concepts
+    async fn update_concept_graph_from_learning(
+        &mut self,
+        learning_results: &[RetrievedKnowledge],
+        concept_graph: &mut ConceptGraphManager,
+    ) -> Result<(), BrainError> {
+        for result in learning_results {
+            let concepts = self.extract_key_concepts(&result.content);
+            for concept in concepts {
+                // Create a concept node and add it to the graph
+                let concept_node = crate::concept_graph::ConceptNode::new(
+                    crate::concept_graph::ConceptType::Entity,
+                    concept.clone(),
+                    0.6,
+                    None,
+                );
+                let _ = concept_graph.create_concept(concept_node).await;
+            }
+        }
+        Ok(())
+    }
+
+    /// Extract key concepts from text
+    fn extract_key_concepts(&self, text: &str) -> Vec<String> {
+        // Simple keyword extraction
+        let words: Vec<&str> = text.split_whitespace().collect();
+        let mut concepts = Vec::new();
+        
+        for word in words {
+            let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
+            if clean_word.len() > 3 && !self.is_stop_word(&clean_word) {
+                concepts.push(clean_word);
+            }
+        }
+        
+        // Remove duplicates and limit
+        concepts.sort();
+        concepts.dedup();
+        concepts.truncate(10);
+        concepts
+    }
+
+    /// Extract key concepts from URL
+    fn extract_key_concepts_from_url(&self, url: &str) -> Vec<String> {
+        let mut concepts = Vec::new();
+        
+        // Extract domain
+        if let Some(domain_start) = url.find("://") {
+            if let Some(domain_end) = url[domain_start + 3..].find('/') {
+                let domain = &url[domain_start + 3..domain_start + 3 + domain_end];
+                concepts.push(format!("Website: {}", domain));
+            }
+        }
+        
+        // Extract path segments
+        if let Some(path_start) = url.find("://") {
+            if let Some(path_start) = url[path_start..].find('/') {
+                let path = &url[path_start + 1..];
+                let segments: Vec<&str> = path.split('/').collect();
+                for segment in segments {
+                    if segment.len() > 2 && !segment.contains('?') && !segment.contains('&') {
+                        concepts.push(format!("Topic: {}", segment.replace('-', " ").replace('_', " ")));
                     }
                 }
             }
         }
-
-        Ok(insights)
+        
+        concepts.push(format!("URL analyzed: {}", url));
+        concepts
     }
 
-    /// Perform semantic analysis with DoTA-RAG inspiration
-    async fn perform_semantic_analysis(
-        &mut self,
-        query: &str,
-        memory_system: &mut MemorySystem,
-    ) -> Result<Vec<SemanticInsight>, BrainError> {
-        let mut insights = Vec::new();
+    /// Fetch web content from URL
+    async fn fetch_web_content(&self, url: &str) -> Result<String, BrainError> {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .user_agent("Brain AI Learning Bot 1.0")
+            .build()
+            .map_err(|e| BrainError::NetworkError(format!("Failed to create HTTP client: {}", e)))?;
 
-        // Generate expanded queries (DoTA-RAG inspired)
-        let expanded_queries = self.generate_expanded_queries(query);
-        println!("  📝 Generated {} expanded queries from original", expanded_queries.len());
+        let response = client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("Failed to fetch URL: {}", e)))?;
 
-        // Execute each query strategy
-        for (strategy, expanded_query) in expanded_queries {
-            println!("  🔄 Executing strategy '{}' with query: '{}'", strategy, expanded_query);
+        if !response.status().is_success() {
+            let status = response.status();
+            return Err(BrainError::NetworkError(format!(
+                "HTTP error {}: {}",
+                status,
+                status.canonical_reason().unwrap_or("Unknown error")
+            )));
+        }
+
+        let content = response
+            .text()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("Failed to read response body: {}", e)))?;
+
+        // Basic content filtering - remove HTML tags and clean up
+        let cleaned_content = self.clean_html_content(&content);
+        
+        // Limit content size to avoid token limits
+        if cleaned_content.len() > 50000 {
+            Ok(cleaned_content[..50000].to_string() + "\n\n[Content truncated...]")
+        } else {
+            Ok(cleaned_content)
+        }
+    }
+
+    /// Clean HTML content and extract text
+    fn clean_html_content(&self, html: &str) -> String {
+        // Simple HTML tag removal and content extraction
+        let mut cleaned = html.to_string();
+        
+        // Remove script and style tags entirely
+        while let Some(start) = cleaned.find("<script") {
+            if let Some(end) = cleaned[start..].find("</script>") {
+                cleaned.replace_range(start..start + end + 9, "");
+            } else {
+                break;
+            }
+        }
+        
+        while let Some(start) = cleaned.find("<style") {
+            if let Some(end) = cleaned[start..].find("</style>") {
+                cleaned.replace_range(start..start + end + 8, "");
+            } else {
+                break;
+            }
+        }
+        
+        // Remove HTML tags
+        let mut result = String::new();
+        let mut in_tag = false;
+        
+        for char in cleaned.chars() {
+            match char {
+                '<' => in_tag = true,
+                '>' => {
+                    in_tag = false;
+                    result.push(' '); // Replace tags with spaces
+                }
+                _ if !in_tag => result.push(char),
+                _ => {} // Skip characters inside tags
+            }
+        }
+        
+        // Clean up whitespace
+        result
+            .split_whitespace()
+            .collect::<Vec<&str>>()
+            .join(" ")
+    }
+
+    /// Analyze web content using OpenAI
+    async fn analyze_web_content_with_ai(&self, content: &str, url: &str) -> Result<Vec<String>, BrainError> {
+        // Get OpenAI API key from environment
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .map_err(|_| BrainError::ConfigError("OPENAI_API_KEY not found".to_string()))?;
+
+        let client = reqwest::Client::new();
+        
+        // Create a focused prompt for web content analysis
+        let analysis_prompt = format!(
+            "Analyze this web content from {} and extract key insights, concepts, and learnings. \
+            Focus on practical information, main topics, technologies mentioned, and actionable insights. \
+            Provide 5-10 concise bullet points of the most important learnings.\n\nContent:\n{}",
+            url,
+            // Truncate content for API call
+            if content.len() > 8000 { &content[..8000] } else { content }
+        );
+
+        let request = OpenAIRequest {
+            model: "gpt-3.5-turbo".to_string(),
+            max_tokens: Some(1000),
+            temperature: 0.3,
+            messages: vec![
+                OpenAIMessage {
+                    role: "system".to_string(),
+                    content: "You are a knowledge extraction expert. Analyze web content and extract key insights, concepts, and learnings in a structured format.".to_string(),
+                },
+                OpenAIMessage {
+                    role: "user".to_string(),
+                    content: analysis_prompt,
+                },
+            ],
+            stream: false,
+        };
+
+        let response = client
+            .post("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("OpenAI API request failed: {}", e)))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(BrainError::NetworkError(format!(
+                "OpenAI API error {}: {}",
+                status,
+                error_text
+            )));
+        }
+
+        let openai_response: OpenAIResponse = response
+            .json()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("Failed to parse OpenAI response: {}", e)))?;
+
+        if let Some(choice) = openai_response.choices.first() {
+            let analysis = &choice.message.content;
             
-            let memories = memory_system.search_memories(&expanded_query, 0.3, 10);
-            for memory in memories {
-                let relevance = self.calculate_relevance(&memory.content, &expanded_query, &memory);
-                if relevance > 0.5 {
-                    insights.push(SemanticInsight {
-                        content: memory.content.clone(),
-                        confidence: relevance,
-                    });
+            // Parse the analysis into individual insights
+            let insights: Vec<String> = analysis
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .map(|line| line.trim().to_string())
+                .filter(|line| !line.is_empty())
+                .collect();
+
+            Ok(insights)
+        } else {
+            Err(BrainError::ProcessingError("No response from OpenAI".to_string()))
+        }
+    }
+
+    /// Detect programming language from code
+    fn detect_programming_language(&self, code: &str) -> String {
+        if code.contains("fn ") || code.contains("impl ") || code.contains("struct ") {
+            "Rust".to_string()
+        } else if code.contains("def ") || code.contains("import ") || code.contains("from ") {
+            "Python".to_string()
+        } else if code.contains("function ") || code.contains("const ") || code.contains("let ") {
+            "JavaScript".to_string()
+        } else if code.contains("class ") || code.contains("interface ") || code.contains("type ") {
+            "TypeScript".to_string()
+        } else if code.contains("public class") || code.contains("private ") || code.contains("import java") {
+            "Java".to_string()
+        } else if code.contains("#include") || code.contains("int main") || code.contains("std::") {
+            "C++".to_string()
+        } else {
+            "Unknown".to_string()
+        }
+    }
+
+    /// Extract functions from code
+    fn extract_functions_from_code(&self, code: &str, language: &str) -> Vec<String> {
+        let mut functions = Vec::new();
+        
+        for line in code.lines() {
+            let line = line.trim();
+            match language {
+                "Rust" => {
+                    if let Some(func_name) = self.extract_function_name_rust(line) {
+                        functions.push(func_name);
+                    }
+                },
+                "Python" => {
+                    if let Some(func_name) = self.extract_function_name_python(line) {
+                        functions.push(func_name);
+                    }
+                },
+                "JavaScript" | "TypeScript" => {
+                    if let Some(func_name) = self.extract_function_name_js(line) {
+                        functions.push(func_name);
+                    }
+                },
+                _ => {}
+            }
+        }
+        
+        functions
+    }
+
+    /// Extract imports from code
+    fn extract_imports_from_code(&self, code: &str, language: &str) -> Vec<String> {
+        let mut imports = Vec::new();
+        
+        for line in code.lines() {
+            let line = line.trim();
+            match language {
+                "Rust" => {
+                    if line.starts_with("use ") {
+                        imports.push(line.to_string());
+                    }
+                },
+                "Python" => {
+                    if line.starts_with("import ") || line.starts_with("from ") {
+                        imports.push(line.to_string());
+                    }
+                },
+                "JavaScript" | "TypeScript" => {
+                    if line.starts_with("import ") || line.contains("require(") {
+                        imports.push(line.to_string());
+                    }
+                },
+                _ => {}
+            }
+        }
+        
+        imports
+    }
+
+    /// Extract data structures from code
+    fn extract_data_structures_from_code(&self, code: &str, language: &str) -> Vec<String> {
+        let mut structures = Vec::new();
+        
+        for line in code.lines() {
+            let line = line.trim();
+            match language {
+                "Rust" => {
+                    if line.starts_with("struct ") || line.starts_with("enum ") || line.starts_with("trait ") {
+                        structures.push(line.to_string());
+                    }
+                },
+                "Python" => {
+                    if line.starts_with("class ") {
+                        structures.push(line.to_string());
+                    }
+                },
+                "JavaScript" | "TypeScript" => {
+                    if line.starts_with("class ") || line.starts_with("interface ") || line.starts_with("type ") {
+                        structures.push(line.to_string());
+                    }
+                },
+                _ => {}
+            }
+        }
+        
+        structures
+    }
+
+    /// Extract function name from Rust code
+    fn extract_function_name_rust(&self, line: &str) -> Option<String> {
+        if line.starts_with("fn ") || line.contains(" fn ") {
+            if let Some(start) = line.find("fn ") {
+                if let Some(end) = line[start + 3..].find('(') {
+                    let name = line[start + 3..start + 3 + end].trim();
+                    return Some(name.to_string());
                 }
             }
         }
-
-        // Deduplicate and rank insights
-        insights.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
-        insights.truncate(10); // Limit to top 10 insights
-
-        println!("  📊 Ranked and deduplicated to {} high-quality results", insights.len());
-
-        Ok(insights)
+        None
     }
 
-    /// Generate expanded queries for DoTA-RAG inspired analysis
-    fn generate_expanded_queries(&self, query: &str) -> Vec<(String, String)> {
-        let mut expanded = Vec::new();
-
-        // Direct exact match
-        expanded.push(("direct_exact".to_string(), query.to_string()));
-
-        // If query mentions architectural patterns, expand with specific patterns
-        if query.to_lowercase().contains("architecture") || query.to_lowercase().contains("pattern") {
-            let patterns = vec![
-                "Node-Flow Architecture",
-                "Async Parallel Processing", 
-                "Batch Optimization Framework",
-                "BaseNode pattern",
-                "Flow orchestration"
-            ];
-            for pattern in patterns {
-                expanded.push(("architectural_patterns".to_string(), pattern.to_string()));
+    /// Extract function name from Python code
+    fn extract_function_name_python(&self, line: &str) -> Option<String> {
+        if line.starts_with("def ") {
+            if let Some(end) = line.find('(') {
+                let name = line[4..end].trim();
+                return Some(name.to_string());
             }
         }
-
-        // Conceptual synonyms
-        if query.to_lowercase().contains("pattern") || query.to_lowercase().contains("architecture") {
-            let synonyms = vec![
-                "design pattern",
-                "framework structure",
-                "system design",
-                "architectural approach",
-                "implementation pattern",
-                "design approach",
-                "implementation strategy",
-                "architectural style",
-                "framework paradigm"
-            ];
-            for synonym in synonyms {
-                expanded.push(("conceptual_synonyms".to_string(), synonym.to_string()));
-            }
-        }
-
-        expanded
+        None
     }
 
-    /// Calculate relevance between content and query
-    fn calculate_relevance(&self, content: &str, query: &str, _item: &WorkingMemoryItem) -> f64 {
-        let content_lower = content.to_lowercase();
-        let query_lower = query.to_lowercase();
+    /// Extract function name from JavaScript/TypeScript code
+    fn extract_function_name_js(&self, line: &str) -> Option<String> {
+        if line.starts_with("function ") {
+            if let Some(end) = line.find('(') {
+                let name = line[9..end].trim();
+                return Some(name.to_string());
+            }
+        } else if line.contains(" = ") && (line.contains("function") || line.contains("=>")) {
+            if let Some(eq_pos) = line.find(" = ") {
+                let name = line[..eq_pos].trim();
+                if let Some(last_space) = name.rfind(' ') {
+                    return Some(name[last_space + 1..].to_string());
+                } else {
+                    return Some(name.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Check if word is a stop word
+    fn is_stop_word(&self, word: &str) -> bool {
+        let stop_words = vec![
+            "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
+            "by", "from", "up", "about", "into", "through", "during", "before",
+            "after", "above", "below", "between", "among", "this", "that", "these",
+            "those", "i", "you", "he", "she", "it", "we", "they", "me", "him",
+            "her", "us", "them", "my", "your", "his", "her", "its", "our", "their"
+        ];
+        stop_words.contains(&word)
+    }
+
+    /// Count JSON fields
+    fn count_json_fields(&self, value: &serde_json::Value) -> usize {
+        match value {
+            serde_json::Value::Object(obj) => obj.len(),
+            serde_json::Value::Array(arr) => arr.len(),
+            _ => 1,
+        }
+    }
+
+    /// Generate AI response for query using OpenAI based on insights and memory
+    async fn generate_ai_response_for_query(
+        &self,
+        query: &str,
+        insights: &[BrainInsight],
+        memory_system: &mut MemorySystem,
+    ) -> Result<String, BrainError> {
+        // Get OpenAI API key from environment
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .map_err(|_| BrainError::ConfigError("OPENAI_API_KEY not found".to_string()))?;
+
+        let client = reqwest::Client::new();
         
-        // Simple relevance calculation based on word overlap
-        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-        let mut matches = 0;
+        // Retrieve relevant memory context
+        let memory_context = self.get_relevant_memory_context(query, memory_system).await?;
         
-        for word in query_words.iter() {
-            if content_lower.contains(word) {
-                matches += 1;
+        // Build context from insights and memory
+        let mut context_parts = Vec::new();
+        
+        if !insights.is_empty() {
+            context_parts.push("**Recent Analysis Insights:**".to_string());
+            for insight in insights.iter().take(10) {
+                context_parts.push(format!("- {} (Source: {}, Confidence: {:.2})", 
+                    insight.content, insight.source, insight.confidence));
             }
         }
         
-        if query_words.is_empty() {
-            0.0
+        if !memory_context.is_empty() {
+            context_parts.push("\n**Relevant Knowledge from Memory:**".to_string());
+            for memory in memory_context.iter().take(5) {
+                context_parts.push(format!("- {}", memory));
+            }
+        }
+        
+        let context = if context_parts.is_empty() {
+            "No specific context available.".to_string()
         } else {
-            matches as f64 / query_words.len() as f64
+            context_parts.join("\n")
+        };
+
+        // Create a comprehensive prompt for intelligent response generation
+        let system_prompt = "You are Brain AI, an advanced AI system with learning capabilities. You analyze information, learn from content, and provide intelligent responses based on your knowledge. Be helpful, accurate, and conversational. When you have learned from specific content, reference it naturally in your response.".to_string();
+        
+        let user_prompt = format!(
+            "Query: {}\n\nContext and Knowledge:\n{}\n\nPlease provide a comprehensive, helpful response to the query based on the available context and knowledge. If you've learned from specific content, reference it naturally. Be conversational and informative.",
+            query, context
+        );
+
+        let request = OpenAIRequest {
+            model: "gpt-3.5-turbo".to_string(),
+            max_tokens: Some(800),
+            temperature: 0.7,
+            messages: vec![
+                OpenAIMessage {
+                    role: "system".to_string(),
+                    content: system_prompt,
+                },
+                OpenAIMessage {
+                    role: "user".to_string(),
+                    content: user_prompt,
+                },
+            ],
+            stream: false,
+        };
+
+        let response = client
+            .post("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("OpenAI API request failed: {}", e)))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(BrainError::NetworkError(format!(
+                "OpenAI API error {}: {}",
+                status,
+                error_text
+            )));
         }
+
+        let openai_response: OpenAIResponse = response
+            .json()
+            .await
+            .map_err(|e| BrainError::NetworkError(format!("Failed to parse OpenAI response: {}", e)))?;
+
+        if let Some(choice) = openai_response.choices.first() {
+            Ok(choice.message.content.clone())
+        } else {
+            Err(BrainError::ProcessingError("No response from OpenAI".to_string()))
+        }
+    }
+
+    /// Get relevant memory context for a query
+    async fn get_relevant_memory_context(
+        &self,
+        query: &str,
+        memory_system: &mut MemorySystem,
+    ) -> Result<Vec<String>, BrainError> {
+        // Simple memory retrieval - get recent and relevant memories
+        let memories = memory_system.find_related_memories(query, 5)
+            .map_err(|e| BrainError::ProcessingError(format!("Memory search failed: {}", e)))?;
+        
+        let mut context: Vec<String> = Vec::new();
+        
+        // Extract content from working memory results
+        for item in memories.working_results.iter().take(3) {
+            context.push(item.content.clone());
+        }
+        
+        // Extract content from episodic memory results
+        for event in memories.episodic_results.iter().take(2) {
+            context.push(event.content.clone());
+        }
+        
+        // Extract content from semantic memory results
+        for concept in memories.semantic_results.iter().take(2) {
+            context.push(format!("{}: {}", concept.name, concept.description));
+        }
+        
+        Ok(context)
     }
 }
 
