@@ -97,7 +97,8 @@ pub struct SimilarityConfig {
 
 /// Legacy compatibility for segment discovery
 pub mod segment_discovery {
-    pub use brain_infra::{BpeSegmenter, BpeConfig};
+    pub use brain_infra::BpeSegmenter;
+    pub use brain_core::BpeConfig;
     
     // Legacy compatibility types
     pub struct StorageConfig {
@@ -120,7 +121,8 @@ pub mod memory {
 
 /// Legacy compatibility for concept graph
 pub mod concept_graph {
-    pub use brain_core::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, ConceptRepository};
+    pub use brain_infra::{ConceptGraphManager, ConceptGraphConfig};
+    pub use brain_core::{ConceptNode, ConceptType, ConceptRepository};
 }
 
 /// Legacy compatibility for visualization
