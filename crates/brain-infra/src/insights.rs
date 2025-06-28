@@ -8,7 +8,7 @@
 //! 3. Rule Generalization System - Advanced rule management and generalization
 
 use brain_types::*;
-use brain_core::{Insight, InsightType, InsightRepository, InsightService};
+use brain_core::{Insight, InsightType, InsightRepository};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -297,6 +297,7 @@ impl PatternDetector {
     }
 
     /// Extract content pattern from text
+    #[allow(dead_code)]
     fn extract_content_pattern(&self, content: &str) -> String {
         // Simple pattern extraction - in real implementation would use NLP
         content.split_whitespace()

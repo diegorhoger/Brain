@@ -442,6 +442,7 @@ pub struct UnifiedCognitivePipeline {
     /// Training data service
     training_service: Option<Arc<dyn TrainingDataService>>,
     /// Communication bus for inter-component messages
+    #[allow(dead_code)]
     communication_bus: Arc<RwLock<CommunicationBus>>,
     /// Pipeline statistics
     stats: Arc<RwLock<CognitiveModelStats>>,
@@ -452,6 +453,7 @@ pub struct CommunicationBus {
     /// Message queues by component
     message_queues: HashMap<String, Vec<ComponentMessage>>,
     /// Message handlers
+    #[allow(dead_code)]
     handlers: HashMap<String, Box<dyn MessageHandler>>,
     /// Bus statistics
     stats: CommunicationStats,
@@ -925,6 +927,7 @@ pub struct CognitiveTestFramework {
     /// Test configuration
     config: CognitiveTestConfig,
     /// Test results storage
+    #[allow(dead_code)]
     results: Vec<CognitiveTestResult>,
     /// Performance benchmarks
     benchmarks: CognitiveBenchmarks,

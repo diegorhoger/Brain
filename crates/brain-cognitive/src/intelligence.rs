@@ -400,18 +400,24 @@ pub struct IndependentIntelligenceOrchestrator {
     /// Configuration
     config: IndependentIntelligenceConfig,
     /// Memory repository
+    #[allow(dead_code)]
     memory_repository: Arc<dyn WorkingMemoryRepository>,
     /// Concept repository
+    #[allow(dead_code)]
     concept_repository: Arc<dyn ConceptRepository>,
     /// Insight repository
+    #[allow(dead_code)]
     insight_repository: Arc<dyn InsightRepository>,
     /// Performance metrics
     performance_metrics: Arc<RwLock<IndependencePerformanceMetrics>>,
     /// Model performance history
+    #[allow(dead_code)]
     performance_history: Arc<RwLock<Vec<ModelPerformanceSnapshot>>>,
     /// Conversation routing statistics
+    #[allow(dead_code)]
     routing_stats: Arc<RwLock<RoutingStatistics>>,
     /// Quality comparison data
+    #[allow(dead_code)]
     quality_comparisons: Arc<RwLock<Vec<QualityComparison>>>,
 }
 
@@ -489,6 +495,7 @@ impl IndependentIntelligenceOrchestrator {
     }
 
     /// Convert retrieved knowledge to cognitive knowledge
+    #[allow(dead_code)]
     fn convert_to_cognitive_knowledge(retrieved_knowledge: &[RetrievedKnowledge]) -> Result<Vec<CognitiveKnowledge>, BrainError> {
         let mut cognitive_knowledge = Vec::new();
 
@@ -510,6 +517,7 @@ impl IndependentIntelligenceOrchestrator {
     }
 
     /// Create memory state from repositories
+    #[allow(dead_code)]
     async fn create_memory_state(&self) -> Result<MemoryState, BrainError> {
         let query = brain_core::memory::WorkingMemoryQuery::default();
         let working_memory = self.memory_repository.query_items(&query).await?;
@@ -533,6 +541,7 @@ impl IndependentIntelligenceOrchestrator {
     }
 
     /// Extract user profile from context
+    #[allow(dead_code)]
     fn extract_user_profile(context: &ConversationContext) -> Result<UserProfile, BrainError> {
         Ok(UserProfile {
             user_id: context.user_profile.user_id.clone(),

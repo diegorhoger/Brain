@@ -4,7 +4,6 @@
 //! including interactive concept graph exploration, memory timeline visualization,
 //! and simulation results dashboards.
 
-use brain_types::*;
 use axum::{
     extract::Query,
     response::{Html, IntoResponse, Json},
@@ -116,6 +115,7 @@ pub struct GraphMetadata {
 
 /// Visualization manager for coordinating visualization services
 pub struct VisualizationManager {
+    #[allow(dead_code)]
     config: VisualizationConfig,
 }
 

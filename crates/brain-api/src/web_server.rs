@@ -7,13 +7,12 @@
 use brain_types::*;
 use brain_core::{WorkingMemoryItem, WorkingMemoryQuery, Priority, WorkingMemoryRepository as WorkingMemoryRepositoryTrait};
 use brain_infra::{WorkingMemoryRepository, ConceptGraphManager, InMemoryInsightRepository, ConceptGraphConfig};
-use brain_cognitive::*;
+// Removed unused brain_cognitive import
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{Filter, Reply};
-use chrono::Utc;
 
 // Request/Response structures
 #[derive(Debug, Serialize, Deserialize)]

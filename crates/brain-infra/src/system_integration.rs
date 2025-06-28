@@ -15,12 +15,10 @@ use tokio::sync::RwLock;
 use brain_types::{Result, BrainError};
 use brain_core::{
     ModelConfig, BpeConfig, ConsolidationConfig, SimulationConfig,
-    CharacterVocab, CharacterPredictorService, MemoryService,
-    SimulationEngine as SimulationEngineTrait,
+    CharacterVocab,
 };
 use crate::{
-    ConceptGraphManager, ConceptGraphConfig,
-    CharacterPredictor, BpeSegmenter, WorkingMemoryRepository,
+    ConceptGraphManager, ConceptGraphConfig, BpeSegmenter, WorkingMemoryRepository,
     SimulationEngineImpl,
     performance_monitor::{PerformanceMonitor, PerformanceConfig}
 };
@@ -516,6 +514,7 @@ impl BrainSystem {
     }
     
     /// Initialize all registered components
+    #[allow(dead_code)]
     fn initialize_components(&mut self) -> Result<()> {
         info!("Initializing system components...");
         
@@ -529,6 +528,7 @@ impl BrainSystem {
     }
     
     /// Initialize a specific component
+    #[allow(dead_code)]
     fn initialize_component(&mut self, name: &str) -> Result<()> {
         info!("Initializing component: {}", name);
         
@@ -1475,7 +1475,7 @@ mod tests {
 
     #[test]
     fn test_component_registry() {
-        let mut registry = ComponentRegistry::new();
+        let registry = ComponentRegistry::new();
         assert_eq!(registry.get_initialization_order().len(), 0);
         
         // Test would require actual component implementations

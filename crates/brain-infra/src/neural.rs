@@ -181,6 +181,7 @@ pub struct FeedForwardNetworkImpl {
     bias1: DVector<f64>,
     bias2: DVector<f64>,
     /// Hidden dimension
+    #[allow(dead_code)]
     hidden_dim: usize,
 }
 

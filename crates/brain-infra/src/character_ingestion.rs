@@ -13,13 +13,6 @@ use brain_core::{
 };
 use nalgebra::{DMatrix, DVector};
 use rand::prelude::*;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
-use std::path::Path;
-use std::time::Instant;
 use async_trait::async_trait;
 
 /// File-based character ingestion repository
@@ -174,7 +167,7 @@ impl CharacterPredictor {
         let mut losses = Vec::new();
         let encoded = self.vocab.encode(sequence);
         
-        for epoch in 0..epochs {
+        for _epoch in 0..epochs {
             let mut epoch_loss = 0.0;
             let mut num_batches = 0;
 
@@ -491,6 +484,7 @@ impl PerformanceTracker for SimplePerformanceTracker {
 
 /// Simple segment provider implementation
 pub struct SimpleSegmentProvider {
+    #[allow(dead_code)]
     segments: Vec<String>,
 }
 

@@ -6,10 +6,7 @@
 
 use brain_core::*;
 use brain_types::*;
-use chrono::{DateTime, Utc};
-use neo4rs::{Graph, Node, Relation, Row, query};
-use std::collections::{HashMap, HashSet, VecDeque, BinaryHeap};
-use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Configuration for the Neo4j concept graph database
@@ -164,18 +161,23 @@ pub struct ConceptSubgraph {
 /// Advanced concept graph manager with Neo4j integration and sophisticated algorithms
 pub struct ConceptGraphManager {
     /// Connection configuration
+    #[allow(dead_code)]
     config: ConceptGraphConfig,
     /// In-memory storage for concepts (fallback when Neo4j unavailable)
     concepts: HashMap<Uuid, ConceptNode>,
     /// In-memory storage for relationships (fallback when Neo4j unavailable)
     relationships: HashMap<Uuid, ConceptRelationship>,
     /// Hebbian learning configuration
+    #[allow(dead_code)]
     hebbian_config: HebbianConfig,
     /// Concept formation configuration
+    #[allow(dead_code)]
     formation_config: ConceptFormationConfig,
     /// Traversal algorithm configuration
+    #[allow(dead_code)]
     traversal_config: TraversalConfig,
     /// Similarity calculation configuration
+    #[allow(dead_code)]
     similarity_config: SimilarityConfig,
 }
 
@@ -560,7 +562,7 @@ pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use brain_core::{ConceptRepository as _, RelationshipRepository as _};
+    // Removed unused test imports
 
     #[tokio::test]
     async fn test_concept_graph_manager_creation() {

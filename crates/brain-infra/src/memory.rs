@@ -149,7 +149,7 @@ impl WorkingMemoryRepository {
 #[async_trait::async_trait]
 impl brain_core::WorkingMemoryRepository for WorkingMemoryRepository {
     async fn store_item(&mut self, item: WorkingMemoryItem) -> Result<Uuid> {
-        let id = item.id;
+        let _id = item.id;
         let priority = item.priority;
         let content = item.content.clone();
         
@@ -400,6 +400,7 @@ impl EpisodicMemoryRepository {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn update_stats(&mut self) {
         // Would need to query database for accurate stats
         self.stats.last_access = Utc::now();

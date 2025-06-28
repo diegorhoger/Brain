@@ -5,7 +5,6 @@
 //! through trait implementations.
 
 use brain_types::*;
-use nalgebra::{DMatrix, DVector};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use async_trait::async_trait;
