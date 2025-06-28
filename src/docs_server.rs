@@ -5,7 +5,7 @@
 
 use anyhow::{anyhow, Result};
 use axum::{
-    extract::{Path, Query},
+    extract::Path,
     http::{header, StatusCode},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
@@ -118,8 +118,10 @@ impl DocsServer {
 
         info!("Starting documentation server on http://{}", addr);
 
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
+        let listener = tokio::net::TcpListener::bind(&addr).await
+            .map_err(|e| anyhow!("Failed to bind to address {}: {}", addr, e))?;
+        
+        axum::serve(listener, app.into_make_service())
             .await
             .map_err(|e| anyhow!("Documentation server failed: {}", e))?;
 
@@ -161,7 +163,34 @@ impl DocsServer {
 
 /// Serve the main documentation index page
 async fn serve_index() -> impl IntoResponse {
-    Html(include_str!("../docs/index.html"))
+    Html(r#"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain AI Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .nav { margin: 20px 0; }
+        .nav a { margin-right: 20px; text-decoration: none; color: #007acc; }
+        .nav a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Brain AI Documentation</h1>
+    <div class="nav">
+        <a href="/swagger-ui">API Documentation</a>
+        <a href="/examples">Examples</a>
+        <a href="/tutorials">Tutorials</a>
+        <a href="/health">Health Check</a>
+    </div>
+    <p>Welcome to the Brain AI documentation server. This is a modular AI architecture built with Rust.</p>
+    <p>Use the navigation links above to explore the API documentation and examples.</p>
+</body>
+</html>
+    "#)
 }
 
 /// Serve the OpenAPI specification in YAML format

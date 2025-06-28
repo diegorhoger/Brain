@@ -11,4 +11,5 @@ serde = { version = "1.0", features = ["derive"] }
 async-trait = "0.1"
 
 # Core logic dependencies (no I/O) - minimal for migration
-nalgebra = "0.32" 
+nalgebra = "0.32"
+rand = "0.8" 

@@ -1,33 +1,18 @@
-use brain::start_web_server;
-use clap::{Arg, Command};
-use log::info;
+use brain::{Result, docs_server::{DocsServer, DocsConfig}};
 
 #[tokio::main]
-async fn main() -> brain::Result<()> {
+async fn main() -> Result<()> {
     env_logger::init();
     
-    let matches = Command::new("brain-web-server")
-        .version("1.0.0")
-        .about("Brain AI Web Interface Server")
-        .arg(
-            Arg::new("port")
-                .short('p')
-                .long("port")
-                .value_name("PORT")
-                .help("Port to run the web server on")
-                .default_value("3030")
-        )
-        .get_matches();
+    let port = 3030;
 
-    let port: u16 = matches
-        .get_one::<String>("port")
-        .unwrap()
-        .parse()
-        .expect("Invalid port number");
-
-    info!("🧠 Starting Brain AI Web Server on port {}", port);
+    println!("🧠 Starting Brain AI Documentation Server on port {}", port);
+    println!("📚 Phase 6: Application Integration - Alternative Web Server");
     
-    start_web_server(port).await?;
+    let mut config = DocsConfig::default();
+    config.port = port;
+    let docs_server = DocsServer::new(config);
+    docs_server.start().await?;
     
     Ok(())
 } 

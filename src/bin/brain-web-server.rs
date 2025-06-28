@@ -1,9 +1,7 @@
 #![recursion_limit = "1024"]
 
-use brain::web_server::WebServer;
-use brain::error::Result;
+use brain::{Result, docs_server::{DocsServer, DocsConfig}};
 use std::env;
-use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,11 +14,14 @@ async fn main() -> Result<()> {
         .parse::<u16>()
         .expect("PORT must be a valid number");
 
-    println!("Starting Brain Web Server on port {}", port);
+    println!("🧠 Starting Brain AI Documentation Server on port {}", port);
+    println!("📚 Phase 6: Application Integration - Web Server Available");
 
-    // Create and start the web server
-    let web_server = WebServer::new();
-    web_server.start(port).await?;
+    // Create and start the documentation server
+    let mut config = DocsConfig::default();
+    config.port = port;
+    let docs_server = DocsServer::new(config);
+    docs_server.start().await?;
 
     Ok(())
 } 

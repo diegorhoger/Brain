@@ -18,6 +18,10 @@ tracing.workspace = true
 reqwest.workspace = true
 async-trait.workspace = true
 
+# Machine learning dependencies
+nalgebra = "0.32"
+rand = "0.8"
+
 # Database
 sqlx.workspace = true
 rusqlite = { version = "0.30", features = ["bundled"] }
@@ -31,4 +35,8 @@ base64 = "0.22"
 tempfile = "3.10"
 
 # Configuration
-toml = "0.8" 
+toml = "0.8"
+
+# Performance monitoring
+sysinfo = "0.30"
+log = "0.4" 

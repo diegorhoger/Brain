@@ -1,12 +1,12 @@
 [workspace]
 members = [
+    "crates/brain-types",
     "crates/brain-core",      # Pure domain logic (memory, concepts, patterns)
     "crates/brain-infra",     # Infrastructure (DB, files, external APIs)
     "crates/brain-api",       # REST API layer (web routes, handlers)
-    "crates/brain-cli",       # Command line interface
-    "crates/brain-types",     # Shared types, errors, utilities
     "crates/brain-cognitive", # Cognitive architecture (conversation, learning)
     "crates/brain-analysis",  # Code analysis and pattern recognition
+    "crates/brain-cli",       # Command line interface
 ]
 resolver = "2"
 
@@ -44,4 +44,50 @@ insta = "1.30"
 version = "0.8.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/user/brain-ai" 
+repository = "https://github.com/user/brain-ai"
+
+[package]
+name = "brain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# New crate dependencies
+brain-types = { path = "crates/brain-types" }
+brain-core = { path = "crates/brain-core" }
+brain-infra = { path = "crates/brain-infra" }
+brain-api = { path = "crates/brain-api" }
+brain-cognitive = { path = "crates/brain-cognitive" }
+brain-analysis = { path = "crates/brain-analysis" }
+brain-cli = { path = "crates/brain-cli" }
+
+# Workspace dependencies
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+async-trait.workspace = true
+warp.workspace = true
+axum.workspace = true
+sqlx.workspace = true
+reqwest.workspace = true
+octocrab.workspace = true
+
+# Additional dependencies for main application
+clap = "4.0"
+env_logger = "0.10"
+log = "0.4"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+serde_yaml = "0.9"
+
+[features]
+default = []
+python = [] 

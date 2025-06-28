@@ -1,19 +1,43 @@
 [package]
 name = "brain-cognitive"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
+version = "0.1.0"
+edition = "2021"
+description = "Cognitive architecture components for Brain AI system"
+license = "MIT"
 
 [dependencies]
+# Workspace dependencies
 brain-types = { path = "../brain-types" }
 brain-core = { path = "../brain-core" }
+brain-infra = { path = "../brain-infra" }
 
-tokio.workspace = true
-serde.workspace = true
-uuid.workspace = true
-chrono.workspace = true
-thiserror.workspace = true
-tracing.workspace = true
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
 
-# Text processing
-regex = "1.10" 
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Unique identifiers
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# Collections and utilities
+regex = "1.10"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+tokio-test = "0.4" 
