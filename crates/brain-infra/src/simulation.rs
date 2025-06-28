@@ -7,9 +7,11 @@ use brain_types::*;
 use brain_core::{
     SimulationConfig, BranchingConfig, SimulationState, StateProperty, PropertyType,
     RelationshipInfo, StateTransition, Action, ActionResult, BranchingResult, BranchingStats, SimulationConstraint,
-    ConstraintType, Condition, ConditionType, ComparisonOperator,
-    TextToStateParser, StateValidator, SimulationEngine as SimulationEngineTrait, ConceptNode, RelationshipType, ConceptRepository
+    TextToStateParser, StateValidator, SimulationEngine as SimulationEngineTrait, ConceptNode, RelationshipType, ConceptRepository,
 };
+
+#[cfg(test)]
+use brain_core::{ConstraintType, Condition, ConditionType, ComparisonOperator};
 use crate::concepts::ConceptGraphManager;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
