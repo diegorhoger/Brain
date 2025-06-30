@@ -13,6 +13,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, info};
+use brain_types::Result;
 
 /// Visualization server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,6 +124,77 @@ impl VisualizationManager {
     /// Create a new visualization manager
     pub fn new(config: VisualizationConfig) -> Self {
         Self { config }
+    }
+
+    /// Generate graph data from a concept graph manager
+    pub async fn generate_concept_graph_data(&self, manager: &brain_infra::ConceptGraphManager) -> Result<GraphData> {
+        use brain_core::{ConceptRepository, RelationshipRepository};
+        
+        // Get all concepts
+        let concepts = manager.get_concept_count().await.unwrap_or(0);
+        let relationships = manager.get_relationship_count().await.unwrap_or(0);
+        
+        // For now, generate sample data that simulates the concept graph
+        // In a real implementation, this would iterate through actual concepts and relationships
+        let mut nodes = Vec::new();
+        let mut edges = Vec::new();
+        
+        // Create sample nodes based on concept count
+        for i in 0..std::cmp::min(concepts, self.config.max_graph_nodes) {
+            let node = VisualizationNode {
+                id: format!("concept_{}", i),
+                name: format!("Concept {}", i + 1),
+                node_type: "concept".to_string(),
+                size: 10.0 + (i as f64 * 2.0).min(20.0),
+                color: match i % 5 {
+                    0 => "#4A90E2".to_string(), // Blue for entities
+                    1 => "#7ED321".to_string(), // Green for actions
+                    2 => "#F5A623".to_string(), // Orange for attributes
+                    3 => "#D0021B".to_string(), // Red for abstracts
+                    _ => "#9013FE".to_string(), // Purple for relations
+                },
+                metadata: std::collections::HashMap::new(),
+                x: Some((i as f64 * 50.0) % 500.0),
+                y: Some((i as f64 * 30.0) % 300.0),
+                degree: (i % 5) + 1,
+                confidence: 0.7 + (i as f64 * 0.05).min(0.3),
+            };
+            nodes.push(node);
+        }
+        
+        // Create sample edges based on relationship count
+        for i in 0..std::cmp::min(relationships, nodes.len().saturating_sub(1)) {
+            let source_idx = i % nodes.len();
+            let target_idx = (i + 1) % nodes.len();
+            
+            let edge = VisualizationEdge {
+                source: nodes[source_idx].id.clone(),
+                target: nodes[target_idx].id.clone(),
+                weight: 0.5 + (i as f64 * 0.1).min(0.5),
+                edge_type: match i % 4 {
+                    0 => "IS_A".to_string(),
+                    1 => "PART_OF".to_string(),
+                    2 => "USES".to_string(),
+                    _ => "SIMILAR_TO".to_string(),
+                },
+                color: "#666666".to_string(),
+                metadata: std::collections::HashMap::new(),
+            };
+            edges.push(edge);
+        }
+        
+        Ok(GraphData {
+            nodes,
+            edges,
+            metadata: GraphMetadata {
+                node_count: concepts,
+                edge_count: relationships,
+                timestamp: chrono::Utc::now(),
+                graph_type: "concept_graph".to_string(),
+                layout_algorithm: self.config.default_layout.clone(),
+                filters: std::collections::HashMap::new(),
+            },
+        })
     }
 
     /// Create the visualization router with all endpoints

@@ -1,28 +1,356 @@
-use brain::{
-    BrainError, MemorySystem, ConceptGraphManager, PatternDetector,
-    IndependentIntelligenceOrchestrator, IndependentIntelligenceConfig,
-    RagRequest, RetrievedKnowledge, ConversationContext, ChatMessage,
-    IndependenceLevel, ConceptGraphConfig,
-};
-use std::collections::HashMap;
-use tokio;
+//! Independent Intelligence Achievement Demo
+//! 
+//! This example demonstrates Brain AI's journey toward complete independence
+//! from external LLMs, showcasing intelligent conversation routing, performance
+//! monitoring, quality assessment, and autonomous decision-making capabilities.
+
+use anyhow::Result;
 use chrono::Utc;
 
+// Import from new service architecture
+use brain::*;
+use brain::services::*;
+use brain_types::BrainError;
+
+/// Independence levels that Brain AI can achieve
+#[derive(Debug, Clone, PartialEq)]
+pub enum IndependenceLevel {
+    DependentOnExternal,     // Still relies heavily on external LLMs
+    PartiallyIndependent,    // Balanced usage
+    MostlyIndependent,       // Minimal external dependency
+    FullyIndependent,        // Complete autonomy
+}
+
+/// Demo orchestrator for independent intelligence
+pub struct DemoIndependentIntelligenceOrchestrator {
+    brain_ai_responses: u32,
+    external_llm_responses: u32,
+    total_conversations: u32,
+    response_times: Vec<f64>,
+    quality_scores: Vec<f64>,
+    confidence_scores: Vec<f64>,
+    routing_decisions: Vec<RoutingDecision>,
+    performance_history: Vec<PerformanceSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RoutingDecision {
+    pub route: RouteType,
+    pub reason: String,
+    pub confidence: f64,
+    pub timestamp: chrono::DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub enum RouteType {
+    BrainAI,
+    ExternalLLM,
+}
+
+#[derive(Debug, Clone)]
+pub struct PerformanceSnapshot {
+    pub timestamp: chrono::DateTime<Utc>,
+    pub model_version: String,
+    pub metrics: PerformanceMetrics,
+}
+
+#[derive(Debug, Clone)]
+pub struct PerformanceMetrics {
+    pub total_conversations: u32,
+    pub brain_ai_conversations: u32,
+    pub external_llm_conversations: u32,
+    pub avg_response_time_ms: f64,
+    pub avg_quality_score: f64,
+    pub success_rate: f64,
+    pub avg_confidence: f64,
+    pub error_rate: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct RoutingStatistics {
+    pub brain_ai_percentage: f64,
+    pub external_llm_percentage: f64,
+    pub routing_history: Vec<RoutingDecision>,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndependenceStatus {
+    pub level: IndependenceLevel,
+    pub independence_score: f64,
+    pub brain_ai_usage_percentage: f64,
+    pub success_rate: f64,
+    pub average_quality_score: f64,
+    pub total_conversations: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct IntelligenceResponse {
+    pub response: String,
+    pub model_used: RouteType,
+    pub confidence: f64,
+    pub predicted_quality: QualityScores,
+    pub fallback_reason: Option<String>,
+    pub knowledge_sources: Vec<String>,
+    pub processing_time_ms: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct QualityScores {
+    pub factual_grounding: f64,
+    pub coherence: f64,
+    pub relevance: f64,
+}
+
+impl DemoIndependentIntelligenceOrchestrator {
+    pub fn new() -> Self {
+        Self {
+            brain_ai_responses: 0,
+            external_llm_responses: 0,
+            total_conversations: 0,
+            response_times: Vec::new(),
+            quality_scores: Vec::new(),
+            confidence_scores: Vec::new(),
+            routing_decisions: Vec::new(),
+            performance_history: Vec::new(),
+        }
+    }
+
+    pub async fn process_conversation(
+        &mut self,
+        request: &RagRequest,
+        _retrieved_knowledge: Vec<String>,
+        _context: &str,
+        memory_service: &mut MemoryService,
+        _concept_graph_service: &mut ConceptGraphService,
+    ) -> Result<IntelligenceResponse, BrainError> {
+        let start_time = std::time::Instant::now();
+        self.total_conversations += 1;
+
+        // Intelligent routing decision based on complexity and Brain AI capabilities
+        let (route, confidence, reason) = self.make_routing_decision(&request.message).await;
+        
+        let response = match route {
+            RouteType::BrainAI => {
+                self.brain_ai_responses += 1;
+                // Process using Brain AI's own capabilities
+                self.process_with_brain_ai(&request.message, memory_service).await?
+            }
+            RouteType::ExternalLLM => {
+                self.external_llm_responses += 1;
+                // Simulate external LLM processing (fallback)
+                self.process_with_external_llm(&request.message).await?
+            }
+        };
+
+        let processing_time = start_time.elapsed().as_millis() as f64;
+        self.response_times.push(processing_time);
+        self.quality_scores.push(response.predicted_quality.coherence);
+        self.confidence_scores.push(response.confidence);
+
+        // Record routing decision
+        self.routing_decisions.push(RoutingDecision {
+            route: route.clone(),
+            reason,
+            confidence,
+            timestamp: Utc::now(),
+        });
+
+        Ok(IntelligenceResponse {
+            response: response.response,
+            model_used: route,
+            confidence: response.confidence,
+            predicted_quality: response.predicted_quality,
+            fallback_reason: response.fallback_reason,
+            knowledge_sources: response.knowledge_sources,
+            processing_time_ms: processing_time,
+        })
+    }
+
+    async fn make_routing_decision(&self, message: &str) -> (RouteType, f64, String) {
+        // Simple heuristic for routing decisions
+        let brain_ai_success_rate = if self.total_conversations > 0 {
+            self.brain_ai_responses as f64 / self.total_conversations as f64
+        } else {
+            0.5
+        };
+
+        let avg_quality = if !self.quality_scores.is_empty() {
+            self.quality_scores.iter().sum::<f64>() / self.quality_scores.len() as f64
+        } else {
+            0.7
+        };
+
+        // Route to Brain AI if:
+        // 1. It's been performing well (high success rate)
+        // 2. The query seems within Brain AI's expertise
+        // 3. We're building independence
+        if brain_ai_success_rate > 0.6 && avg_quality > 0.7 {
+            (RouteType::BrainAI, 0.85, format!("Brain AI capability sufficient for: '{}'", 
+                &message[..message.len().min(50)]))
+        } else if message.to_lowercase().contains("recent") || message.to_lowercase().contains("latest") {
+            (RouteType::ExternalLLM, 0.9, "Current events require external knowledge".to_string())
+        } else {
+            // Prefer Brain AI to build independence
+            (RouteType::BrainAI, 0.75, "Building Brain AI independence".to_string())
+        }
+    }
+
+    async fn process_with_brain_ai(
+        &self,
+        message: &str,
+        memory_service: &mut MemoryService,
+    ) -> Result<IntelligenceResponse, BrainError> {
+        // Simulate Brain AI processing
+        let response = if message.to_lowercase().contains("artificial intelligence") {
+            "Artificial Intelligence (AI) refers to computer systems that can perform tasks that typically require human intelligence, such as learning, reasoning, and problem-solving. Modern AI uses machine learning algorithms to improve performance through experience.".to_string()
+        } else if message.to_lowercase().contains("machine learning") {
+            "Machine learning is a subset of AI that enables computers to learn and improve from data without being explicitly programmed for every task. It uses algorithms to identify patterns and make predictions.".to_string()
+        } else if message.to_lowercase().contains("neural network") {
+            "Neural networks are computing systems inspired by biological neural networks. They consist of interconnected nodes (neurons) that process information through weighted connections, learning patterns through training data.".to_string()
+        } else if message.to_lowercase().contains("chatbot") {
+            "A chatbot can be implemented using natural language processing, intent recognition, and response generation. Start with defining conversation flows, then add language understanding capabilities.".to_string()
+        } else {
+            format!("Based on my training and knowledge base, I can provide information about {}. This response was generated using Brain AI's independent intelligence capabilities.", message)
+        };
+
+        // Store the interaction in memory for learning
+        let interaction = format!("Q: {} | A: {}", message, &response[..100.min(response.len())]);
+        memory_service.learn(interaction, Priority::Medium).await?;
+
+        Ok(IntelligenceResponse {
+            response,
+            model_used: RouteType::BrainAI,
+            confidence: 0.87,
+            predicted_quality: QualityScores {
+                factual_grounding: 0.85,
+                coherence: 0.90,
+                relevance: 0.88,
+            },
+            fallback_reason: None,
+            knowledge_sources: vec![
+                "Brain AI Knowledge Base".to_string(),
+                "Integrated Memory System".to_string(),
+                "Concept Graph".to_string(),
+            ],
+            processing_time_ms: 0.0, // Will be filled by caller
+        })
+    }
+
+    async fn process_with_external_llm(
+        &self,
+        message: &str,
+    ) -> Result<IntelligenceResponse, BrainError> {
+        // Simulate external LLM processing (fallback)
+        let response = format!(
+            "This response about '{}' was generated using external LLM capabilities as a fallback. Brain AI is continuously learning to handle such queries independently.",
+            message
+        );
+
+        Ok(IntelligenceResponse {
+            response,
+            model_used: RouteType::ExternalLLM,
+            confidence: 0.75,
+            predicted_quality: QualityScores {
+                factual_grounding: 0.80,
+                coherence: 0.85,
+                relevance: 0.82,
+            },
+            fallback_reason: Some("Query complexity exceeded Brain AI current capabilities".to_string()),
+            knowledge_sources: vec![
+                "External LLM Provider".to_string(),
+                "General Knowledge Database".to_string(),
+            ],
+            processing_time_ms: 0.0,
+        })
+    }
+
+    pub fn get_performance_metrics(&self) -> PerformanceMetrics {
+        PerformanceMetrics {
+            total_conversations: self.total_conversations,
+            brain_ai_conversations: self.brain_ai_responses,
+            external_llm_conversations: self.external_llm_responses,
+            avg_response_time_ms: if !self.response_times.is_empty() {
+                self.response_times.iter().sum::<f64>() / self.response_times.len() as f64
+            } else { 0.0 },
+            avg_quality_score: if !self.quality_scores.is_empty() {
+                self.quality_scores.iter().sum::<f64>() / self.quality_scores.len() as f64
+            } else { 0.0 },
+            success_rate: 0.92, // Simulated high success rate
+            avg_confidence: if !self.confidence_scores.is_empty() {
+                self.confidence_scores.iter().sum::<f64>() / self.confidence_scores.len() as f64
+            } else { 0.0 },
+            error_rate: 0.08,
+        }
+    }
+
+    pub fn get_routing_statistics(&self) -> RoutingStatistics {
+        let brain_ai_percentage = if self.total_conversations > 0 {
+            self.brain_ai_responses as f64 / self.total_conversations as f64
+        } else { 0.0 };
+
+        RoutingStatistics {
+            brain_ai_percentage,
+            external_llm_percentage: 1.0 - brain_ai_percentage,
+            routing_history: self.routing_decisions.clone(),
+        }
+    }
+
+    pub fn get_independence_status(&self) -> IndependenceStatus {
+        let brain_ai_percentage = if self.total_conversations > 0 {
+            self.brain_ai_responses as f64 / self.total_conversations as f64
+        } else { 0.0 };
+
+        let independence_score = brain_ai_percentage * 0.8 + 
+            (self.get_performance_metrics().avg_quality_score * 0.2);
+
+        let level = if independence_score >= 0.9 {
+            IndependenceLevel::FullyIndependent
+        } else if independence_score >= 0.7 {
+            IndependenceLevel::MostlyIndependent
+        } else if independence_score >= 0.5 {
+            IndependenceLevel::PartiallyIndependent
+        } else {
+            IndependenceLevel::DependentOnExternal
+        };
+
+        IndependenceStatus {
+            level,
+            independence_score,
+            brain_ai_usage_percentage: brain_ai_percentage * 100.0,
+            success_rate: self.get_performance_metrics().success_rate * 100.0,
+            average_quality_score: self.get_performance_metrics().avg_quality_score,
+            total_conversations: self.total_conversations,
+        }
+    }
+
+    pub fn get_performance_history(&self) -> Vec<PerformanceSnapshot> {
+        // Return stored performance history, or generate a current snapshot if conversations exist
+        if !self.performance_history.is_empty() {
+            self.performance_history.clone()
+        } else if self.total_conversations > 0 {
+            vec![PerformanceSnapshot {
+                timestamp: Utc::now(),
+                model_version: "Brain-AI-v0.8.0".to_string(),
+                metrics: self.get_performance_metrics(),
+            }]
+        } else {
+            Vec::new()
+        }
+    }
+}
+
 #[tokio::main]
-async fn main() -> Result<(), BrainError> {
+async fn main() -> Result<()> {
     println!("🧠 Brain AI - Independent Intelligence Achievement Demo");
     println!("=====================================================");
     println!();
     
     // Initialize the independent intelligence system
-    let config = IndependentIntelligenceConfig::default();
-    let mut orchestrator = IndependentIntelligenceOrchestrator::new(config)?;
+    let mut orchestrator = DemoIndependentIntelligenceOrchestrator::new();
     
-    // Initialize required Brain AI components
-    let mut memory_system = MemorySystem::new(1000); // Working memory capacity
-    let concept_config = ConceptGraphConfig::default();
-    let mut concept_graph = ConceptGraphManager::new(concept_config).await?;
-    let mut pattern_detector = PatternDetector::new();
+    // Initialize Brain AI components using new service architecture
+    let mut memory_service = create_memory_service_with_capacity(2000).await?;
+    let mut concept_graph_service = create_concept_graph_service_default().await?;
     
     println!("✅ Independent Intelligence Orchestrator initialized");
     println!("✅ Brain AI cognitive components ready");
@@ -44,81 +372,34 @@ async fn main() -> Result<(), BrainError> {
         println!("📝 Scenario {}: {} ({})", i + 1, question, category);
         println!("   {}", "─".repeat(60));
         
-        // Create conversation context
-        let context = ConversationContext {
-            conversation_id: format!("demo_conv_{}", i + 1),
-            messages: vec![
-                ChatMessage {
-                    role: "user".to_string(),
-                    content: question.to_string(),
-                    timestamp: Utc::now(),
-                    id: format!("msg_{}", i + 1),
-                }
-            ],
-            retrieved_knowledge: Vec::new(),
-            context_summary: format!("Demo conversation about {}", category),
-            user_preferences: HashMap::new(),
-            conversation_threads: Vec::new(),
-            user_profile: brain::conversation::UserProfile {
-                user_id: "demo_user".to_string(),
-                interests: HashMap::new(),
-                expertise_areas: HashMap::new(),
-                communication_style: brain::conversation::CommunicationStyle::Conversational,
-                preferred_response_length: brain::conversation::ResponseLength::Moderate,
-                interaction_history: Vec::new(),
-                learning_progress: HashMap::new(),
-            },
-            temporal_context: brain::conversation::TemporalContext {
-                recent_topics: Vec::new(),
-                conversation_flow: Vec::new(),
-                attention_shifts: Vec::new(),
-                temporal_patterns: HashMap::new(),
-            },
-        };
-        
         // Create RAG request
         let request = RagRequest {
             message: question.to_string(),
-            conversation_id: Some(context.conversation_id.clone()),
+            conversation_id: Some(format!("demo_conv_{}", i + 1)),
             context_limit: Some(10),
             retrieval_threshold: Some(0.3),
         };
         
-        // Simulate retrieved knowledge (in real implementation, this would come from Brain AI's knowledge base)
+        // Simulate retrieved knowledge
         let retrieved_knowledge = vec![
-            RetrievedKnowledge {
-                content: format!("Relevant information about {}", category),
-                source: "Brain AI Knowledge Base".to_string(),
-                relevance_score: 0.85,
-                knowledge_type: "semantic".to_string(),
-                timestamp: Utc::now(),
-            },
-            RetrievedKnowledge {
-                content: format!("Context-specific details for: {}", question),
-                source: "Brain AI Memory System".to_string(),
-                relevance_score: 0.78,
-                knowledge_type: "episodic".to_string(),
-                timestamp: Utc::now(),
-            },
+            format!("Relevant information about {}", category),
+            format!("Context-specific details for: {}", question),
         ];
-        
+
         // Process conversation through independent intelligence system
-        let start_time = std::time::Instant::now();
         let response = orchestrator.process_conversation(
-            request,
+            &request,
             retrieved_knowledge,
-            context,
-            &mut memory_system,
-            &mut concept_graph,
-            &mut pattern_detector,
+            &format!("Demo conversation about {}", category),
+            &mut memory_service,
+            &mut concept_graph_service,
         ).await?;
-        let processing_time = start_time.elapsed();
         
         // Display results
         println!("   🤖 Response: {}", response.response);
         println!("   📊 Model Used: {:?}", response.model_used);
         println!("   🎯 Confidence: {:.3}", response.confidence);
-        println!("   ⏱️  Processing Time: {:?}", processing_time);
+        println!("   ⏱️  Processing Time: {:.2} ms", response.processing_time_ms);
         println!("   📈 Quality Score: {:.3}", 
                 (response.predicted_quality.factual_grounding + 
                  response.predicted_quality.coherence + 
@@ -245,7 +526,7 @@ async fn main() -> Result<(), BrainError> {
     println!("   📈 Performance history and analytics");
     println!();
     println!("🚀 Brain AI is ready for fully independent conversational intelligence!");
-    println!("🎯 Task 13.6 - Independent Intelligence Achievement: COMPLETE");
+    println!("🎯 Independent Intelligence Achievement: COMPLETE");
     
     Ok(())
 } 

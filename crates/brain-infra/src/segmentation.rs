@@ -443,6 +443,45 @@ impl SegmentationProvider for BpeSegmenter {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct FeedbackBpeSegmenter {
+    segmenter: BpeSegmenter,
+    high_confidence_segments: Vec<String>,
+}
+
+impl FeedbackBpeSegmenter {
+    pub fn from_text(text: &str, config: Option<BpeConfig>) -> brain_types::Result<Self> {
+        let config = config.unwrap_or_default();
+        let mut segmenter = BpeSegmenter::new(config);
+        segmenter.initialize_from_text(text)?;
+        segmenter.train()?;
+        
+        // Extract high-confidence segments (frequency > 2 or confidence > 0.5)
+        let high_confidence_segments = segmenter.get_segments_by_frequency()
+            .iter()
+            .filter(|stats| stats.frequency > 2 || stats.confidence > 0.5)
+            .map(|stats| stats.segment.clone())
+            .collect();
+        
+        Ok(Self {
+            segmenter,
+            high_confidence_segments,
+        })
+    }
+    
+    pub fn get_segmenter(&self) -> &BpeSegmenter {
+        &self.segmenter
+    }
+    
+    pub fn get_high_confidence_segments(&self) -> &Vec<String> {
+        &self.high_confidence_segments
+    }
+    
+    pub fn segment(&self, text: &str) -> brain_types::Result<Vec<String>> {
+        Ok(self.segmenter.segment_text(text))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -4,7 +4,9 @@
 //! This example focuses on extracting detailed architectural insights
 //! from the PocketFlow README content that's already in memory.
 
-use brain::*;
+use brain::{services::*, Priority, WorkingMemoryQuery};
+use brain_infra::{GitHubLearningEngine, GitHubLearningConfig, WorkingMemoryRepository};
+use brain_types::Result;
 use std::env;
 use tokio;
 
@@ -16,8 +18,9 @@ async fn main() -> Result<()> {
     println!("📖 Brain AI README Insights Extractor - PocketFlow Architecture");
     println!("{}", "=".repeat(60));
 
-    // Initialize Brain AI components
-    let mut memory_system = MemorySystem::new(2000);
+    // Initialize Brain AI components with new service architecture
+    let mut working_repo = WorkingMemoryRepository::new(2000);
+    let mut memory_service = create_memory_service_with_capacity(2000).await?;
     
     // Get GitHub token
     let github_token = env::var("GITHUB_TOKEN").ok();
@@ -39,7 +42,7 @@ async fn main() -> Result<()> {
 
     // Learn from PocketFlow repository
     let pocketflow_url = "https://github.com/The-Pocket/PocketFlow";
-    match github_engine.learn_from_repository(&mut memory_system, pocketflow_url).await {
+    match github_engine.learn_from_repository(&mut working_repo, pocketflow_url).await {
         Ok(result) => {
             println!("✅ Learning completed!");
             println!("   Files processed: {}", result.files_processed);
@@ -63,7 +66,7 @@ async fn main() -> Result<()> {
         limit: Some(5),
     };
 
-    match memory_system.query_working(&readme_query) {
+    match memory_service.query_working(&readme_query).await {
         Ok(items) => {
             for (i, item) in items.iter().enumerate() {
                 if item.content.contains("README") && item.content.len() > 1000 {
@@ -210,7 +213,7 @@ async fn main() -> Result<()> {
     ];
 
     for (title, description) in architectural_insights {
-        match memory_system.learn(format!("{}: {}", title, description), Priority::High) {
+        match memory_service.learn(format!("{}: {}", title, description), Priority::High).await {
             Ok(_) => println!("✅ Stored: {}", title),
             Err(e) => println!("❌ Failed to store {}: {}", title, e),
         }

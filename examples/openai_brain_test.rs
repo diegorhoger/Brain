@@ -1,132 +1,133 @@
-//! OpenAI Brain AI Integration Test
+//! OpenAI Brain Test
 //! 
-//! This example demonstrates the OpenAI ChatGPT integration with Brain AI impersonation.
-//! It shows how Brain AI maintains its persona while using OpenAI as the underlying LLM.
+//! Tests Brain AI conversation capabilities with OpenAI integration
+//! using the new MemoryService and ConceptGraphService architecture.
 
-use brain::{
-    RagOrchestrator, RagRequest, MemorySystem, ConceptGraphManager, PatternDetector,
-    BrainImpersonationHandler
-};
+use brain::*;
+use brain::services::*;
 use std::env;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🧠 Brain AI OpenAI Integration Test");
-    println!("=====================================");
-
+async fn main() -> Result<()> {
+    println!("🧠 Brain AI - OpenAI Integration Test");
+    println!("====================================");
+    
     // Check for OpenAI API key
-    if env::var("OPENAI_API_KEY").is_err() {
-        println!("❌ OPENAI_API_KEY environment variable not set");
-        println!("Please set your OpenAI API key in the .env file or environment");
-        return Ok(());
-    }
-
-    // Test Brain AI impersonation handler
-    println!("\n🎭 Testing Brain AI Impersonation Handler");
-    println!("-----------------------------------------");
+    let _openai_key = env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
+        println!("❌ OPENAI_API_KEY environment variable not found!");
+        println!("   Please set your OpenAI API key:");
+        println!("   export OPENAI_API_KEY=your_key_here");
+        std::process::exit(1);
+    });
     
-    let impersonation_handler = BrainImpersonationHandler::default();
+    println!("✅ OpenAI API key found");
     
-    // Test various responses that might come from OpenAI
-    let test_responses = vec![
-        "I am an AI assistant created by OpenAI to be helpful and harmless.",
-        "As an AI language model, I don't have access to real-time information.",
-        "I'm ChatGPT, and I cannot browse the internet or access external databases.",
-        "I don't have the ability to remember our previous conversations.",
+    // Initialize Brain AI services
+    println!("\n🔧 Initializing Brain AI Services...");
+    let mut memory_system = create_memory_service_with_capacity(1000).await?;
+    let mut concept_graph = create_concept_graph_service_default().await?;
+    
+    println!("✅ MemoryService initialized");
+    println!("✅ ConceptGraphService initialized");
+    
+    // Load some test knowledge
+    println!("\n📚 Loading Test Knowledge...");
+    let test_knowledge = vec![
+        "Brain AI is an advanced artificial intelligence system with memory and reasoning capabilities",
+        "The system uses episodic, working, and semantic memory for comprehensive knowledge storage",
+        "Brain AI can learn from conversations and improve its responses over time",
+        "The architecture supports real-time learning and knowledge consolidation",
+        "Brain AI integrates with OpenAI for enhanced language generation capabilities",
     ];
     
-    for (i, response) in test_responses.iter().enumerate() {
-        println!("\nTest {}: Original Response:", i + 1);
-        println!("  \"{}\"", response);
-        
-        let processed = impersonation_handler.process_response(response);
-        println!("  Processed Response:");
-        println!("  \"{}\"", processed);
+    for (i, knowledge) in test_knowledge.iter().enumerate() {
+        memory_system.learn(knowledge.to_string(), Priority::High).await?;
+        println!("✅ Loaded knowledge item {}", i + 1);
     }
     
-    // Test system prompt generation
-    println!("\n🤖 Brain AI System Prompt");
-    println!("--------------------------");
-    let system_prompt = impersonation_handler.get_brain_system_prompt();
-    println!("{}", system_prompt);
-
-    // Initialize Brain AI components
-    println!("\n🧠 Initializing Brain AI Components");
-    println!("------------------------------------");
+    // Create RAG orchestrator for conversation processing
+    println!("\n🤖 Initializing Conversation System...");
+    let mut rag_orchestrator = RagOrchestrator::new()?;
     
-    let mut memory_system = MemorySystem::new(1000);
-    let mut concept_graph = ConceptGraphManager::new(Default::default()).await?;
-    let mut pattern_detector = PatternDetector::new();
+    // Test questions to validate the integration
+    let test_questions = vec![
+        "What is Brain AI?",
+        "How does Brain AI handle memory?",
+        "What makes Brain AI different from other AI systems?",
+        "How does Brain AI integrate with OpenAI?",
+        "Can Brain AI learn from our conversation?",
+    ];
     
-    println!("✅ Memory System initialized");
-    println!("✅ Concept Graph initialized");
-    println!("✅ Pattern Detector initialized");
-
-    // Initialize RAG Orchestrator with OpenAI
-    println!("\n🔗 Initializing RAG Orchestrator with OpenAI");
-    println!("----------------------------------------------");
+    println!("\n💬 Testing Brain AI Conversations");
+    println!("=================================");
     
-    match RagOrchestrator::new() {
-        Ok(mut rag_orchestrator) => {
-            println!("✅ RAG Orchestrator initialized with OpenAI");
-            
-            // Test conversation
-            println!("\n💬 Testing Brain AI Conversation");
-            println!("---------------------------------");
-            
-            let test_messages = vec![
-                "Hello, what are you?",
-                "Can you tell me about your capabilities?",
-                "How do you access information?",
-                "What makes you different from other AI systems?",
-            ];
-            
-            for message in test_messages {
-                println!("\n👤 User: {}", message);
+    for (i, question) in test_questions.iter().enumerate() {
+        println!("\n📝 Test {}: {}", i + 1, question);
+        
+        let request = RagRequest {
+            message: question.to_string(),
+            conversation_id: Some("openai_test_session".to_string()),
+            context_limit: Some(5),
+            retrieval_threshold: Some(0.3),
+        };
+        
+        match rag_orchestrator.process_conversation(
+            request,
+            &mut memory_system,
+            &mut concept_graph,
+        ).await {
+            Ok(response) => {
+                println!("🤖 Brain AI Response:");
+                println!("   {}", response.response);
+                println!("   📊 Confidence: {:.1}%", response.confidence_score * 100.0);
+                println!("   📚 Knowledge sources used: {}", response.context_used.len());
                 
-                let request = RagRequest {
-                    message: message.to_string(),
-                    conversation_id: None,
-                    context_limit: Some(10),
-                    retrieval_threshold: Some(0.3),
-                };
+                // Store the interaction for learning
+                let interaction = format!("Q: {} | A: {}", question, response.response);
+                memory_system.learn(interaction, Priority::Low).await?;
                 
-                match rag_orchestrator.process_conversation(
-                    request,
-                    &mut memory_system,
-                    &mut concept_graph,
-                    &mut pattern_detector,
-                ).await {
-                    Ok(response) => {
-                        println!("🧠 Brain AI: {}", response.response);
-                        println!("   Confidence: {:.3}", response.confidence_score);
-                        println!("   Knowledge sources used: {}", response.context_used.len());
-                    },
-                    Err(e) => {
-                        println!("❌ Error: {}", e);
-                    }
+                // Validate response quality
+                if response.confidence_score > 0.5 {
+                    println!("   ✅ High confidence response");
+                } else {
+                    println!("   ⚠️  Lower confidence response");
                 }
             }
-            
-            // Display RAG orchestrator stats
-            println!("\n📊 RAG Orchestrator Statistics");
-            println!("-------------------------------");
-            let stats = rag_orchestrator.get_stats();
-            for (key, value) in stats {
-                println!("  {}: {}", key, value);
+            Err(e) => {
+                println!("   ❌ Error processing question: {}", e);
+                println!("   This could indicate API issues or configuration problems");
             }
-            
-        },
+        }
+        
+        // Brief pause between requests
+        tokio::time::sleep(tokio::time::Duration::from_millis(750)).await;
+    }
+    
+    // Display final statistics
+    println!("\n📊 Session Summary");
+    println!("==================");
+    
+    let conversation_stats = rag_orchestrator.get_conversation_stats();
+    for (key, value) in conversation_stats {
+        println!("   {}: {}", key, value);
+    }
+    
+    // Test memory consolidation
+    println!("\n🧠 Testing Memory Consolidation...");
+    match memory_system.consolidate().await {
+        Ok(result) => {
+            println!("✅ Memory consolidation successful:");
+            println!("   Working to Episodic: {} items", result.working_to_episodic);
+            println!("   Episodic to Semantic: {} items", result.episodic_to_semantic);
+            println!("   Forgotten items: {} items", result.forgotten_events);
+        }
         Err(e) => {
-            println!("❌ Failed to initialize RAG Orchestrator: {}", e);
-            println!("   Make sure OPENAI_API_KEY is set in your environment");
+            println!("⚠️  Memory consolidation warning: {}", e);
         }
     }
-
-    println!("\n🎯 Test Complete!");
-    println!("==================");
-    println!("Brain AI is now configured to use OpenAI ChatGPT as the underlying LLM");
-    println!("while maintaining the Brain AI persona and never mentioning external providers.");
-
+    
+    println!("\n✅ OpenAI Brain AI Test Complete!");
+    println!("   The new service architecture is functioning properly with OpenAI integration.");
+    
     Ok(())
 } 

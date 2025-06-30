@@ -4,7 +4,8 @@
 //! This debug example tests RAG retrieval directly to understand why
 //! the stored architectural knowledge isn't being found by the Brain AI.
 
-use brain::*;
+use brain::{MemoryService, WorkingMemoryQuery, Priority, Result};
+use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use tokio;
 
 #[tokio::main]
@@ -15,8 +16,13 @@ async fn main() -> Result<()> {
     println!("🔍 Brain AI RAG Retrieval Debug");
     println!("{}", "=".repeat(50));
 
-    // Initialize Brain AI components
-    let mut memory_system = MemorySystem::new(2000);
+    // Create memory repositories
+    let working_repo = Box::new(WorkingMemoryRepository::new(100));
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("debug_rag.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+    
+    // Create memory service
+    let mut memory_service = MemoryService::new(working_repo, episodic_repo, semantic_repo);
     
     println!("\n🧠 Loading Test Knowledge");
     println!("{}", "-".repeat(30));
@@ -31,7 +37,7 @@ async fn main() -> Result<()> {
     ];
 
     for (i, knowledge) in test_knowledge.iter().enumerate() {
-        match memory_system.learn(knowledge.to_string(), Priority::High) {
+        match memory_service.learn(knowledge.to_string(), Priority::High).await {
             Ok(_) => println!("✅ Stored knowledge {}", i + 1),
             Err(e) => println!("❌ Failed to store knowledge {}: {}", i + 1, e),
         }
@@ -62,7 +68,7 @@ async fn main() -> Result<()> {
             limit: Some(5),
         };
 
-        match memory_system.query_working(&working_query) {
+        match memory_service.query_working(&working_query).await {
             Ok(items) => {
                 println!("   Working memory: {} items found", items.len());
                 for (i, item) in items.iter().take(2).enumerate() {
@@ -80,7 +86,7 @@ async fn main() -> Result<()> {
         }
 
         // Test cross-memory search
-        match memory_system.find_related_memories(query, 3) {
+        match memory_service.query_all_memories(query).await {
             Ok(results) => {
                 let total = results.working_results.len() + results.episodic_results.len() + results.semantic_results.len();
                 println!("   Cross-memory search: {} total results", total);
@@ -127,12 +133,17 @@ async fn main() -> Result<()> {
     println!("\n📊 Memory System State");
     println!("{}", "-".repeat(30));
     
-    let stats = memory_system.get_stats();
-    for (memory_type, memory_stats) in stats.iter() {
-        println!("{}: {} items, {} bytes", 
-                memory_type, 
-                memory_stats.total_items, 
-                memory_stats.size_bytes);
+    // Since MemoryService doesn't have get_stats, let's check working memory
+    let all_query = WorkingMemoryQuery::default();
+    match memory_service.query_working(&all_query).await {
+        Ok(items) => {
+            let total_items = items.len();
+            let total_size: usize = items.iter().map(|item| item.content.len()).sum();
+            println!("Working Memory: {} items, {} bytes", total_items, total_size);
+        }
+        Err(e) => {
+            println!("Failed to get memory stats: {}", e);
+        }
     }
 
     println!("\n✅ RAG Retrieval Debug Complete!");

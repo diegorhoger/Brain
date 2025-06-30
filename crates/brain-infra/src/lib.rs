@@ -11,6 +11,7 @@ pub mod insights;
 pub mod neural;
 pub mod character_ingestion;
 pub mod simulation;
+pub mod simulation_engine;
 pub mod database;
 pub mod filesystem;
 pub mod http;
@@ -25,11 +26,11 @@ pub use memory::{
     average_embeddings
 };
 pub use concepts::{
-    ConceptGraphManager, ConceptGraphConfig, HebbianConfig, 
+    ConceptGraphManager, ConceptGraphConfig, HebbianConfig, GraphStatistics,
     ConceptFormationConfig, ConceptFormationResult, SimilarityConfig,
     ConceptSubgraph, cosine_similarity
 };
-pub use segmentation::{InMemorySegmentRepository, BpeSegmenter, ContextMatrix, EntropyAnalyzer};
+pub use segmentation::{InMemorySegmentRepository, BpeSegmenter, FeedbackBpeSegmenter, ContextMatrix, EntropyAnalyzer};
 pub use insights::*;
 pub use neural::*;
 pub use character_ingestion::{
@@ -37,6 +38,12 @@ pub use character_ingestion::{
 };
 pub use simulation::{
     TextToStateParserImpl, StateValidatorImpl, SimulationEngineImpl, ActionConfig, ConfidenceConfig
+};
+pub use simulation_engine::{
+    SimulationEngine, SimulationState, StateProperty, PropertyType,
+    Action, ActionPriority, Effect, EffectType, Condition, ConditionType, ComparisonOperator,
+    BranchingConfig, ConfidenceConfig as SimulationConfidenceConfig, SimulationConstraint, ConstraintType, BranchingResult,
+    SimulationBranch, PruningStatistics
 };
 pub use database::{DatabaseManager, DatabaseConfig as DbConfig};
 pub use filesystem::*;

@@ -1,107 +1,103 @@
-#!/usr/bin/env cargo run --example simple_github_learning
-//! Simple GitHub Learning Example
+//! Simple GitHub Learning Demo
 //!
-//! This example demonstrates how to use Brain AI to learn from a GitHub repository
-//! and then query the learned information.
-//!
-//! Usage:
-//!     cargo run --example simple_github_learning
-//!     GITHUB_TOKEN=your_token cargo run --example simple_github_learning
+//! This is a streamlined demonstration of Brain AI's GitHub learning capabilities.
+//! 
+//! A more focused version that shows the core functionality:
+//! - Learning from a single repository
+//! - Storing knowledge in memory
+//! - Simple querying of learned content
 
-use brain::*;
+use brain::{MemoryService, WorkingMemoryQuery, WorkingMemoryRepository, Result};
+use brain_infra::memory::{WorkingMemoryRepository as WorkingMemoryRepo, EpisodicMemoryRepository, SemanticMemoryRepository};
+use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
 use std::env;
+use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize Brain AI with memory capacity
-    let mut brain = MemorySystem::new(500);
-    
-    // Set up GitHub learning
+    println!("🧠 Simple GitHub Learning Demo");
+    println!("==============================\n");
+
+    // Create memory repositories  
+    let mut working_repo = WorkingMemoryRepo::new(500);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("simple_github_demo.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+
+    // Create memory service for additional functionality (if needed)
+    let _memory_service = MemoryService::new(
+        Box::new(WorkingMemoryRepo::new(100)),
+        episodic_repo,
+        semantic_repo
+    );
+
+    // Get GitHub token if available
     let github_token = env::var("GITHUB_TOKEN").ok();
+
+    // Create GitHub learning configuration
     let config = GitHubLearningConfig {
-        max_files: 20,           // Limit to 20 files for quick demo
-        max_file_size: 30_000,   // 30KB max per file
+        max_files: 20,          // Fewer files for simplicity
+        max_file_size: 30_000,  // 30KB per file
         include_code: true,
         include_docs: true,
-        include_config: false,   // Skip config files for this demo
+        include_config: false,  // Skip config files for simplicity
         ..Default::default()
     };
-    
+
     let github_engine = GitHubLearningEngine::new(github_token, Some(config));
+
+    // Learn from a single, simple repository
+    let repo_url = "BurntSushi/ripgrep";  // A well-documented Rust tool
     
-    println!("🧠 Brain AI - Simple GitHub Learning Example");
-    println!("Learning from 'rust-lang/mdbook' repository...\n");
-    
-    // Learn from repository
-    match github_engine.learn_from_repository(&mut brain, "rust-lang/mdbook").await {
+    println!("📚 Learning from repository: {}", repo_url);
+    println!("⏳ This may take a moment...\n");
+
+    match github_engine.learn_from_repository(&mut working_repo, repo_url).await {
         Ok(result) => {
-            println!("✅ Learning completed!");
+            println!("✅ Learning completed successfully!");
             println!("   Files processed: {}", result.files_processed);
+            println!("   Memory entries: {}", result.memory_entries_created);
             println!("   Concepts discovered: {}", result.concepts_discovered);
-            println!("   Learning time: {}ms", result.learning_time_ms);
-            println!("   Summary: {}\n", result.summary);
+            println!("   Learning time: {}ms\n", result.learning_time_ms);
+            
+            // Query what we learned
+            println!("🔍 Querying learned knowledge:");
+            println!("{}", "-".repeat(35));
+            
+            let query = WorkingMemoryQuery::default();
+            match working_repo.query_items(&query).await {
+                Ok(items) => {
+                    println!("📊 Total items in memory: {}\n", items.len());
+                    
+                    if !items.is_empty() {
+                        println!("🔗 Sample content:");
+                        for (i, item) in items.iter().take(3).enumerate() {
+                            let content = if item.content.len() > 120 {
+                                format!("{}...", &item.content[..120])
+                            } else {
+                                item.content.clone()
+                            };
+                            println!("   {}. {} (Priority: {:?})", i + 1, content, item.priority);
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("❌ Error querying memory: {}", e);
+                }
+            }
         }
         Err(e) => {
             println!("❌ Learning failed: {}", e);
-            return Err(e);
+            println!("💡 Make sure you have internet connectivity");
+            if env::var("GITHUB_TOKEN").is_err() {
+                println!("💡 Set GITHUB_TOKEN environment variable for better rate limits");
+            }
+            return Ok(()); // Don't fail the demo completely
         }
     }
-    
-    // Query what we learned
-    println!("🔍 Querying learned information:");
-    
-    let queries = vec![
-        "markdown",
-        "documentation", 
-        "Rust",
-    ];
-    
-    for query in queries {
-        println!("\n🔎 Query: '{}'", query);
-        
-        match brain.query_all_memories(query) {
-            Ok(results) => {
-                let total = results.working_results.len() + 
-                          results.episodic_results.len() + 
-                          results.semantic_results.len();
-                          
-                if total > 0 {
-                    println!("   Found {} related memories", total);
-                    
-                    // Show first working memory result
-                    if let Some(first) = results.working_results.first() {
-                        let preview = if first.content.len() > 100 {
-                            format!("{}...", &first.content[..97])
-                        } else {
-                            first.content.clone()
-                        };
-                        println!("   Example: {}", preview);
-                    }
-                } else {
-                    println!("   No results found");
-                }
-            }
-            Err(e) => {
-                println!("   Query error: {}", e);
-            }
-        }
-    }
-    
-    // Show memory statistics
-    println!("\n📊 Brain Memory Statistics:");
-    let stats = brain.get_stats();
-    
-    if let Some(working_stats) = stats.get("working") {
-        println!("   Working Memory: {} items", working_stats.total_items);
-    }
-    if let Some(semantic_stats) = stats.get("semantic") {
-        println!("   Semantic Memory: {} concepts", semantic_stats.total_items);
-    }
-    
-    let total_size: usize = stats.values().map(|s| s.size_bytes).sum();
-    println!("   Total size: {} KB", total_size / 1024);
-    
-    println!("\n🎉 Example completed! Brain AI successfully learned from the repository.");
+
+    println!("\n🎉 Simple GitHub Learning Demo Completed!");
+    println!("   Repository knowledge has been stored in memory");
+    println!("   Try the more comprehensive 'github_learning_demo' for advanced features");
     
     Ok(())
 } 

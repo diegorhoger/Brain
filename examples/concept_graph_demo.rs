@@ -1,6 +1,9 @@
 use anyhow::Result;
-use brain::concept_graph::{ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, ConceptQuery, 
-                           RelationshipType, RelationshipQuery, HebbianConfig};
+use brain::concept_graph::{
+    ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, ConceptQuery,
+    RelationshipType, RelationshipQuery, HebbianConfig, ConceptRepository, 
+    RelationshipRepository, ConceptRelationship
+};
 use tokio;
 use uuid::Uuid;
 
@@ -235,7 +238,8 @@ async fn run_relationship_demo(manager: &mut ConceptGraphManager, concept_ids: &
     let mut relationship_ids = Vec::new();
     
     for (source, target, rel_type, weight, description) in relationships {
-        let rel_id = manager.create_relationship(source, target, rel_type.clone(), weight).await?;
+        let relationship = ConceptRelationship::new(source, target, rel_type.clone(), weight);
+        let rel_id = manager.create_relationship(relationship).await?;
         relationship_ids.push(rel_id);
         println!("    ✅ {}", description);
         println!("       Weight: {:.2}, ID: {}", weight, rel_id);
@@ -266,7 +270,7 @@ async fn run_relationship_demo(manager: &mut ConceptGraphManager, concept_ids: &
     
     // Test co-activation between concepts
     let co_activations = manager.co_activate_concepts(concept_ids[0], concept_ids[3]).await?;
-    println!("  🤝 Co-activated {} relationships between key concepts", co_activations);
+    println!("  🤝 Co-activated {} concepts related to key concepts", co_activations.len());
     println!();
 
     println!("📊 Phase 7: Network Analysis & Metrics");

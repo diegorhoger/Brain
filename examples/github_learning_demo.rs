@@ -22,7 +22,9 @@
 //!     - Internet connection for repository access
 //!     - Optional: GitHub token for private repos or higher rate limits
 
-use brain::*;
+use brain::{MemoryService, WorkingMemoryQuery, WorkingMemoryRepository, Result};
+use brain_infra::memory::{WorkingMemoryRepository as WorkingMemoryRepo, EpisodicMemoryRepository, SemanticMemoryRepository};
+use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
 use std::env;
 use tokio;
 
@@ -34,8 +36,18 @@ async fn main() -> Result<()> {
     println!("🧠 Brain AI - GitHub Repository Learning Demo (Rust)");
     println!("{}", "=".repeat(60));
 
-    // Initialize Brain AI components with working memory capacity
-    let mut memory_system = MemorySystem::new(1000); // 1000 item capacity
+    // Create memory repositories
+    let mut working_repo = WorkingMemoryRepo::new(1000);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("github_demo.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+    
+    // Create memory service for queries
+    let memory_service = MemoryService::new(
+        Box::new(WorkingMemoryRepo::new(100)), // For the service
+        episodic_repo, 
+        semantic_repo
+    );
+    
     let github_token = env::var("GITHUB_TOKEN").ok();
     
     if github_token.is_some() {
@@ -72,7 +84,7 @@ async fn main() -> Result<()> {
         
         let start_time = std::time::Instant::now();
         
-        match github_engine.learn_from_repository(&mut memory_system, repo_url).await {
+        match github_engine.learn_from_repository(&mut working_repo, repo_url).await {
             Ok(result) => {
                 let duration = start_time.elapsed();
                 
@@ -98,21 +110,7 @@ async fn main() -> Result<()> {
                 println!("❌ Failed to learn from {}: {}", repo_url, e);
                 
                 // Provide helpful error guidance
-                match e {
-                    BrainError::NetworkError(_) => {
-                        println!("   💡 Check your internet connection");
-                    }
-                    BrainError::InvalidInput(_) => {
-                        println!("   💡 Repository URL format might be invalid");
-                    }
-                    BrainError::NotFound(_) => {
-                        println!("   💡 Repository not found or might be private - set GITHUB_TOKEN");
-                    }
-                    _ => {
-                        println!("   💡 See error message above for details");
-                    }
-                }
-                
+                println!("   💡 Check your internet connection or repository URL");
                 continue; // Try next repository
             }
         }
@@ -121,14 +119,14 @@ async fn main() -> Result<()> {
         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     }
 
-    // Demonstrate memory querying capabilities
-    demonstrate_memory_queries(&memory_system).await?;
+    // Demonstrate memory querying capabilities (using the working repo directly)
+    demonstrate_memory_queries(&working_repo).await?;
     
-    // Demonstrate concept relationships
-    demonstrate_concept_analysis(&memory_system).await?;
+    // Also demonstrate with the memory service
+    demonstrate_concept_analysis(&memory_service).await?;
     
     // Show memory statistics
-    demonstrate_memory_statistics(&memory_system).await?;
+    demonstrate_memory_statistics(&memory_service).await?;
 
     println!("\n🎉 GitHub Learning Demo Completed Successfully!");
     println!("{}", "=".repeat(60));
@@ -136,156 +134,101 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn demonstrate_memory_queries(memory_system: &MemorySystem) -> Result<()> {
+async fn demonstrate_memory_queries(working_repo: &dyn WorkingMemoryRepository) -> Result<()> {
     println!("\n🔍 Memory Querying and Information Retrieval");
     println!("{}", "-".repeat(40));
 
-    let queries = vec![
-        "documentation generation",
-        "Rust programming patterns", 
-        "async runtime",
-        "command line tools",
-        "configuration management",
-    ];
-
-    for query in queries {
-        println!("\n🔎 Query: '{}'", query);
-        
-        // Query cross-memory to search all memory types at once
-        match memory_system.query_all_memories(query) {
-            Ok(results) => {
-                let total_results = results.working_results.len() + 
-                                  results.episodic_results.len() + 
-                                  results.semantic_results.len();
-                                  
-                if total_results == 0 {
-                    println!("   No results found");
-                } else {
-                    println!("   Found {} results:", total_results);
-                    
-                    // Show working memory results
-                    for (i, result) in results.working_results.iter().take(2).enumerate() {
-                        println!("   {}. {} (Working Memory)", 
-                                i + 1, 
-                                truncate_text(&result.content, 80));
-                    }
-                    
-                    // Show episodic memory results  
-                    for (i, result) in results.episodic_results.iter().take(2).enumerate() {
-                        println!("   {}. {} (Episodic Memory)", 
-                                i + 3, 
-                                truncate_text(&result.content, 80));
-                    }
-                    
-                    // Show semantic memory results
-                    for (i, result) in results.semantic_results.iter().take(2).enumerate() {
-                        println!("   {}. {} (Semantic Memory)", 
-                                i + 5, 
-                                truncate_text(&result.description, 80));
-                    }
-                }
-            }
-            Err(e) => {
-                println!("   Error querying memory: {}", e);
-            }
+    // Query the working repository directly
+    let query = WorkingMemoryQuery::default();
+    let items = working_repo.query_items(&query).await?;
+    println!("📊 Working Memory Overview:");
+    println!("   Total items: {}", items.len());
+    
+    if !items.is_empty() {
+        println!("\n🔗 Sample Content:");
+        for (i, item) in items.iter().take(3).enumerate() {
+            println!("   {}. {} (Priority: {:?})", 
+                    i + 1, 
+                    truncate_text(&item.content, 100), 
+                    item.priority);
         }
     }
 
     Ok(())
 }
 
-async fn demonstrate_concept_analysis(memory_system: &MemorySystem) -> Result<()> {
+async fn demonstrate_concept_analysis(memory_service: &MemoryService) -> Result<()> {
     println!("\n🧩 Concept Relationship Analysis");
     println!("{}", "-".repeat(40));
 
-    // Get memory statistics to understand what we've learned
-    let stats = memory_system.get_stats();
-    
-    println!("📊 Memory Overview:");
-    if let Some(working_stats) = stats.get("working") {
-        println!("   Working Memory: {} items", working_stats.total_items);
-    }
-    if let Some(episodic_stats) = stats.get("episodic") {
-        println!("   Episodic Memory: {} items", episodic_stats.total_items);
-    }
-    if let Some(semantic_stats) = stats.get("semantic") {
-        println!("   Semantic Memory: {} items", semantic_stats.total_items);
-    }
-
-    // Calculate total memory size
-    let total_size: usize = stats.values().map(|s| s.size_bytes).sum();
-    println!("   Total Memory Size: {} bytes", total_size);
-
-    // Try to find patterns in learned content
-    if let Some(semantic_stats) = stats.get("semantic") {
-        if semantic_stats.total_items > 0 {
-            println!("\n🔗 Semantic Concepts Discovered:");
-            println!("   Brain AI has discovered {} semantic concepts", semantic_stats.total_items);
-            println!("   These represent patterns and relationships extracted from repositories");
+    // Create a simple query to see what we have in working memory
+    let query = WorkingMemoryQuery::default();
+    match memory_service.query_working(&query).await {
+        Ok(items) => {
+            println!("📊 Memory Overview:");
+            println!("   Working Memory: {} items", items.len());
+            
+            if !items.is_empty() {
+                println!("\n🔗 Sample Content:");
+                for (i, item) in items.iter().take(3).enumerate() {
+                    println!("   {}. {} (Priority: {:?})", 
+                            i + 1, 
+                            truncate_text(&item.content, 100), 
+                            item.priority);
+                }
+            }
+        }
+        Err(e) => {
+            println!("❌ Failed to query memory: {}", e);
         }
     }
 
     Ok(())
 }
 
-async fn demonstrate_memory_statistics(memory_system: &MemorySystem) -> Result<()> {
+async fn demonstrate_memory_statistics(memory_service: &MemoryService) -> Result<()> {
     println!("\n📈 Performance Metrics and Statistics");
     println!("{}", "-".repeat(40));
 
-    let stats = memory_system.get_stats();
-    
-    println!("🔢 Detailed Memory Statistics:");
-    
-    // Working Memory stats
-    if let Some(working_stats) = stats.get("working") {
-        println!("   Working Memory:");
-        println!("     - Total items: {}", working_stats.total_items);
-        println!("     - Size: {} bytes", working_stats.size_bytes);
-        println!("     - Access count: {}", working_stats.access_count);
-        println!("     - Consolidations: {}", working_stats.consolidation_count);
+    // Since MemoryService doesn't have get_stats method, let's demonstrate with queries
+    let all_query = WorkingMemoryQuery::default();
+    match memory_service.query_working(&all_query).await {
+        Ok(items) => {
+            let total_items = items.len();
+            let total_size: usize = items.iter().map(|item| item.content.len()).sum();
+            
+            println!("🔢 Memory Statistics:");
+            println!("   Working Memory:");
+            println!("     - Total items: {}", total_items);
+            println!("     - Total content size: {} bytes", total_size);
+            
+            if total_items > 0 {
+                println!("     - Average item size: {} bytes", total_size / total_items);
+                
+                // Count by priority
+                let mut priority_counts = std::collections::HashMap::new();
+                for item in &items {
+                    *priority_counts.entry(format!("{:?}", item.priority)).or_insert(0) += 1;
+                }
+                
+                println!("     - Items by priority:");
+                for (priority, count) in priority_counts {
+                    println!("       • {}: {}", priority, count);
+                }
+            }
+            
+            println!("\n📊 Overall Learning Efficiency:");
+            println!("   - Information units stored: {}", total_items);
+            println!("   - Memory usage: {} KB", total_size / 1024);
+            if total_size > 0 {
+                println!("   - Compression ratio: {:.2}:1", 
+                         total_items as f64 / (total_size as f64 / 1024.0));
+            }
+        }
+        Err(e) => {
+            println!("❌ Failed to get statistics: {}", e);
+        }
     }
-
-    // Episodic Memory stats
-    if let Some(episodic_stats) = stats.get("episodic") {
-        println!("   Episodic Memory:");
-        println!("     - Total events: {}", episodic_stats.total_items);
-        println!("     - Size: {} bytes", episodic_stats.size_bytes);
-        println!("     - Access count: {}", episodic_stats.access_count);
-        println!("     - Storage efficiency: {:.1}%", 
-                 if episodic_stats.size_bytes > 0 { 
-                     (episodic_stats.total_items as f64 / episodic_stats.size_bytes as f64) * 100000.0 
-                 } else { 
-                     0.0 
-                 });
-    }
-
-    // Semantic Memory stats
-    if let Some(semantic_stats) = stats.get("semantic") {
-        println!("   Semantic Memory:");
-        println!("     - Total concepts: {}", semantic_stats.total_items);
-        println!("     - Size: {} bytes", semantic_stats.size_bytes);
-        println!("     - Access count: {}", semantic_stats.access_count);
-        println!("     - Concept density: {:.2}", 
-                 if semantic_stats.size_bytes > 0 { 
-                     semantic_stats.total_items as f64 / semantic_stats.size_bytes as f64 * 1000.0 
-                 } else { 
-                     0.0 
-                 });
-    }
-
-    // Overall efficiency
-    let total_items: usize = stats.values().map(|s| s.total_items).sum();
-    let total_size: usize = stats.values().map(|s| s.size_bytes).sum();
-    
-    println!("\n📊 Overall Learning Efficiency:");
-    println!("   - Total information units: {}", total_items);
-    println!("   - Total memory usage: {} KB", total_size / 1024);
-    println!("   - Learning compression ratio: {:.2}:1", 
-             if total_size > 0 { 
-                 total_items as f64 / (total_size as f64 / 1024.0) 
-             } else { 
-                 0.0 
-             });
 
     Ok(())
 }

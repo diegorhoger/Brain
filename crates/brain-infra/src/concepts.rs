@@ -158,6 +158,19 @@ pub struct ConceptSubgraph {
     pub metrics: NetworkMetrics,
 }
 
+/// Graph statistics for analysis and reporting
+#[derive(Debug, Clone)]
+pub struct GraphStatistics {
+    pub total_concepts: usize,
+    pub total_relationships: usize,
+    pub average_confidence: f64,
+    pub high_confidence_concepts: usize,
+    pub concepts_by_type: std::collections::HashMap<ConceptType, usize>,
+    pub relationships_by_type: std::collections::HashMap<RelationshipType, usize>,
+    pub newest_concept_age_seconds: Option<u64>,
+    pub last_access_age_seconds: Option<u64>,
+}
+
 /// Advanced concept graph manager with Neo4j integration and sophisticated algorithms
 pub struct ConceptGraphManager {
     /// Connection configuration
@@ -225,6 +238,170 @@ impl ConceptGraphManager {
             traversal_config,
             similarity_config,
         })
+    }
+
+    /// Get graph statistics
+    pub async fn get_statistics(&self) -> Result<GraphStatistics> {
+        let total_concepts = self.concepts.len();
+        let total_relationships = self.relationships.len();
+        
+        let average_confidence = if total_concepts > 0 {
+            self.concepts.values().map(|c| c.confidence_score).sum::<f64>() / total_concepts as f64
+        } else {
+            0.0
+        };
+        
+        let high_confidence_concepts = self.concepts.values()
+            .filter(|c| c.confidence_score >= 0.8)
+            .count();
+            
+        let mut concepts_by_type = std::collections::HashMap::new();
+        for concept in self.concepts.values() {
+            *concepts_by_type.entry(concept.concept_type.clone()).or_insert(0) += 1;
+        }
+        
+        let mut relationships_by_type = std::collections::HashMap::new();
+        for relationship in self.relationships.values() {
+            *relationships_by_type.entry(relationship.relationship_type.clone()).or_insert(0) += 1;
+        }
+        
+        let newest_concept_age_seconds = self.concepts.values()
+            .map(|c| chrono::Utc::now().signed_duration_since(c.created_at).num_seconds() as u64)
+            .min();
+            
+        let last_access_age_seconds = self.concepts.values()
+            .map(|c| chrono::Utc::now().signed_duration_since(c.last_accessed_at).num_seconds() as u64)
+            .min();
+        
+        Ok(GraphStatistics {
+            total_concepts,
+            total_relationships,
+            average_confidence,
+            high_confidence_concepts,
+            concepts_by_type,
+            relationships_by_type,
+            newest_concept_age_seconds,
+            last_access_age_seconds,
+        })
+    }
+
+    /// Get concept count (convenience method)
+    pub fn concept_count(&self) -> usize {
+        self.concepts.len()
+    }
+
+    /// Get relationship count (convenience method)  
+    pub fn relationship_count(&self) -> usize {
+        self.relationships.len()
+    }
+
+    /// Get the current Hebbian configuration
+    pub fn hebbian_config(&self) -> &HebbianConfig {
+        &self.hebbian_config
+    }
+
+    /// Set a new Hebbian configuration
+    pub fn set_hebbian_config(&mut self, config: HebbianConfig) {
+        self.hebbian_config = config;
+    }
+
+    /// Apply decay to all relationships (alias for compatibility)
+    pub async fn apply_decay_to_all_relationships(&mut self, time_delta_hours: f64) -> Result<usize> {
+        self.apply_decay_to_all(time_delta_hours).await
+    }
+
+    /// Get network metrics (simplified version)
+    pub async fn get_network_metrics(&self) -> Result<NetworkMetrics> {
+        let stats = self.get_statistics().await?;
+        
+        let strong_relationships = self.relationships.values()
+            .filter(|r| r.weight >= 0.7)
+            .count();
+            
+        let weak_relationships = self.relationships.values()
+            .filter(|r| r.weight < 0.3)
+            .count();
+            
+        let prunable_relationships = self.relationships.values()
+            .filter(|r| r.should_prune())
+            .count();
+            
+        let average_weight = if stats.total_relationships > 0 {
+            self.relationships.values().map(|r| r.weight).sum::<f64>() / stats.total_relationships as f64
+        } else {
+            0.0
+        };
+        
+        let average_degree = if stats.total_concepts > 0 {
+            (stats.total_relationships * 2) as f64 / stats.total_concepts as f64
+        } else {
+            0.0
+        };
+        
+        // Find isolated concepts (concepts with no relationships)
+        let mut connected_concepts = std::collections::HashSet::new();
+        for relationship in self.relationships.values() {
+            connected_concepts.insert(relationship.source_id);
+            connected_concepts.insert(relationship.target_id);
+        }
+        let isolated_concepts = stats.total_concepts - connected_concepts.len();
+        
+        // Find most connected concepts
+        let mut concept_degrees: std::collections::HashMap<Uuid, usize> = std::collections::HashMap::new();
+        for relationship in self.relationships.values() {
+            *concept_degrees.entry(relationship.source_id).or_insert(0) += 1;
+            *concept_degrees.entry(relationship.target_id).or_insert(0) += 1;
+        }
+        
+        let mut most_connected: Vec<(Uuid, usize)> = concept_degrees.into_iter().collect();
+        most_connected.sort_by(|a, b| b.1.cmp(&a.1));
+        most_connected.truncate(10); // Top 10 most connected
+        
+        Ok(NetworkMetrics {
+            total_relationships: stats.total_relationships,
+            relationships_by_type: stats.relationships_by_type,
+            average_weight,
+            strong_relationships,
+            weak_relationships,
+            prunable_relationships,
+            average_degree,
+            isolated_concepts,
+            clustering_coefficient: 0.0, // Simplified - would require complex calculation
+            most_connected_concepts: most_connected,
+        })
+    }
+
+    /// Co-activate concepts (simplified version for demo)
+    pub async fn co_activate_concepts(&mut self, source_id: Uuid, target_id: Uuid) -> Result<Vec<Uuid>> {
+        // This is a simplified implementation - in a real system this would
+        // involve complex neural network-style co-activation
+        let mut co_activated = Vec::new();
+        
+        // Find all concepts connected to either source or target
+        for relationship in self.relationships.values() {
+            if relationship.source_id == source_id || relationship.target_id == source_id {
+                let other_id = if relationship.source_id == source_id {
+                    relationship.target_id
+                } else {
+                    relationship.source_id
+                };
+                if other_id != target_id && !co_activated.contains(&other_id) {
+                    co_activated.push(other_id);
+                }
+            }
+            if relationship.source_id == target_id || relationship.target_id == target_id {
+                let other_id = if relationship.source_id == target_id {
+                    relationship.target_id
+                } else {
+                    relationship.source_id
+                };
+                if other_id != source_id && !co_activated.contains(&other_id) {
+                    co_activated.push(other_id);
+                }
+            }
+        }
+        
+        Ok(co_activated)
     }
 }
 

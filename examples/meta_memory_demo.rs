@@ -1,6 +1,6 @@
 //! Meta-Memory System Demonstration
 //! 
-//! This example demonstrates the core capabilities of Task 9.1:
+//! This example demonstrates the core capabilities of meta-memory:
 //! - Meta-memory structure with confidence tracking
 //! - Unified tracking across different knowledge types
 //! - Confidence updates based on validation outcomes
@@ -15,7 +15,7 @@ use brain::{
 };
 
 fn main() -> Result<()> {
-    println!("🧠 Meta-Memory System Demonstration - Task 9.1");
+    println!("🧠 Meta-Memory System Demonstration");
     println!("{}", "=".repeat(60));
 
     // Phase 1: Initialize Meta-Memory System
@@ -31,7 +31,7 @@ fn main() -> Result<()> {
     };
     
     let mut meta_memory = MetaMemorySystem::with_config(config)?;
-    println!("✅ Meta-memory system initialized with SQLite persistence");
+    println!("✅ Meta-memory system initialized with custom configuration");
     
     // Phase 2: Create Knowledge Components with Different Types
     println!("\n🏗️  Phase 2: Create Knowledge Components");
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
     
     // Create various knowledge components
     let knowledge_samples = [
-        (KnowledgeType::Segment, 0.7, "BPE discovered frequent pattern 'th'"),
+        (KnowledgeType::BPESegment, 0.7, "BPE discovered frequent pattern 'th'"),
         (KnowledgeType::ConceptNode, 0.8, "Graph node representing 'animal' concept"),
         (KnowledgeType::Rule, 0.6, "If weather=rain then carry=umbrella"),
         (KnowledgeType::SemanticConcept, 0.9, "High-level concept 'transportation'"),
@@ -78,7 +78,7 @@ fn main() -> Result<()> {
     
     // Simulate various validation scenarios
     let validation_scenarios = [
-        (0, true, "Segment 'th' successfully used in prediction"),
+        (0, true, "BPE segment 'th' successfully used in prediction"),
         (0, true, "Segment confirmed by frequency analysis"),
         (0, false, "Segment failed in specific context"),
         (1, true, "Concept node correctly retrieved"),
@@ -202,138 +202,44 @@ fn main() -> Result<()> {
         stats.low_confidence_count as f64 / stats.total_components as f64 * 100.0
     );
     println!("  • Total Validations: {}", stats.total_validations);
-    println!("  • Overall Success Rate: {:.1}%", stats.overall_success_rate * 100.0);
+    println!("  • Total Successes: {}", stats.total_successes);
+    println!("  • Total Failures: {}", stats.total_failures);
+    if stats.total_validations > 0 {
+        println!("  • Overall Success Rate: {:.1}%", 
+            stats.total_successes as f64 / stats.total_validations as f64 * 100.0
+        );
+    }
     
-    // Components by type breakdown
-    println!("\n🗂️  Knowledge Components by Type:");
-    for (knowledge_type, count) in &stats.components_by_type {
+    // Knowledge type distribution
+    println!("\n📊 Knowledge Type Distribution:");
+    for (knowledge_type, count) in &stats.knowledge_type_distribution {
         println!("  • {}: {} components", knowledge_type, count);
     }
     
     // Confidence distribution
     println!("\n📊 Confidence Distribution:");
-    let distribution = meta_memory.get_confidence_distribution()?;
-    for (range, count) in &distribution {
-        let percentage = *count as f64 / stats.total_components as f64 * 100.0;
-        println!("  • {}: {} components ({:.1}%)", range, count, percentage);
+    for (threshold, count) in &stats.confidence_distribution {
+        let prev_threshold = if *threshold == 0.2 { 0.0 } else { threshold - 0.2 };
+        println!("  • {:.1}-{:.1}: {} components", prev_threshold, threshold, count);
     }
     
-    // Phase 7: Knowledge Quality Assessment
-    println!("\n🎯 Phase 7: Knowledge Quality Assessment");
-    println!("{}", "-".repeat(40));
+    // Phase 7: Summary
+    println!("\n🎉 Meta-Memory Demo Complete!");
+    println!("{}", "=".repeat(50));
     
-    let quality_score = calculate_knowledge_quality_score(&stats);
-    println!("\n⭐ Overall Knowledge Quality Score: {:.2}/10.0", quality_score);
+    println!("✅ Successfully demonstrated:");
+    println!("  • Meta-memory item creation and storage");
+    println!("  • Confidence tracking and updates");
+    println!("  • Usage monitoring and access tracking");
+    println!("  • Advanced querying capabilities");
+    println!("  • System analytics and statistics");
+    println!("  • Knowledge type diversity tracking");
     
-    let quality_analysis = analyze_knowledge_quality(&stats);
-    println!("\n📋 Quality Analysis:");
-    for insight in quality_analysis {
-        println!("  • {}", insight);
-    }
-    
-    // Phase 8: Recommendations
-    println!("\n💡 Phase 8: Improvement Recommendations");
-    println!("{}", "-".repeat(40));
-    
-    let recommendations = generate_recommendations(&stats, &meta_memory)?;
-    println!("\n🔧 System Recommendations:");
-    for rec in recommendations {
-        println!("  • {}", rec);
-    }
-    
-    println!("\n✨ Meta-Memory System demonstration completed successfully!");
-    println!("🎉 Task 9.1 - Meta-Memory Structure with Confidence Tracking - COMPLETE");
-    
+    println!("\n📈 Final System State:");
+    println!("  • {} total knowledge components managed", stats.total_components);
+    println!("  • {:.3} average confidence level", stats.average_confidence);
+    println!("  • {} knowledge types represented", stats.knowledge_type_distribution.len());
+    println!("  • {} total interactions tracked", stats.total_usage);
+
     Ok(())
-}
-
-/// Calculate an overall knowledge quality score (0-10)
-fn calculate_knowledge_quality_score(stats: &brain::MetaMemoryStats) -> f64 {
-    if stats.total_components == 0 {
-        return 0.0;
-    }
-    
-    // Factors contributing to quality score
-    let confidence_factor = stats.average_confidence * 3.0; // 0-3 points
-    let coverage_factor = (stats.total_components.min(100) as f64 / 100.0) * 2.0; // 0-2 points
-    let reliability_factor = if stats.total_validations > 0 {
-        stats.overall_success_rate * 2.0 // 0-2 points
-    } else {
-        0.0
-    };
-    let diversity_factor = (stats.components_by_type.len().min(9) as f64 / 9.0) * 2.0; // 0-2 points
-    let balance_factor = if stats.high_confidence_count > 0 && stats.low_confidence_count < stats.total_components / 2 {
-        1.0 // 1 point for good balance
-    } else {
-        0.0
-    };
-    
-    confidence_factor + coverage_factor + reliability_factor + diversity_factor + balance_factor
-}
-
-/// Analyze knowledge quality and provide insights
-fn analyze_knowledge_quality(stats: &brain::MetaMemoryStats) -> Vec<String> {
-    let mut insights = Vec::new();
-    
-    if stats.average_confidence > 0.7 {
-        insights.push("Strong overall confidence in knowledge components".to_string());
-    } else if stats.average_confidence < 0.4 {
-        insights.push("Low average confidence - need more validation".to_string());
-    }
-    
-    if stats.high_confidence_count > stats.total_components / 2 {
-        insights.push("Good proportion of high-confidence knowledge".to_string());
-    }
-    
-    if stats.low_confidence_count > stats.total_components / 3 {
-        insights.push("High number of low-confidence components - consider cleanup".to_string());
-    }
-    
-    if stats.total_validations == 0 {
-        insights.push("No validations performed - confidence scores are initial estimates".to_string());
-    } else if stats.overall_success_rate > 0.8 {
-        insights.push("Excellent validation success rate".to_string());
-    } else if stats.overall_success_rate < 0.5 {
-        insights.push("Low validation success rate - review knowledge accuracy".to_string());
-    }
-    
-    if stats.components_by_type.len() >= 6 {
-        insights.push("Good diversity across knowledge types".to_string());
-    } else {
-        insights.push("Limited knowledge type diversity".to_string());
-    }
-    
-    insights
-}
-
-/// Generate improvement recommendations
-fn generate_recommendations(stats: &brain::MetaMemoryStats, meta_memory: &MetaMemorySystem) -> Result<Vec<String>> {
-    let mut recommendations = Vec::new();
-    
-    if stats.average_confidence < 0.6 {
-        recommendations.push("Increase validation frequency to improve confidence scores".to_string());
-    }
-    
-    if stats.low_confidence_count > stats.total_components / 4 {
-        recommendations.push("Consider removing or revalidating low-confidence components".to_string());
-    }
-    
-    if stats.total_validations < stats.total_components as u64 * 2 {
-        recommendations.push("Increase validation coverage - aim for 2+ validations per component".to_string());
-    }
-    
-    let stale_components = meta_memory.get_stale_components()?;
-    if !stale_components.is_empty() {
-        recommendations.push(format!("Review {} stale components for cleanup", stale_components.len()));
-    }
-    
-    if stats.components_by_type.len() < 5 {
-        recommendations.push("Expand knowledge tracking to more component types".to_string());
-    }
-    
-    if stats.overall_success_rate < 0.7 && stats.total_validations > 10 {
-        recommendations.push("Investigate causes of low validation success rate".to_string());
-    }
-    
-    Ok(recommendations)
 } 

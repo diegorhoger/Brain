@@ -15,8 +15,9 @@ use uuid::Uuid;
 use brain::simulation_engine::{
     SimulationEngine, SimulationState, StateProperty, PropertyType,
     Action, ActionPriority, Effect, EffectType, Condition, ConditionType, ComparisonOperator,
-    BranchingConfig, ConfidenceConfig, SimulationConstraint, ConstraintType, BranchingResult,
+    BranchingConfig, SimulationConstraint, ConstraintType, BranchingResult,
 };
+use brain::SimulationConfidenceConfig as ConfidenceConfig;
 use brain::concept_graph::{ConceptGraphManager, ConceptNode, ConceptType};
 
 #[tokio::main]
@@ -266,34 +267,24 @@ fn add_demo_constraints(engine: &mut SimulationEngine) -> Result<()> {
     let avoid_center = SimulationConstraint {
         id: Uuid::new_v4(),
         constraint_type: ConstraintType::Avoidance,
-        description: "Avoid staying in center position for too long".to_string(),
-        condition: Condition {
-            condition_type: ConditionType::PropertyEquals,
-            entity_id: None,
-            property_name: Some("position".to_string()),
-            expected_value: "center".to_string(),
-            operator: ComparisonOperator::Equals,
-            required_confidence: 0.8,
-        },
+        target_entity: None,
+        target_property: Some("position".to_string()),
+        target_value: Some("center".to_string()),
         weight: 0.7,
-        is_mandatory: false,
+        priority: ActionPriority::Medium,
+        description: "Avoid staying in center position for too long".to_string(),
     };
     
     // Constraint 2: Maintain high energy
     let maintain_energy = SimulationConstraint {
         id: Uuid::new_v4(),
         constraint_type: ConstraintType::Maintenance,
-        description: "Try to maintain high energy levels".to_string(),
-        condition: Condition {
-            condition_type: ConditionType::PropertyEquals,
-            entity_id: None,
-            property_name: Some("energy".to_string()),
-            expected_value: "high".to_string(),
-            operator: ComparisonOperator::Equals,
-            required_confidence: 0.7,
-        },
+        target_entity: None,
+        target_property: Some("energy".to_string()),
+        target_value: Some("high".to_string()),
         weight: 0.8,
-        is_mandatory: false,
+        priority: ActionPriority::High,
+        description: "Try to maintain high energy levels".to_string(),
     };
 
     engine.add_constraint(avoid_center);
@@ -305,11 +296,12 @@ fn add_demo_constraints(engine: &mut SimulationEngine) -> Result<()> {
 /// Analyze branching results in detail
 fn analyze_branching_results(result: &BranchingResult) -> Result<()> {
     println!("🌳 Branch Tree Analysis:");
-    println!("  • Root branch: {}", result.root_branch_id);
-    println!("  • Total branches: {}", result.branches.len());
+    println!("  • Total branches explored: {}", result.total_branches_explored);
+    println!("  • Total branches pruned: {}", result.total_branches_pruned);
+    println!("  • Final states: {}", result.final_states.len());
     
-    // Analyze branch depths
-    let depths: Vec<usize> = result.branches.values().map(|b| b.depth).collect();
+    // Analyze branch depths from most likely outcomes
+    let depths: Vec<usize> = result.most_likely_outcomes.iter().map(|b| b.depth).collect();
     let max_depth = depths.iter().max().unwrap_or(&0);
     let avg_depth = if !depths.is_empty() { 
         depths.iter().sum::<usize>() as f64 / depths.len() as f64 
@@ -318,27 +310,13 @@ fn analyze_branching_results(result: &BranchingResult) -> Result<()> {
     println!("  • Maximum depth reached: {}", max_depth);
     println!("  • Average branch depth: {:.2}", avg_depth);
     
-    // Analyze active vs pruned branches
-    let active_branches = result.branches.values().filter(|b| b.is_active).count();
-    let pruned_branches = result.branches.values().filter(|b| !b.is_active).count();
-    
-    println!("  • Active branches: {}", active_branches);
-    println!("  • Pruned branches: {}", pruned_branches);
-    
-    // Show pruning reasons
-    let mut pruning_reasons: HashMap<String, usize> = HashMap::new();
-    for branch in result.branches.values() {
-        if let Some(reason) = &branch.pruning_reason {
-            *pruning_reasons.entry(reason.clone()).or_insert(0) += 1;
-        }
-    }
-    
-    if !pruning_reasons.is_empty() {
-        println!("  • Pruning reasons:");
-        for (reason, count) in pruning_reasons {
-            println!("    - {}: {} branches", reason, count);
-        }
-    }
+    // Analyze pruning statistics
+    println!("  • Pruning breakdown:");
+    println!("    - Low confidence: {}", result.pruning_statistics.low_confidence_pruned);
+    println!("    - Resource limit: {}", result.pruning_statistics.resource_limit_pruned);
+    println!("    - Constraint violation: {}", result.pruning_statistics.constraint_violation_pruned);
+    println!("    - Time limit: {}", result.pruning_statistics.time_limit_pruned);
+    println!("    - Aggressive pruning: {}", result.pruning_statistics.aggressive_pruned);
     
     Ok(())
 }
@@ -347,9 +325,10 @@ fn analyze_branching_results(result: &BranchingResult) -> Result<()> {
 fn analyze_confidence_scoring(result: &BranchingResult) -> Result<()> {
     println!("📊 Confidence Scoring Analysis:");
     
-    // Collect confidence scores
-    let confidences: Vec<f64> = result.branches.values()
-        .map(|b| b.accumulated_confidence)
+    // Collect confidence scores from most likely outcomes
+    let confidences: Vec<f64> = result.most_likely_outcomes
+        .iter()
+        .map(|b| b.confidence)
         .collect();
     
     if !confidences.is_empty() {
@@ -360,15 +339,14 @@ fn analyze_confidence_scoring(result: &BranchingResult) -> Result<()> {
         println!("  • Confidence range: {:.3} - {:.3}", min_conf, max_conf);
         println!("  • Average confidence: {:.3}", avg_conf);
         println!("  • Overall simulation confidence: {:.3}", result.overall_confidence);
+        println!("  • Constraint satisfaction: {:.3}", result.constraint_satisfaction_score);
     }
     
     // Analyze most likely outcomes
     println!("  • Most likely outcomes: {} branches", result.most_likely_outcomes.len());
-    for (i, &branch_id) in result.most_likely_outcomes.iter().take(3).enumerate() {
-        if let Some(branch) = result.branches.get(&branch_id) {
-            println!("    {}. Branch {} (confidence: {:.3}, depth: {})", 
-                i + 1, branch_id, branch.accumulated_confidence, branch.depth);
-        }
+    for (i, branch) in result.most_likely_outcomes.iter().take(3).enumerate() {
+        println!("    {}. Branch {:?} (confidence: {:.3}, depth: {})", 
+            i + 1, branch.id, branch.confidence, branch.depth);
     }
     
     Ok(())
@@ -387,14 +365,22 @@ fn demonstrate_pruning_mechanisms(result: &BranchingResult) -> Result<()> {
     println!("  • Pruning efficiency: {:.1}% ({}/{} branches pruned)", 
         pruning_ratio * 100.0, result.total_branches_pruned, result.total_branches_explored);
     
-    // Analyze branching statistics
-    println!("  • Branching statistics:");
-    println!("    - Average confidence: {:.3}", result.branching_stats.average_confidence);
-    println!("    - Maximum depth reached: {}", result.branching_stats.max_depth_reached);
-    println!("    - Average depth: {:.2}", result.branching_stats.average_depth);
-    println!("    - Terminal branches: {}", result.branching_stats.terminal_branches);
-    println!("    - Diversity score: {:.3}", result.branching_stats.diversity_score);
-    println!("    - Complexity score: {:.3}", result.branching_stats.complexity_score);
+    // Analyze available statistics
+    println!("  • Available metrics:");
+    println!("    - Overall confidence: {:.3}", result.overall_confidence);
+    println!("    - Constraint satisfaction: {:.3}", result.constraint_satisfaction_score);
+    println!("    - Most likely outcomes: {} branches", result.most_likely_outcomes.len());
+    println!("    - Final states: {} states", result.final_states.len());
+    println!("    - Execution time: {}ms", result.execution_time_ms);
+    
+    // Detailed pruning breakdown
+    let stats = &result.pruning_statistics;
+    println!("  • Detailed pruning breakdown:");
+    println!("    - Low confidence pruned: {}", stats.low_confidence_pruned);
+    println!("    - Resource limit pruned: {}", stats.resource_limit_pruned);
+    println!("    - Constraint violation pruned: {}", stats.constraint_violation_pruned);
+    println!("    - Time limit pruned: {}", stats.time_limit_pruned);
+    println!("    - Aggressive pruned: {}", stats.aggressive_pruned);
     
     println!("\n💡 Pruning helps manage computational complexity while preserving");
     println!("   the most promising simulation paths for exploration.");

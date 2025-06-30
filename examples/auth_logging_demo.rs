@@ -2,16 +2,16 @@ use brain::{
     AuthManager, AuthConfig, UserRole, Permission, User,
     RateLimitManager, RateLimitConfig, create_request_context,
     LoggingManager, LoggingConfig, ErrorCategory, ErrorSeverity,
+    AuthenticationResult,
 };
 use std::net::{IpAddr, Ipv4Addr};
 use std::collections::HashMap;
-use std::time::Duration;
 use anyhow::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("🔐 Brain AI - Authentication, Logging & Documentation Demo");
-    println!("==========================================================\n");
+    println!("🔐 Brain AI - Authentication, Logging & Rate Limiting Demo");
+    println!("=========================================================\n");
 
     // ================================
     // Phase 1: Authentication System
@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
         created_at: chrono::Utc::now(),
         last_login: None,
         active: true,
-        metadata: std::collections::HashMap::new(),
+        metadata: HashMap::new(),
     };
     auth_manager.add_user(admin_user.clone())?;
     println!("✅ Created admin user: {}", admin_user.id);
@@ -44,23 +44,10 @@ async fn main() -> Result<()> {
         created_at: chrono::Utc::now(),
         last_login: None,
         active: true,
-        metadata: std::collections::HashMap::new(),
+        metadata: HashMap::new(),
     };
     auth_manager.add_user(developer_user.clone())?;
     println!("✅ Created developer user: {}", developer_user.id);
-
-    let analyst_user = User {
-        id: "analyst_001".to_string(),
-        name: "Analyst User".to_string(),
-        email: "analyst@brain.ai".to_string(),
-        role: UserRole::Analyst,
-        created_at: chrono::Utc::now(),
-        last_login: None,
-        active: true,
-        metadata: std::collections::HashMap::new(),
-    };
-    auth_manager.add_user(analyst_user.clone())?;
-    println!("✅ Created analyst user: {}", analyst_user.id);
 
     // Generate API keys
     let admin_api_key = auth_manager.generate_api_key(&admin_user.id, UserRole::Admin, "Demo admin key")?;
@@ -106,12 +93,6 @@ async fn main() -> Result<()> {
         client_ip, 
         "admin_endpoint".to_string()
     );
-    let dev_context = create_request_context(
-        Some(developer_user.id.clone()), 
-        Some(UserRole::Developer),
-        client_ip, 
-        "dev_endpoint".to_string()
-    );
 
     println!("🚦 Testing Rate Limits by User Role:");
 
@@ -119,13 +100,6 @@ async fn main() -> Result<()> {
     for i in 1..=5 {
         let result = rate_manager.check_rate_limit(&admin_context)?;
         println!("  Admin Request {}: {} (Remaining: {})", 
-                 i, if result.allowed { "✅ ALLOWED" } else { "❌ BLOCKED" }, result.remaining);
-    }
-
-    // Developer user (500 req/min limit)
-    for i in 1..=5 {
-        let result = rate_manager.check_rate_limit(&dev_context)?;
-        println!("  Dev Request {}: {} (Remaining: {})", 
                  i, if result.allowed { "✅ ALLOWED" } else { "❌ BLOCKED" }, result.remaining);
     }
 
@@ -149,7 +123,9 @@ async fn main() -> Result<()> {
     println!("  Total Requests: {}", stats.total_requests);
     println!("  Allowed Requests: {}", stats.allowed_requests);
     println!("  Blocked Requests: {}", stats.blocked_requests);
-    println!("  Block Rate: {:.2}%", (stats.blocked_requests as f64 / stats.total_requests as f64) * 100.0);
+    if stats.total_requests > 0 {
+        println!("  Block Rate: {:.2}%", (stats.blocked_requests as f64 / stats.total_requests as f64) * 100.0);
+    }
 
     // ================================
     // Phase 3: Logging System
@@ -158,190 +134,105 @@ async fn main() -> Result<()> {
     println!("--------------------------");
 
     let logging_config = LoggingConfig::default();
-    let logging_manager = match LoggingManager::new(logging_config) {
-        Ok(manager) => manager,
-        Err(_) => {
-            println!("⚠️  Logging manager already initialized, skipping logging demo");
-            println!("   (This is normal in test environments)");
-            
-            // Continue with other phases
-            println!("\n📚 Phase 4: Documentation System");
-            println!("--------------------------------");
-            demonstrate_documentation_features().await?;
-            
-            println!("\n🎉 Task 7.3 Demo Complete!");
-            println!("===========================");
-            print_completion_summary();
-            return Ok(());
-        }
-    };
+    let logging_manager = LoggingManager::new(logging_config)?;
 
-    // Simulate API request logging
-    println!("📊 Simulating API Request Logging:");
-    
+    // Start tracking a request
     let request_id = "req_001".to_string();
-    let endpoint = "/api/memory/query".to_string();
-    let method = "POST".to_string();
-    
-    // Start request
-    logging_manager.start_request(request_id.clone(), endpoint.clone(), method.clone(), client_ip);
-    
-    // Simulate processing time
-    tokio::time::sleep(Duration::from_millis(50)).await;
-    
-    // Complete request
+    logging_manager.start_request(
+        request_id.clone(), 
+        "/api/memory/query".to_string(), 
+        "POST".to_string(), 
+        client_ip
+    );
+
+    // Complete the request
+    let auth_result = AuthenticationResult::new(api_user_id.clone(), api_role);
     let mut metadata = HashMap::new();
     metadata.insert("query_type".to_string(), "concept_search".to_string());
     metadata.insert("result_count".to_string(), "25".to_string());
     
-    // Create AuthResult for logging
-    use brain::AuthResult;
-    let auth_result = AuthResult::new(api_user_id.clone(), api_role);
-    
     logging_manager.complete_request(
         request_id,
-        endpoint,
-        method,
-        client_ip,
-        Some(&auth_result),
         200,
-        Some(512),
-        Some(2048),
-        false,
-        None,
+        Some(auth_result),
         metadata,
-    )?;
-    
-    println!("  ✅ Logged successful API request");
+    );
 
-    // Log different types of errors
-    println!("\n🚨 Demonstrating Error Logging:");
+    // Log some errors
+    let mut error_context = HashMap::new();
+    error_context.insert("query".to_string(), "SELECT * FROM concepts".to_string());
     
-    let validation_error_id = logging_manager.log_error(
+    logging_manager.log_error(
         ErrorCategory::Validation,
         ErrorSeverity::Medium,
-        "query_validation".to_string(),
-        "Invalid query syntax: missing WHERE clause".to_string(),
-        "Query: 'SELECT * FROM concepts'".to_string(),
-        Some(developer_user.id.clone()),
-        Some(client_ip),
-    )?;
-    println!("  ✅ Logged validation error: {}", validation_error_id);
+        "Invalid query syntax".to_string(),
+        Some("Missing WHERE clause".to_string()),
+        error_context,
+        Some("req_001".to_string()),
+        Some(api_user_id.clone()),
+    );
 
-    let auth_error_id = logging_manager.log_error(
+    logging_manager.log_error(
         ErrorCategory::Authentication,
         ErrorSeverity::High,
-        "token_validation".to_string(),
         "JWT token expired".to_string(),
-        "Token issued at: 2024-01-01T00:00:00Z, Current time: 2024-01-02T00:00:00Z".to_string(),
-        Some(analyst_user.id.clone()),
-        Some(client_ip),
-    )?;
-    println!("  ✅ Logged authentication error: {}", auth_error_id);
-
-    let critical_error_id = logging_manager.log_error(
-        ErrorCategory::Database,
-        ErrorSeverity::Critical,
-        "connection_failure".to_string(),
-        "Failed to connect to Neo4j database".to_string(),
-        "Connection timeout after 30 seconds".to_string(),
+        Some("Token issued too long ago".to_string()),
+        HashMap::new(),
         None,
-        None,
-    )?;
-    println!("  ✅ Logged critical database error: {}", critical_error_id);
+        Some(api_user_id),
+    );
 
-    // Collect performance metrics
-    println!("\n⚡ Collecting Performance Metrics:");
-    logging_manager.collect_performance_metrics()?;
-    let metrics = logging_manager.get_performance_metrics(Some(1))?;
-    if let Some(latest_metrics) = metrics.first() {
-        println!("  CPU Usage: {:.1}%", latest_metrics.cpu_usage_percent);
-        println!("  Memory Usage: {} MB ({:.1}%)", 
-                 latest_metrics.memory_usage_mb, latest_metrics.memory_usage_percent);
-        println!("  Requests/sec: {:.2}", latest_metrics.requests_per_second);
-        println!("  Avg Response Time: {:.1}ms", latest_metrics.avg_response_time_ms);
+    // Log an audit event
+    logging_manager.log_audit(
+        "user_action".to_string(),
+        admin_user.id.clone(),
+        UserRole::Admin,
+        "memory_query".to_string(),
+        Some("concept_search".to_string()),
+        client_ip,
+        true,
+        HashMap::new(),
+    );
+
+    // Get logging statistics
+    let log_stats = logging_manager.get_stats()?;
+    println!("\n📈 Logging Statistics:");
+    println!("  Total Requests: {}", log_stats.total_requests);
+    println!("  Successful Requests: {}", log_stats.successful_requests);
+    println!("  Failed Requests: {}", log_stats.failed_requests);
+    println!("  Average Response Time: {:.2}ms", log_stats.average_response_time_ms);
+
+    // Get recent errors
+    let recent_errors = logging_manager.get_recent_errors(5)?;
+    println!("\n📋 Recent Errors:");
+    for error in recent_errors {
+        println!("  {} - {}: {} ({})", 
+                 error.timestamp.format("%H:%M:%S"),
+                 error.category,
+                 error.message,
+                 error.severity);
     }
 
-    // Get usage analytics
-    println!("\n📊 Usage Analytics:");
-    let analytics = logging_manager.get_usage_analytics()?;
-    println!("  Total API Calls: {}", analytics.total_api_calls);
-    println!("  Operations:");
-    for (operation, count) in analytics.calls_by_operation {
-        println!("    {}: {} calls", operation, count);
-    }
+    // ================================
+    // Phase 4: Integration Demo
+    // ================================
+    println!("\n🔗 Phase 4: Integration Demo");
+    println!("----------------------------");
 
-    // Export logs
-    println!("\n💾 Exporting Logs:");
-    let exported_logs = logging_manager.export_logs_json(true, true)?;
-    println!("  ✅ Exported {} bytes of log data", exported_logs.len());
+    // Get authentication statistics
+    let auth_stats = auth_manager.get_stats();
+    println!("👥 Authentication Statistics:");
+    println!("  Total Users: {}", auth_stats.total_users);
+    println!("  Active Users: {}", auth_stats.active_users);
+    println!("  Total API Keys: {}", auth_stats.total_api_keys);
+    println!("  Active API Keys: {}", auth_stats.active_api_keys);
 
-    // ================================
-    // Phase 4: Documentation System
-    // ================================
-    println!("\n📚 Phase 4: Documentation System");
-    println!("--------------------------------");
-    demonstrate_documentation_features().await?;
-
-    // ================================
-    // Demo Complete
-    // ================================
-    println!("\n🎉 Task 7.3 Demo Complete!");
-    println!("===========================");
-    print_completion_summary();
+    println!("\n🎉 Brain AI Authentication & Logging Demo Complete!");
+    println!("====================================================");
+    println!("✅ Authentication: Users, API keys, JWT tokens");
+    println!("✅ Rate Limiting: Role-based and IP-based limits");
+    println!("✅ Logging: Request tracking, error logging, audit trails");
+    println!("✅ Integration: All systems working together");
 
     Ok(())
-}
-
-async fn demonstrate_documentation_features() -> Result<()> {
-    println!("📖 Documentation Features:");
-    println!("  ✅ OpenAPI 3.0.3 specification available at docs/api/openapi.yaml");
-    println!("  ✅ Interactive Swagger UI integration implemented");
-    println!("  ✅ Authentication schemes documented (JWT + API Key)");
-    println!("  ✅ Rate limiting policies documented");
-    println!("  ✅ Error handling and response codes documented");
-    println!("  ✅ Example requests and responses provided");
-    
-    println!("\n🌐 Documentation Server:");
-    println!("  ✅ Health monitoring endpoint: /health");
-    println!("  ✅ API documentation endpoint: /docs");
-    println!("  ✅ OpenAPI spec endpoint: /docs/openapi.yaml");
-    println!("  ✅ Interactive testing capabilities");
-    
-    println!("\n📋 API Documentation Coverage:");
-    println!("  ✅ Authentication endpoints (/auth/*)");
-    println!("  ✅ Memory query endpoints (/memory/*)");
-    println!("  ✅ Concept graph endpoints (/concepts/*)");
-    println!("  ✅ Simulation endpoints (/simulation/*)");
-    println!("  ✅ Export endpoints (/export/*)");
-    println!("  ✅ Admin endpoints (/admin/*)");
-    
-    Ok(())
-}
-
-fn print_completion_summary() {
-    println!("🏆 Task 7.3 Implementation Summary:");
-    println!("   • ✅ JWT & API Key Authentication System");
-    println!("   • ✅ Role-based Access Control (5 roles, 8 permissions)");
-    println!("   • ✅ Multi-layer Rate Limiting (User, IP, Global)");
-    println!("   • ✅ Comprehensive Logging & Telemetry");
-    println!("   • ✅ Performance Metrics Collection");
-    println!("   • ✅ Usage Analytics Tracking");
-    println!("   • ✅ Error Categorization & Deduplication");
-    println!("   • ✅ OpenAPI 3.0.3 Documentation");
-    println!("   • ✅ Interactive Documentation Server");
-    println!("   • ✅ Health Monitoring & API Testing");
-    
-    println!("\n🚀 Ready for Production:");
-    println!("   • Enterprise-grade authentication");
-    println!("   • Scalable rate limiting");
-    println!("   • Comprehensive monitoring");
-    println!("   • Complete API documentation");
-    println!("   • Multi-user support");
-    
-    println!("\n📈 Task 7 (API Interface) Progress:");
-    println!("   • ✅ 7.1: Core API Functions & Unified Interface");
-    println!("   • ✅ 7.2: Query Language & Export Functionality");
-    println!("   • ✅ 7.3: Authentication, Logging & Documentation");
-    println!("   • 🎯 Task 7 COMPLETE - API Interface System Ready!");
 } 

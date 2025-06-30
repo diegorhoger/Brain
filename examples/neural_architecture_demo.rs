@@ -8,13 +8,15 @@
 
 use brain::neural_architecture::{
     SelfAttention, AttentionConfig, TransformerPredictor, TransformerConfig,
-    DevelopmentalPredictor, GrowthConfig
+    DevelopmentalPredictor, GrowthConfig, SelfAttentionService, TransformerPredictorService,
+    DevelopmentalPredictorService
 };
 use brain::character_ingestion::{CharacterVocab, CharacterPredictor, ModelConfig};
 use brain::Result;
 use nalgebra::DMatrix;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     println!("🧠 Brain Neural Architecture - Advanced Features Demo (Task 3.1)");
     println!("================================================================");
     
@@ -44,13 +46,13 @@ fn main() -> Result<()> {
     });
     
     println!("\n📊 Processing sequence of length {}...", seq_len);
-    let attention_output = attention.forward(&input)?;
+    let attention_output = attention.forward(&input).await?;
     println!("✅ Self-attention forward pass completed");
     println!("   - Input shape: {}x{}", input.nrows(), input.ncols());
     println!("   - Output shape: {}x{}", attention_output.nrows(), attention_output.ncols());
     
     // Analyze attention weights
-    if let Some(weights) = attention.get_attention_weights() {
+    if let Some(weights) = attention.get_attention_weights().await {
         println!("🔍 Attention weights analysis:");
         println!("   - Attention matrix shape: {}x{}", weights.nrows(), weights.ncols());
         
@@ -94,7 +96,7 @@ fn main() -> Result<()> {
     println!("\n🔮 Testing transformer prediction...");
     println!("Input sequence: {:?}", input_sequence);
     
-    let predictions = transformer.predict_next(&input_sequence)?;
+    let predictions = transformer.predict_next(&input_sequence).await?;
     println!("✅ Prediction completed, output dimension: {}", predictions.len());
     
     // Analyze predictions
@@ -110,7 +112,7 @@ fn main() -> Result<()> {
     }
     
     // Analyze attention maps
-    let attention_maps = transformer.get_attention_maps();
+    let attention_maps = transformer.get_attention_maps().await;
     println!("\n🗺️ Attention maps analysis:");
     for (layer_idx, attention_map) in attention_maps.iter().enumerate() {
         if let Some(map) = attention_map {
@@ -134,7 +136,7 @@ fn main() -> Result<()> {
     
     let mut dev_predictor = DevelopmentalPredictor::new(vocab_size, Some(transformer_config), Some(growth_config.clone()))?;
     println!("✅ Developmental predictor created:");
-    println!("   - Initial stage: {:?}", dev_predictor.get_developmental_stage());
+    println!("   - Initial stage: {:?}", dev_predictor.get_developmental_stage().await);
     println!("   - Initial scale: {:.1}x", growth_config.initial_scale);
     println!("   - Growth rate: {:.1}x", growth_config.growth_rate);
     println!("   - Meta-learning: {}", growth_config.enable_meta_learning);
@@ -156,12 +158,12 @@ fn main() -> Result<()> {
         
         // Generate different input patterns for each session
         let input_ids: Vec<usize> = (0..=session).map(|i| i * 7 % vocab_size).collect();
-        let output = dev_predictor.developmental_forward(&input_ids, context)?;
+        let output = dev_predictor.developmental_forward(&input_ids, context).await?;
         
         println!("   - Input length: {}", input_ids.len());
-        println!("   - Developmental stage: {:?}", dev_predictor.get_developmental_stage());
+        println!("   - Developmental stage: {:?}", dev_predictor.get_developmental_stage().await);
         
-        let capacity = dev_predictor.get_capacity_metrics();
+        let capacity = dev_predictor.get_capacity_metrics().await;
         println!("   - Current complexity: {:.3}", capacity.current_complexity);
         println!("   - Utilization: {:.3}", capacity.utilization);
         println!("   - Growth pressure: {:.3}", capacity.growth_pressure);
@@ -177,7 +179,7 @@ fn main() -> Result<()> {
     println!("\n📚 Learning History Analysis");
     println!("============================");
     
-    let learning_history = dev_predictor.get_learning_history();
+    let learning_history = dev_predictor.get_learning_history().await;
     println!("Total learning events: {}", learning_history.len());
     
     for (i, event) in learning_history.iter().enumerate() {
@@ -191,20 +193,21 @@ fn main() -> Result<()> {
     println!("\n💾 Exporting Developmental State");
     println!("===============================");
     
-    match dev_predictor.export_developmental_state() {
+    match dev_predictor.export_developmental_state().await {
         Ok(state_json) => {
             println!("✅ Developmental state exported ({} bytes)", state_json.len());
             
             // Save to file
             std::fs::write("developmental_state.json", &state_json)
-                .map_err(|e| brain::error::BrainError::Io { source: e })?;
+                .map_err(|e| brain::BrainError::Io { source: e })?;
             println!("📁 State saved to 'developmental_state.json'");
             
             // Show summary
             println!("\n🔍 State Summary:");
-            println!("   - Current stage: {:?}", dev_predictor.get_developmental_stage());
+            println!("   - Current stage: {:?}", dev_predictor.get_developmental_stage().await);
             println!("   - Learning events: {}", learning_history.len());
-            println!("   - Capacity complexity: {:.3}", dev_predictor.get_capacity_metrics().current_complexity);
+            let final_capacity = dev_predictor.get_capacity_metrics().await;
+            println!("   - Capacity complexity: {:.3}", final_capacity.current_complexity);
         }
         Err(e) => {
             println!("❌ Failed to export state: {}", e);

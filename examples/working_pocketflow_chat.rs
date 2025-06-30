@@ -1,11 +1,13 @@
 #!/usr/bin/env cargo run --example working_pocketflow_chat
 //! Working PocketFlow Chat
 //!
-//! A working chat interface that properly uses memory retrieval to answer
-//! questions about PocketFlow architecture patterns.
+//! This example demonstrates a working chat interface that can answer
+//! questions about PocketFlow based on stored knowledge.
 
-use brain::*;
+use brain::{MemoryService, Priority, WorkingMemoryQuery, Result};
+use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use tokio;
+use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -14,206 +16,123 @@ async fn main() -> Result<()> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    println!("💬 Working PocketFlow Architecture Chat");
-    println!("{}", "=".repeat(50));
+    println!("🤖 PocketFlow Knowledge Chat");
+    println!("============================");
+    println!("Ask me anything about PocketFlow! Type 'quit' to exit.\n");
 
-    // Initialize Brain AI components
-    let mut memory_system = MemorySystem::new(2000);
+    // Create memory repositories
+    let working_repo = Box::new(WorkingMemoryRepository::new(100));
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("pocketflow_chat.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
-    println!("\n🧠 Loading PocketFlow Knowledge Base");
-    println!("{}", "-".repeat(40));
+    // Create memory service
+    let mut memory_service = MemoryService::new(working_repo, episodic_repo, semantic_repo);
 
-    // Load comprehensive PocketFlow knowledge with exact answers
-    let pocketflow_knowledge = vec![
-        // Q1: What are the 3 unique architecture patterns in PocketFlow?
-        "The 3 unique architecture patterns in PocketFlow are: 1) Node-Flow Architecture which separates processing logic (Nodes) from execution orchestration (Flows), 2) Async Parallel Processing which enables concurrent LLM operations through AsyncFlow and ParallelBatchNode, and 3) Batch Optimization Framework which groups multiple LLM requests to reduce API costs.",
-        
-        // Q2: How does PocketFlow implement the Node-Flow architecture pattern?
-        "PocketFlow implements the Node-Flow architecture pattern by using BaseNode as the fundamental abstraction for all processing units, and Flow classes to orchestrate execution. Nodes contain the processing logic while Flows handle the sequencing and coordination. This separation allows for modular, reusable components that can be chained together to create complex workflows.",
-        
-        // Q3: What is the purpose of BatchNode and ParallelBatchNode?
-        "BatchNode and ParallelBatchNode in PocketFlow are used to optimize LLM API costs and improve efficiency. BatchNode groups multiple requests into batches to reduce the number of individual API calls. ParallelBatchNode adds concurrent processing to handle multiple batches simultaneously, further improving throughput and reducing latency.",
-        
-        // Q4: How does PocketFlow enable agent-based workflows?
-        "PocketFlow enables agent-based workflows through its 'Agents build Agents' design philosophy. The framework provides abstractions that allow autonomous agents to create and orchestrate other agents. This enables recursive and self-improving AI systems where agents can spawn new agents, coordinate multi-agent tasks, and build complex agent hierarchies.",
-        
-        // Q5: What makes PocketFlow a 100-line framework?
-        "PocketFlow is called a 100-line framework because it provides essential LLM orchestration capabilities in approximately 100 lines of Python code. This minimalist design philosophy focuses on core functionality without bloat, making the framework easy to understand, modify, and extend while maintaining powerful features for AI workflow orchestration.",
-        
-        // Q6: How does PocketFlow optimize LLM API costs?
-        "PocketFlow optimizes LLM API costs through several mechanisms: BatchNode groups multiple requests to take advantage of batch pricing, ParallelBatchNode enables concurrent processing to reduce wait times, and the framework minimizes redundant API calls through efficient request management. This can significantly reduce costs compared to individual request patterns.",
-        
-        // Q7: What are the key classes and components?
-        "The key classes and components in PocketFlow are: BaseNode (base processing unit for all operations), Flow (synchronous orchestrator for sequential execution), AsyncFlow (asynchronous orchestrator for non-blocking operations), BatchNode (batch processor for cost optimization), and ParallelBatchNode (parallel batch processor for concurrent operations). These components work together to create flexible AI workflows.",
-        
-        // Q8: Use cases and applications
-        "PocketFlow's main use cases and applications include: LLM workflow orchestration for complex AI pipelines, agent-based AI systems for autonomous operations, batch processing of AI tasks for cost efficiency, parallel LLM operations for high throughput, cost-optimized AI pipelines for production environments, and rapid prototyping of AI agents for research and development.",
-    ];
+    // Load PocketFlow knowledge
+    println!("📚 Loading PocketFlow knowledge...");
+    load_pocketflow_knowledge(&mut memory_service).await?;
+    println!("✅ Knowledge loaded! Ready to chat.\n");
 
-    for (i, knowledge) in pocketflow_knowledge.iter().enumerate() {
-        match memory_system.learn(knowledge.to_string(), Priority::High) {
-            Ok(_) => println!("✅ Loaded knowledge chunk {}", i + 1),
-            Err(e) => println!("❌ Failed to load knowledge {}: {}", i + 1, e),
+    // Start chat loop
+    loop {
+        print!("You: ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+        let question = input.trim();
+
+        if question.is_empty() {
+            continue;
         }
-    }
 
-    println!("\n💬 PocketFlow Architecture Q&A Session");
-    println!("{}", "-".repeat(40));
+        if question.to_lowercase() == "quit" {
+            println!("👋 Goodbye!");
+            break;
+        }
 
-    // Test questions about PocketFlow architecture
-    let test_questions = vec![
-        "What are the 3 unique architecture patterns in PocketFlow?",
-        "How does PocketFlow implement the Node-Flow architecture pattern?", 
-        "What is the purpose of BatchNode and ParallelBatchNode in PocketFlow?",
-        "How does PocketFlow enable agent-based workflows?",
-        "What makes PocketFlow a 100-line framework?",
-        "How does PocketFlow optimize LLM API costs?",
-        "What are the key classes and components in PocketFlow?",
-        "What are PocketFlow's main use cases and applications?",
-    ];
-
-    for (i, question) in test_questions.iter().enumerate() {
-        println!("\n📝 Question {}: {}", i + 1, question);
-        
-        // Use direct memory search to find the answer
-        let answer = find_answer_in_memory(&memory_system, question);
-        
-        match answer {
-            Some(response) => {
-                println!("💡 Answer:");
-                println!("   {}", response);
+        // Find answer in memory
+        match find_answer_in_memory(&memory_service, question).await {
+            Some(answer) => {
+                println!("🤖 Bot: {}\n", answer);
             }
             None => {
-                println!("❌ No answer found in knowledge base");
+                println!("🤖 Bot: I don't have specific information about that. Could you try rephrasing your question or ask about PocketFlow's architecture, features, or implementation?\n");
             }
         }
     }
-
-    println!("\n📊 Memory System Statistics");
-    println!("{}", "-".repeat(40));
-    
-    let stats = memory_system.get_stats();
-    for (memory_type, memory_stats) in stats.iter() {
-        println!("{}: {} items, {} bytes", 
-                memory_type, 
-                memory_stats.total_items, 
-                memory_stats.size_bytes);
-    }
-
-    println!("\n✅ Working PocketFlow Chat Complete!");
-    println!("🎯 The Brain AI now successfully demonstrates comprehensive knowledge");
-    println!("   about PocketFlow's 3 unique architecture patterns and implementation details!");
 
     Ok(())
 }
 
-// Function to find answers in memory using multiple search strategies
-fn find_answer_in_memory(memory_system: &MemorySystem, question: &str) -> Option<String> {
-    // Strategy 1: Try key phrase matching
-    let key_phrases = extract_key_phrases(question);
-    
-    for phrase in key_phrases {
-        let query = WorkingMemoryQuery {
-            content_pattern: Some(phrase.clone()),
-            priority: None,
-            min_importance: None,
-            created_after: None,
-            limit: Some(3),
-        };
+async fn load_pocketflow_knowledge(memory_service: &mut MemoryService) -> Result<()> {
+    let knowledge_items = vec![
+        "PocketFlow is a 100-line AI framework that provides essential LLM orchestration capabilities in a compact, easy-to-understand codebase.",
+        "PocketFlow implements three unique architecture patterns: Node-Flow Architecture, Async Parallel Processing, and Batch Optimization Framework.",
+        "The Node-Flow pattern in PocketFlow separates processing logic (Nodes) from execution orchestration (Flows). BaseNode is the fundamental abstraction.",
+        "PocketFlow supports asynchronous execution with AsyncFlow and parallel processing with ParallelBatchNode for efficient concurrent LLM operations.",
+        "BatchNode and ParallelBatchNode in PocketFlow are used to optimize LLM API costs by grouping multiple requests together.",
+        "PocketFlow enables agent-based workflows through its 'Agents build Agents' design philosophy, allowing autonomous agents to create and orchestrate other agents.",
+        "The key classes in PocketFlow are: BaseNode (base processing unit), Flow (synchronous orchestrator), AsyncFlow (asynchronous orchestrator), BatchNode (batch processor), and ParallelBatchNode (parallel batch processor).",
+        "PocketFlow optimizes LLM API costs through BatchNode grouping, ParallelBatchNode concurrent processing, and efficient request management to reduce redundant API calls.",
+        "PocketFlow's main use cases include: LLM workflow orchestration, agent-based AI systems, batch processing of AI tasks, parallel LLM operations, cost-optimized AI pipelines, and rapid prototyping of AI agents.",
+        "PocketFlow uses Python with async/await patterns for non-blocking operations and leverages asyncio library for asynchronous operations.",
+        "PocketFlow implements the observer pattern for flow coordination and uses class inheritance for node specialization.",
+        "The framework maintains clean separation of concerns between data processing (nodes) and execution control (flows).",
+        "PocketFlow supports error handling, fallback mechanisms, and flexible configuration for both research and production environments.",
+        "PocketFlow's minimalist design focuses on core functionality without bloat, making it easy to understand, modify, and extend.",
+        "The framework enables recursive and self-improving AI systems where agents can spawn new agents, coordinate multi-agent tasks, and build complex agent hierarchies.",
+    ];
 
-        if let Ok(items) = memory_system.query_working(&query) {
-            if !items.is_empty() {
-                // Return the most relevant (first) result
-                return Some(items[0].content.clone());
-            }
-        }
+    for (i, knowledge) in knowledge_items.iter().enumerate() {
+        let priority = if i < 5 { Priority::High } else { Priority::Medium };
+        let _id = memory_service.learn(knowledge.to_string(), priority).await?;
     }
-    
-    // Strategy 2: Try related memory search
-    if let Ok(results) = memory_system.find_related_memories(question, 3) {
-        if !results.working_results.is_empty() {
-            return Some(results.working_results[0].content.clone());
-        }
-    }
-    
-    // Strategy 3: Try individual keywords
-    let keywords = extract_keywords(question);
-    for keyword in keywords {
-        let query = WorkingMemoryQuery {
-            content_pattern: Some(keyword.clone()),
-            priority: None,
-            min_importance: None,
-            created_after: None,
-            limit: Some(1),
-        };
 
-        if let Ok(items) = memory_system.query_working(&query) {
-            if !items.is_empty() {
-                return Some(items[0].content.clone());
-            }
-        }
-    }
-    
-    None
+    Ok(())
 }
 
-// Extract key phrases from questions
-fn extract_key_phrases(question: &str) -> Vec<String> {
-    let mut phrases = Vec::new();
-    
-    // Common question patterns and their key phrases
-    if question.contains("3 unique architecture patterns") {
-        phrases.push("3 unique architecture patterns".to_string());
-        phrases.push("architecture patterns".to_string());
-    }
-    
-    if question.contains("Node-Flow architecture") {
-        phrases.push("Node-Flow architecture".to_string());
-        phrases.push("Node-Flow".to_string());
-    }
-    
-    if question.contains("BatchNode") && question.contains("ParallelBatchNode") {
-        phrases.push("BatchNode and ParallelBatchNode".to_string());
-        phrases.push("BatchNode".to_string());
-    }
-    
-    if question.contains("agent-based workflows") {
-        phrases.push("agent-based workflows".to_string());
-        phrases.push("agent-based".to_string());
-    }
-    
-    if question.contains("100-line framework") {
-        phrases.push("100-line framework".to_string());
-        phrases.push("100-line".to_string());
-    }
-    
-    if question.contains("optimize") && question.contains("LLM") && question.contains("costs") {
-        phrases.push("optimize LLM API costs".to_string());
-        phrases.push("LLM API costs".to_string());
-    }
-    
-    if question.contains("key classes") && question.contains("components") {
-        phrases.push("key classes and components".to_string());
-        phrases.push("classes and components".to_string());
-    }
-    
-    if question.contains("use cases") && question.contains("applications") {
-        phrases.push("use cases and applications".to_string());
-        phrases.push("use cases".to_string());
-    }
-    
-    phrases
-}
-
-// Extract important keywords from questions
-fn extract_keywords(question: &str) -> Vec<String> {
-    let important_words: Vec<&str> = question
+async fn find_answer_in_memory(memory_service: &MemoryService, question: &str) -> Option<String> {
+    // Extract keywords from the question
+    let keywords: Vec<String> = question
+        .to_lowercase()
         .split_whitespace()
-        .filter(|word| {
-            word.len() > 3 && 
-            !["what", "how", "does", "the", "are", "and", "for", "with", "this", "that", "from", "into", "they", "have", "will", "been", "were", "said", "each", "which", "their", "time", "when", "where", "why", "would", "there", "make", "like", "him", "her", "his", "our", "out", "who", "get", "has", "had", "let", "put", "say", "she", "may", "use"].contains(&word.to_lowercase().as_str())
-        })
+        .filter(|word| word.len() > 3)
+        .map(|word| word.trim_matches(|c: char| !c.is_alphanumeric()))
+        .filter(|word| !word.is_empty())
+        .map(|word| word.to_string())
         .collect();
-    
-    important_words.iter().map(|&s| s.to_string()).collect()
+
+    if keywords.is_empty() {
+        return None;
+    }
+
+    // Create query for working memory with correct field names
+    let query = WorkingMemoryQuery {
+        content_pattern: Some(keywords[0].clone()),
+        priority: None,
+        min_importance: None,
+        created_after: None,
+        limit: Some(5),
+    };
+
+    // Search working memory
+    if let Ok(results) = memory_service.query_working(&query).await {
+        if !results.is_empty() {
+            // Return the content of the first relevant result
+            return Some(results[0].content.clone());
+        }
+    }
+
+    // If no results in working memory, try cross-memory search
+    if let Ok(cross_results) = memory_service.query_all_memories(&keywords[0]).await {
+        if !cross_results.working_results.is_empty() {
+            return Some(cross_results.working_results[0].content.clone());
+        }
+        if !cross_results.episodic_results.is_empty() {
+            return Some(cross_results.episodic_results[0].content.clone());
+        }
+    }
+
+    None
 } 

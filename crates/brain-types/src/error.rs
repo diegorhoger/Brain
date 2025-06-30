@@ -82,6 +82,18 @@ pub enum BrainError {
     /// Generic error with custom message
     #[error("Error: {0}")]
     Other(String),
+    
+    /// Authentication failed
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+    
+    /// Conflict with existing resource
+    #[error("Conflict: {0}")]
+    Conflict(String),
+    
+    /// Internal system error
+    #[error("Internal error: {0}")]
+    InternalError(String),
 }
 
 impl From<serde_json::Error> for BrainError {

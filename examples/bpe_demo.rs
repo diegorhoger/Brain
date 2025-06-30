@@ -1,16 +1,19 @@
-use brain::segment_discovery::{BpeSegmenter, BpeConfig};
-use brain::Result;
+//! BPE Segmentation Demo
+//!
+//! Demonstrates the Brain AI BPE (Byte Pair Encoding) segmentation capabilities
+
+use brain::{Result, segment_discovery::{BpeSegmenter, BpeConfig}};
 
 fn main() -> Result<()> {
-    println!("🧠 Brain Project - Advanced BPE Segmentation Demo");
-    println!("================================================");
+    println!("🧠 Brain Project - BPE Segmentation Demo");
+    println!("========================================");
     
     // Sample text for demonstration
     let text = "the quick brown fox jumps over the lazy dog the quick brown fox jumps again";
     println!("\n📄 Input text:");
     println!("\"{}\"", text);
     
-    // Create BPE segmenter with advanced heuristics enabled
+    // Create BPE segmenter with configuration
     let config = BpeConfig {
         min_frequency: 2,
         max_vocab_size: 50,
@@ -25,6 +28,7 @@ fn main() -> Result<()> {
     println!("\n⚙️  Configuration:");
     println!("   Min frequency: {}", config.min_frequency);
     println!("   Max vocab size: {}", config.max_vocab_size);
+    println!("   Num merges: {}", config.num_merges);
     println!("   Entropy threshold: {:.1}", config.min_entropy_threshold);
     println!("   Context window: {}", config.context_window_size);
     println!("   Min confidence: {:.1}", config.min_confidence);
@@ -36,13 +40,11 @@ fn main() -> Result<()> {
     println!("\n🔍 Initializing and training BPE...");
     bpe.initialize_from_text(text)?;
     
-    let initial_stats = bpe.get_stats();
-    println!("   Initial vocabulary size: {}", initial_stats.total_segments);
-    println!("   Context observations: {}", initial_stats.context_observations);
+    println!("   Initial vocabulary size: {}", bpe.vocab_size());
     
     bpe.train()?;
     
-    // Get final statistics with advanced metrics
+    // Get final statistics
     let stats = bpe.get_stats();
     println!("\n📊 Training Results:");
     println!("   Final vocabulary size: {}", stats.total_segments);
@@ -99,7 +101,11 @@ fn main() -> Result<()> {
     
     // Show merged segments with formation history
     println!("\n🔗 Merged Segments (formation history):");
-    let merged_segments = bpe.get_merged_segments();
+    let all_segments = bpe.get_segments_by_frequency();
+    let merged_segments: Vec<_> = all_segments.iter()
+        .filter(|s| s.formed_from.is_some())
+        .collect();
+        
     for segment in &merged_segments {
         if let Some(ref pair) = segment.formed_from {
             println!("   '{}' <- '{}' + '{}' (step: {}, conf: {:.2})", 
@@ -111,19 +117,17 @@ fn main() -> Result<()> {
         }
     }
     
-    // Demonstrate co-occurrence analysis
-    println!("\n🤝 Context Co-occurrence Analysis:");
-    let test_pairs = vec![
-        ("t", "h"),
-        ("h", "e"),
-        ("o", "x"),
-        ("q", "u"),
-        ("r", "o"),
+    // Demonstrate text segmentation
+    println!("\n✂️  Text Segmentation:");
+    let test_texts = vec![
+        "the quick brown",
+        "fox jumps over",
+        "lazy dog again",
     ];
     
-    for (seg1, seg2) in test_pairs {
-        let strength = bpe.get_co_occurrence_strength(seg1, seg2);
-        println!("   '{}' ↔ '{}': {:.3}", seg1, seg2, strength);
+    for test_text in test_texts {
+        let segments = bpe.segment_text(test_text);
+        println!("   '{}' -> {:?}", test_text, segments);
     }
     
     // Compare with basic BPE (without advanced heuristics)
@@ -157,100 +161,7 @@ fn main() -> Result<()> {
     println!("   • Context tracking captures co-occurrence patterns");
     println!("   • Segment splitting prevents over-segmentation");
     
-    // Demonstrate persistent storage and lifecycle management (Task 2.3)
-    println!("\n💾 Persistent Storage & Lifecycle Management Demo:");
-    println!("==================================================");
-    
-    use brain::segment_discovery::{StorageConfig, PruningConfig};
-    use std::fs;
-    
-    // Create storage configuration
-    let storage_config = StorageConfig {
-        segments_path: "demo_segments.json".to_string(),
-        archive_path: "demo_segments_archive.json".to_string(),
-        context_path: "demo_context_matrix.json".to_string(),
-        save_interval_seconds: 0, // Immediate save for demo
-        compress_data: false,
-        max_backups: 3,
-    };
-    
-    // Create pruning configuration
-    let pruning_config = PruningConfig {
-        min_confidence_threshold: 0.5, // Higher threshold for demo
-        min_age_days: 0,               // Allow immediate pruning
-        max_inactive_days: 0,          // No activity required
-        min_access_count: 1,           // Low access requirement
-        max_segments: 20,              // Small limit for demo
-        enable_auto_pruning: true,
-    };
-    
-    // Create segmenter with storage
-    let mut persistent_bpe = BpeSegmenter::with_storage(config, storage_config, pruning_config);
-    persistent_bpe.initialize_from_text(text)?;
-    persistent_bpe.train()?;
-    
-    println!("   📊 Before persistence:");
-    let pre_stats = persistent_bpe.get_stats();
-    println!("     Total segments: {}", pre_stats.total_segments);
-    println!("     High confidence: {}", pre_stats.high_confidence_segments);
-    
-    // Demonstrate access tracking
-    println!("   🔍 Simulating segment access...");
-    let segments_to_access: Vec<String> = persistent_bpe.get_high_confidence_segments()
-        .iter()
-        .map(|stats| stats.segment.clone())
-        .collect();
-    
-    for segment in segments_to_access {
-        persistent_bpe.mark_segment_accessed(&segment);
-    }
-    
-    // Save to storage
-    println!("   💾 Saving to persistent storage...");
-    persistent_bpe.save_to_storage("demo_segments.json")?;
-    
-    // Demonstrate pruning
-    println!("   ✂️  Pruning low-confidence segments...");
-    let pruned = persistent_bpe.prune_segments()?;
-    println!("     Pruned {} segments: {:?}", pruned.len(), pruned);
-    println!("     Archived segments: {}", persistent_bpe.get_archived_segments().len());
-    
-    // Load from storage
-    println!("   📂 Loading from persistent storage...");
-    let loaded_bpe = BpeSegmenter::load_from_storage("demo_segments.json")?;
-    let loaded_stats = loaded_bpe.get_stats();
-    
-    println!("   📊 After loading:");
-    println!("     Total segments: {}", loaded_stats.total_segments);
-    println!("     High confidence: {}", loaded_stats.high_confidence_segments);
-    println!("     Archived segments: {}", loaded_bpe.get_archived_segments().len());
-    
-    // Show lifecycle information
-    println!("   ⏰ Segment lifecycle information:");
-    let segments = loaded_bpe.get_segments_by_confidence();
-    for (i, segment) in segments.iter().take(5).enumerate() {
-        println!("     {}: '{}' (accessed: {} times, conf: {:.2})", 
-                 i + 1, 
-                 segment.segment, 
-                 segment.access_count,
-                 segment.confidence);
-    }
-    
-    // Cleanup demo files
-    let demo_files = ["demo_segments.json", "demo_segments_archive.json", "demo_context_matrix.json"];
-    for file in &demo_files {
-        if let Err(_) = fs::remove_file(file) {
-            // Ignore errors - file might not exist
-        }
-    }
-    
-    println!("\n🎯 Persistent Storage Features Demonstrated:");
-    println!("   • Lifecycle tracking with timestamps and access counts");
-    println!("   • Configurable pruning based on confidence and usage");
-    println!("   • Archive system for segment preservation");
-    println!("   • Automatic backup creation and rotation");
-    println!("   • Multi-file storage architecture for organization");
-    println!("   • Complete serialization/deserialization integrity");
+    println!("\n✅ BPE Demo completed successfully!");
     
     Ok(())
 } 

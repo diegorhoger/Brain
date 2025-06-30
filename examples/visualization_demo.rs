@@ -4,11 +4,13 @@
 //! demonstrating interactive graph exploration, filtering, and real-time updates.
 
 use anyhow::Result;
+use brain::concept_graph::{
+    ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType, RelationshipType,
+    ConceptRepository, RelationshipRepository, ConceptRelationship
+};
 use brain::{
-    ConceptGraphManager, ConceptGraphConfig, ConceptNode, ConceptType,
     VisualizationManager, VisualizationConfig
 };
-use brain::concept_graph::RelationshipType;
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -196,12 +198,13 @@ async fn create_sample_concept_graph() -> Result<ConceptGraphManager> {
     // Add relationships
     for (source_idx, target_idx, rel_type, weight) in relationships {
         if source_idx < concept_ids.len() && target_idx < concept_ids.len() {
-            manager.create_relationship(
+            let relationship = ConceptRelationship::new(
                 concept_ids[source_idx],
                 concept_ids[target_idx],
                 rel_type,
                 weight,
-            ).await?;
+            );
+            manager.create_relationship(relationship).await?;
         }
     }
     

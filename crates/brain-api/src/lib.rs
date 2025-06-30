@@ -6,6 +6,13 @@
 
 pub mod visualization;
 pub mod web_server;
+pub mod auth;
+pub mod rate_limit;
+pub mod logging;
 
 pub use visualization::*;
 pub use web_server::*;
+pub use auth::{AuthManager, AuthConfig, User, UserRole, Permission, AuthResult};
+pub use rate_limit::{RateLimitManager, RateLimitConfig, RequestContext, create_request_context};
+pub use logging::{LoggingManager, LoggingConfig, ErrorCategory, ErrorSeverity};
+pub use visualization::{VisualizationManager, VisualizationConfig};

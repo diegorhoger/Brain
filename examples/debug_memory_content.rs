@@ -4,7 +4,11 @@
 //! This debug example shows what's actually stored in Brain AI's memory
 //! after learning from PocketFlow to understand why insights aren't being generated.
 
-use brain::*;
+use brain::{MemoryService, WorkingMemoryQuery, SemanticQuery, Result};
+use brain_infra::{
+    memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository},
+    GitHubLearningEngine, GitHubLearningConfig
+};
 use std::env;
 use tokio;
 
@@ -16,8 +20,14 @@ async fn main() -> Result<()> {
     println!("🔍 Brain AI Memory Debug - PocketFlow Content Analysis");
     println!("{}", "=".repeat(60));
 
-    // Initialize Brain AI components
-    let mut memory_system = MemorySystem::new(2000);
+    // Create memory repositories
+    let mut working_repo = WorkingMemoryRepository::new(100);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("debug_memory.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+    
+    // Create memory service with a separate working repo for queries
+    let working_repo_for_service = Box::new(WorkingMemoryRepository::new(100));
+    let memory_service = MemoryService::new(working_repo_for_service, episodic_repo, semantic_repo);
     
     // Get GitHub token
     let github_token = env::var("GITHUB_TOKEN").ok();
@@ -37,9 +47,9 @@ async fn main() -> Result<()> {
     println!("\n🚀 Learning from PocketFlow Repository");
     println!("{}", "-".repeat(40));
 
-    // Learn from PocketFlow repository
+    // Learn from PocketFlow repository (pass working_repo directly)
     let pocketflow_url = "https://github.com/The-Pocket/PocketFlow";
-    match github_engine.learn_from_repository(&mut memory_system, pocketflow_url).await {
+    match github_engine.learn_from_repository(&mut working_repo, pocketflow_url).await {
         Ok(result) => {
             println!("✅ Learning completed!");
             println!("   Files processed: {}", result.files_processed);
@@ -64,7 +74,7 @@ async fn main() -> Result<()> {
         limit: Some(20), // Show first 20 items
     };
 
-    match memory_system.query_working(&query) {
+    match memory_service.query_working(&query).await {
         Ok(items) => {
             println!("Found {} working memory items:", items.len());
             for (i, item) in items.iter().enumerate() {
@@ -103,7 +113,7 @@ async fn main() -> Result<()> {
             limit: Some(5),
         };
 
-        match memory_system.query_working(&query) {
+        match memory_service.query_working(&query).await {
             Ok(items) => {
                 if !items.is_empty() {
                     println!("\n🎯 Found {} items containing '{}':", items.len(), term);
@@ -134,7 +144,7 @@ async fn main() -> Result<()> {
         limit: Some(10),
     };
 
-    match memory_system.query_semantic(&semantic_query) {
+    match memory_service.query_semantic(&semantic_query).await {
         Ok(concepts) => {
             if !concepts.is_empty() {
                 println!("Found {} semantic concepts:", concepts.len());
@@ -160,7 +170,7 @@ async fn main() -> Result<()> {
     ];
 
     for term in architecture_terms {
-        match memory_system.find_related_memories(term, 3) {
+        match memory_service.query_all_memories(term).await {
             Ok(results) => {
                 let total_results = results.working_results.len() + 
                                   results.episodic_results.len() + 
@@ -198,8 +208,30 @@ async fn main() -> Result<()> {
         }
     }
 
-    println!("\n✅ Memory Debug Complete!");
-    println!("This should help identify why architectural insights aren't being generated.");
+    println!("\n📊 Memory Summary");
+    println!("{}", "-".repeat(40));
+    
+    // Get a summary of what's in memory
+    let all_query = WorkingMemoryQuery::default();
+    match memory_service.query_working(&all_query).await {
+        Ok(items) => {
+            let total_items = items.len();
+            let total_size: usize = items.iter().map(|item| item.content.len()).sum();
+            println!("Working Memory Summary:");
+            println!("  • Total items: {}", total_items);
+            println!("  • Total content size: {} bytes", total_size);
+            if total_items > 0 {
+                let avg_size = total_size / total_items;
+                println!("  • Average item size: {} bytes", avg_size);
+            }
+        }
+        Err(e) => {
+            println!("Failed to get memory summary: {}", e);
+        }
+    }
+
+    println!("\n✅ Memory Content Debug Complete!");
+    println!("This should help identify what's being stored and why insights might not be generated.");
 
     Ok(())
 } 

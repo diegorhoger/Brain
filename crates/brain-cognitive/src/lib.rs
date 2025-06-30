@@ -15,6 +15,7 @@ pub mod intelligence;
 pub mod meta;
 pub mod learning;
 pub mod models;
+pub mod meta_memory;
 
 // Re-export key conversation types
 pub use conversation::{
@@ -64,11 +65,10 @@ pub use intelligence::{
     ConversationalInput,
 };
 
-// Re-export meta-memory types
+// Re-export meta-memory types from meta module
 pub use meta::{
-    MetaMemoryService, MetaMemoryItem, MetaMemoryQuery, MetaMemoryQueryBuilder,
-    KnowledgeType, MetaMemoryStats, MetaMemoryConfig, MetaMemoryError,
-    MetaMemorySortField, MetaMemoryResult,
+    MetaMemoryService, MetaMemoryQueryBuilder,
+    MetaMemoryError, MetaMemorySortField, MetaMemoryResult,
     // Traits
     MetaMemoryRepository, MetaMemoryAnalytics, MetaMemoryMaintenance,
     // Analysis types
@@ -86,4 +86,13 @@ pub use learning::{
 pub use models::{
     BrainConversationalModel, ConversationalModelConfig,
     ModelArchitecture, KnowledgeIntegrationMode
+};
+
+pub use meta_memory::{
+    MetaMemorySystem,
+    MetaMemoryItem as SimpleMetaMemoryItem,
+    MetaMemoryConfig as SimpleMetaMemoryConfig,
+    MetaMemoryQuery as SimpleMetaMemoryQuery,
+    MetaMemoryStats as SimpleMetaMemoryStats,
+    KnowledgeType as SimpleKnowledgeType
 };

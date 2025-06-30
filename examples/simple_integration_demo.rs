@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
     
     let test_inputs = vec![
         "the quick",
-        "brown fox",
+        "brown fox", 
         "lazy dog",
         "quick brown",
     ];
@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
     // 4. Performance comparison
     println!("\n📊 Performance Insights");
     println!("========================");
-        
+    
     let metrics = predictor.get_metrics();
     println!("Predictor Performance:");
     println!("  - Total predictions: {}", metrics.total_predictions);

@@ -4,7 +4,8 @@
 //! This example bypasses the Brain AI Orchestrator and uses direct RAG retrieval
 //! to answer questions about PocketFlow architecture patterns.
 
-use brain::*;
+use brain::{MemoryService, WorkingMemoryQuery, Priority, Result};
+use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use tokio;
 
 #[tokio::main]
@@ -15,8 +16,13 @@ async fn main() -> Result<()> {
     println!("🎯 Direct RAG - PocketFlow Architecture Analysis");
     println!("{}", "=".repeat(55));
 
-    // Initialize Brain AI components (without Brain AI Orchestrator)
-    let mut memory_system = MemorySystem::new(2000);
+    // Create memory repositories
+    let working_repo = Box::new(WorkingMemoryRepository::new(100));
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("direct_rag_pocketflow.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+    
+    // Create memory service
+    let mut memory_service = MemoryService::new(working_repo, episodic_repo, semantic_repo);
     
     println!("\n🧠 Loading PocketFlow Knowledge Base");
     println!("{}", "-".repeat(40));
@@ -55,7 +61,7 @@ async fn main() -> Result<()> {
     ];
 
     for (i, knowledge) in pocketflow_knowledge.iter().enumerate() {
-        match memory_system.learn(knowledge.to_string(), Priority::High) {
+        match memory_service.learn(knowledge.to_string(), Priority::High).await {
             Ok(_) => println!("✅ Loaded knowledge chunk {}", i + 1),
             Err(e) => println!("❌ Failed to load knowledge {}: {}", i + 1, e),
         }
@@ -80,7 +86,7 @@ async fn main() -> Result<()> {
         println!("\n📝 Question {}: {}", i + 1, question);
         
         // Use direct memory search to find relevant knowledge
-        match memory_system.find_related_memories(question, 5) {
+        match memory_service.query_all_memories(question).await {
             Ok(results) => {
                 let total_results = results.working_results.len() + 
                                   results.episodic_results.len() + 
@@ -116,7 +122,7 @@ async fn main() -> Result<()> {
             limit: Some(3),
         };
         
-        match memory_system.query_working(&query) {
+        match memory_service.query_working(&query).await {
             Ok(items) => {
                 if !items.is_empty() {
                     println!("🔍 Direct pattern match found {} items:", items.len());
@@ -139,12 +145,17 @@ async fn main() -> Result<()> {
     println!("\n📊 Memory System Statistics");
     println!("{}", "-".repeat(40));
     
-    let stats = memory_system.get_stats();
-    for (memory_type, memory_stats) in stats.iter() {
-        println!("{}: {} items, {} bytes", 
-                memory_type, 
-                memory_stats.total_items, 
-                memory_stats.size_bytes);
+    // Since MemoryService doesn't have get_stats, let's check working memory
+    let all_query = WorkingMemoryQuery::default();
+    match memory_service.query_working(&all_query).await {
+        Ok(items) => {
+            let total_items = items.len();
+            let total_size: usize = items.iter().map(|item| item.content.len()).sum();
+            println!("Working Memory: {} items, {} bytes", total_items, total_size);
+        }
+        Err(e) => {
+            println!("Failed to get memory stats: {}", e);
+        }
     }
 
     println!("\n✅ Direct RAG Analysis Complete!");
