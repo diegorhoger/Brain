@@ -17,6 +17,10 @@ pub mod learning;
 pub mod models;
 pub mod meta_memory;
 
+// New agent infrastructure
+pub mod agents;
+pub mod context;
+
 // Re-export key conversation types
 pub use conversation::{
     RagOrchestrator, RagRequest, RagResponse, ConversationContext,
