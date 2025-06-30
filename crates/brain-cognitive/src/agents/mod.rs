@@ -14,4 +14,4 @@ pub mod development;
 // Re-exports for convenience
 pub use traits::{BrainAgent, AgentMetadata, AgentInput, AgentOutput, CognitiveContext};
 pub use registry::AgentRegistry;
-pub use development::PlannerAgent; 
+pub use development::{PlannerAgent, ArchitectAgent, DesignerAgent}; 

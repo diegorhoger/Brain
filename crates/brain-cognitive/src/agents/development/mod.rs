@@ -5,13 +5,15 @@
 //! with other agents to create comprehensive development solutions.
 
 pub mod planner;
+pub mod architect;
+pub mod designer;
 
 // Re-export development agents for easier access
 pub use planner::PlannerAgent;
+pub use architect::ArchitectAgent;
+pub use designer::DesignerAgent;
 
 // TODO: Add remaining development agents:
-// pub mod architect;
-// pub mod designer;
 // pub mod schema;
 // pub mod api;
 // pub mod frontend_coder;
@@ -29,6 +31,8 @@ impl DevelopmentAgents {
     pub fn all_agents() -> Vec<Box<dyn crate::agents::traits::BrainAgent + Send + Sync>> {
         vec![
             Box::new(PlannerAgent::new()),
+            Box::new(ArchitectAgent::new()),
+            Box::new(DesignerAgent::new()),
             // TODO: Add other agents as they are implemented
         ]
     }
@@ -45,6 +49,30 @@ impl DevelopmentAgents {
                 "resource_planning",
                 "specification_writing",
                 "stakeholder_analysis"
+            ]),
+            ("ArchitectAgent", vec![
+                "system_design",
+                "component_architecture",
+                "technology_selection",
+                "data_modeling",
+                "api_design",
+                "scalability_planning",
+                "security_architecture",
+                "performance_optimization",
+                "deployment_strategy",
+                "architecture_validation"
+            ]),
+            ("DesignerAgent", vec![
+                "ui_mockups",
+                "component_design",
+                "user_flow_mapping",
+                "accessibility_planning",
+                "design_system_creation",
+                "responsive_design",
+                "interaction_design",
+                "visual_hierarchy",
+                "usability_analysis",
+                "prototype_creation"
             ]),
             // TODO: Add capabilities for other agents
         ]
