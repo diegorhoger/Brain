@@ -8,15 +8,16 @@ pub mod planner;
 pub mod architect;
 pub mod designer;
 pub mod schema;
+pub mod api;
 
 // Re-export development agents for easier access
 pub use planner::PlannerAgent;
 pub use architect::ArchitectAgent;
 pub use designer::DesignerAgent;
 pub use schema::SchemaAgent;
+pub use api::APIAgent;
 
 // TODO: Add remaining development agents:
-// pub mod api;
 // pub mod frontend_coder;
 // pub mod backend_coder;
 // pub mod refactor;
@@ -35,6 +36,7 @@ impl DevelopmentAgents {
             Box::new(ArchitectAgent::new()),
             Box::new(DesignerAgent::new()),
             Box::new(SchemaAgent::new()),
+            Box::new(APIAgent::new()),
             // TODO: Add other agents as they are implemented
         ]
     }
@@ -87,6 +89,18 @@ impl DevelopmentAgents {
                 "data_security_planning",
                 "scalability_modeling",
                 "backup_strategy_design"
+            ]),
+            ("APIAgent", vec![
+                "rest_api_design",
+                "graphql_schema_design",
+                "authentication_planning",
+                "authorization_design",
+                "rate_limiting_strategy",
+                "api_versioning",
+                "documentation_generation",
+                "testing_framework_design",
+                "performance_optimization",
+                "error_handling_design"
             ]),
             // TODO: Add capabilities for other agents
         ]
