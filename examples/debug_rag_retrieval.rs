@@ -13,12 +13,15 @@ async fn main() -> Result<()> {
     // Initialize logging
     env_logger::init();
 
-    println!("🔍 Brain AI RAG Retrieval Debug");
-    println!("{}", "=".repeat(50));
-
-    // Create memory repositories
+    println!("🧠 Debug RAG Retrieval Demo");
+    println!("===========================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
+    // Initialize repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(100));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("debug_rag.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/debug_rag.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service

@@ -22,8 +22,12 @@
 //!     - Internet connection for repository access
 //!     - Optional: GitHub token for private repos or higher rate limits
 
-use brain::{MemoryService, WorkingMemoryQuery, WorkingMemoryRepository, Result};
-use brain_infra::memory::{WorkingMemoryRepository as WorkingMemoryRepo, EpisodicMemoryRepository, SemanticMemoryRepository};
+use brain::{MemoryService, WorkingMemoryQuery, Result, WorkingMemoryRepository as WorkingMemoryTrait};
+use brain_infra::memory::{
+    WorkingMemoryRepository as WorkingMemoryRepo,
+    EpisodicMemoryRepository as EpisodicMemoryRepo, 
+    SemanticMemoryRepository as SemanticMemoryRepo
+};
 use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
 use std::env;
 use tokio;
@@ -34,18 +38,24 @@ async fn main() -> Result<()> {
     env_logger::init();
 
     println!("🧠 Brain AI - GitHub Repository Learning Demo (Rust)");
-    println!("{}", "=".repeat(60));
+    println!("====================================================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
+    println!("This demo will showcase Brain's ability to learn from GitHub repositories");
+    println!("and demonstrate intelligent, context-aware repository understanding.\n");
 
-    // Create memory repositories
+    // Initialize repositories using concrete types
     let mut working_repo = WorkingMemoryRepo::new(1000);
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("github_demo.db").await?);
-    let semantic_repo = Box::new(SemanticMemoryRepository::new());
+    let episodic_repo = Box::new(EpisodicMemoryRepo::new("data/github_demo.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepo::new());
     
     // Create memory service for queries
     let memory_service = MemoryService::new(
-        Box::new(WorkingMemoryRepo::new(100)), // For the service
-        episodic_repo, 
-        semantic_repo
+        Box::new(WorkingMemoryRepo::new(100)),
+        episodic_repo,
+        semantic_repo,
     );
     
     let github_token = env::var("GITHUB_TOKEN").ok();
@@ -120,7 +130,7 @@ async fn main() -> Result<()> {
     }
 
     // Demonstrate memory querying capabilities (using the working repo directly)
-    demonstrate_memory_queries(&working_repo).await?;
+    demonstrate_memory_queries(&working_repo as &dyn WorkingMemoryTrait).await?;
     
     // Also demonstrate with the memory service
     demonstrate_concept_analysis(&memory_service).await?;
@@ -134,7 +144,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn demonstrate_memory_queries(working_repo: &dyn WorkingMemoryRepository) -> Result<()> {
+async fn demonstrate_memory_queries(working_repo: &dyn WorkingMemoryTrait) -> Result<()> {
     println!("\n🔍 Memory Querying and Information Retrieval");
     println!("{}", "-".repeat(40));
 

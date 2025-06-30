@@ -80,7 +80,7 @@ impl Default for BrainConfig {
 impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
-            url: "sqlite:brain.db".to_string(),
+            url: "sqlite:data/brain.db".to_string(),
             max_connections: 10,
             min_connections: 1,
             acquire_timeout_seconds: 30,

@@ -7,31 +7,26 @@
 //! - Querying by confidence levels and knowledge types
 //! - Analytics for knowledge quality assessment
 
+use brain::{
+    MetaMemorySystem, MetaMemoryItem, MetaMemoryQuery,
+    KnowledgeType, MetaMemoryConfig
+};
 use anyhow::Result;
 use uuid::Uuid;
-use brain::{
-    MetaMemorySystem, MetaMemoryItem, MetaMemoryConfig, MetaMemoryQuery,
-    KnowledgeType
-};
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     println!("🧠 Meta-Memory System Demonstration");
-    println!("{}", "=".repeat(60));
-
-    // Phase 1: Initialize Meta-Memory System
-    println!("\n📊 Phase 1: Initialize Meta-Memory System");
-    println!("{}", "-".repeat(40));
+    println!("==================================");
     
-    let config = MetaMemoryConfig {
-        database_path: "meta_memory_demo.db".to_string(),
-        high_confidence_threshold: 0.8,
-        low_confidence_threshold: 0.3,
-        min_validation_count: 3,
-        ..Default::default()
-    };
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| std::io::Error::from(e))?;
+    
+    // Initialize meta-memory system with default config
+    let config = MetaMemoryConfig::default();
     
     let mut meta_memory = MetaMemorySystem::with_config(config)?;
-    println!("✅ Meta-memory system initialized with custom configuration");
+    println!("✅ Meta-memory system initialized with default configuration");
     
     // Phase 2: Create Knowledge Components with Different Types
     println!("\n🏗️  Phase 2: Create Knowledge Components");

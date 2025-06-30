@@ -20,6 +20,11 @@ async fn main() -> Result<()> {
     println!("🧠 Brain Neural Architecture - Advanced Features Demo (Task 3.1)");
     println!("================================================================");
     
+    // Ensure data and logs directories exist
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    std::fs::create_dir_all("logs").map_err(|e| brain::BrainError::Io { source: e })?;
+    std::fs::create_dir_all("temp").map_err(|e| brain::BrainError::Io { source: e })?;
+    
     // 1. Demonstrate Self-Attention Mechanism
     println!("\n⚡ Self-Attention Mechanism Demo");
     println!("===============================");
@@ -197,10 +202,10 @@ async fn main() -> Result<()> {
         Ok(state_json) => {
             println!("✅ Developmental state exported ({} bytes)", state_json.len());
             
-            // Save to file
-            std::fs::write("developmental_state.json", &state_json)
+            // Save to data directory
+            std::fs::write("data/developmental_state.json", &state_json)
                 .map_err(|e| brain::BrainError::Io { source: e })?;
-            println!("📁 State saved to 'developmental_state.json'");
+            println!("📁 State saved to 'data/developmental_state.json'");
             
             // Show summary
             println!("\n🔍 State Summary:");

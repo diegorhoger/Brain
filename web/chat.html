@@ -348,13 +348,32 @@
         }
 
         function isLearningContent(text) {
-            // Simple heuristic to determine if this looks like content to learn from
-            return text.length > 200 || 
-                   text.includes('```') || 
-                   text.includes('function') || 
-                   text.includes('class') ||
-                   text.includes('import') ||
-                   text.toLowerCase().includes('learn from');
+            // Check for GitHub URLs first (highest priority)
+            if (text.includes('github.com/')) {
+                return true;
+            }
+            
+            // Check for explicit learning requests
+            if (text.toLowerCase().includes('learn from') || 
+                text.toLowerCase().includes('learn about') ||
+                text.toLowerCase().includes('teach me about')) {
+                return true;
+            }
+            
+            // Check for code-like content
+            if (text.includes('```') || 
+                text.includes('function') || 
+                text.includes('class') ||
+                text.includes('import')) {
+                return true;
+            }
+            
+            // Check for long content (likely documentation/articles)
+            if (text.length > 200) {
+                return true;
+            }
+            
+            return false;
         }
 
         async function sendMessage() {

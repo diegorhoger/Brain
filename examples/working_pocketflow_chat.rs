@@ -4,25 +4,28 @@
 //! This example demonstrates a working chat interface that can answer
 //! questions about PocketFlow based on stored knowledge.
 
-use brain::{MemoryService, Priority, WorkingMemoryQuery, Result};
+use brain::*;
 use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use tokio;
 use std::io::{self, Write};
+use env_logger;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging with less verbose output
-    env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Info)
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .init();
 
+    println!("🧠 Working PocketFlow Chat Demo");
     println!("🤖 PocketFlow Knowledge Chat");
     println!("============================");
     println!("Ask me anything about PocketFlow! Type 'quit' to exit.\n");
 
-    // Create memory repositories
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| BrainError::Io { source: e })?;
+    
+    // Initialize repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(100));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("pocketflow_chat.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/pocketflow_chat.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service

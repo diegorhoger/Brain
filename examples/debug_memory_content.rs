@@ -4,25 +4,23 @@
 //! This debug example shows what's actually stored in Brain AI's memory
 //! after learning from PocketFlow to understand why insights aren't being generated.
 
-use brain::{MemoryService, WorkingMemoryQuery, SemanticQuery, Result};
-use brain_infra::{
-    memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository},
-    GitHubLearningEngine, GitHubLearningConfig
-};
+use brain::{MemoryService, WorkingMemoryQuery, Result, SemanticQuery};
+use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
+use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
 use std::env;
 use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
-    env_logger::init();
-
-    println!("🔍 Brain AI Memory Debug - PocketFlow Content Analysis");
-    println!("{}", "=".repeat(60));
-
-    // Create memory repositories
+    println!("🧠 Debug Memory Content Demo");
+    println!("============================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
+    // Initialize repositories
     let mut working_repo = WorkingMemoryRepository::new(100);
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("debug_memory.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/debug_memory.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service with a separate working repo for queries

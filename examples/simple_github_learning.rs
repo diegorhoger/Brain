@@ -7,8 +7,12 @@
 //! - Storing knowledge in memory
 //! - Simple querying of learned content
 
-use brain::{MemoryService, WorkingMemoryQuery, WorkingMemoryRepository, Result};
-use brain_infra::memory::{WorkingMemoryRepository as WorkingMemoryRepo, EpisodicMemoryRepository, SemanticMemoryRepository};
+use brain::{MemoryService, WorkingMemoryQuery, Result, WorkingMemoryRepository};
+use brain_infra::memory::{
+    WorkingMemoryRepository as WorkingMemoryRepo, 
+    EpisodicMemoryRepository as EpisodicMemoryRepo, 
+    SemanticMemoryRepository as SemanticMemoryRepo
+};
 use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
 use std::env;
 use tokio;
@@ -16,18 +20,21 @@ use tokio;
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("🧠 Simple GitHub Learning Demo");
-    println!("==============================\n");
+    println!("==============================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
+    // Create memory repositories using concrete types
+    let mut working_repo = WorkingMemoryRepo::new(100);
+    let episodic_repo = Box::new(EpisodicMemoryRepo::new("data/simple_github_demo.db").await?);
+    let semantic_repo = Box::new(SemanticMemoryRepo::new());
 
-    // Create memory repositories  
-    let mut working_repo = WorkingMemoryRepo::new(500);
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("simple_github_demo.db").await?);
-    let semantic_repo = Box::new(SemanticMemoryRepository::new());
-
-    // Create memory service for additional functionality (if needed)
+    // Create memory service for potential future use
     let _memory_service = MemoryService::new(
         Box::new(WorkingMemoryRepo::new(100)),
         episodic_repo,
-        semantic_repo
+        semantic_repo,
     );
 
     // Get GitHub token if available

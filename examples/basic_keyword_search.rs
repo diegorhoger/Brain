@@ -9,13 +9,15 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("{}", "=".repeat(55));
-    println!("🔍 BASIC KEYWORD SEARCH DEMO");
-    println!("{}", "=".repeat(55));
-
-    // Create memory repositories
+    println!("🧠 Basic Keyword Search Demo");
+    println!("============================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
+    // Initialize repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(100));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("memory.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/memory.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service

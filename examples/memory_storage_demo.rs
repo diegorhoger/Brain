@@ -16,15 +16,19 @@ use brain::{
 use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use std::collections::HashMap;
 use tokio;
+use brain::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("🧠 Brain Memory Storage Demonstration");
-    println!("=====================================\n");
-
-    // Create memory repositories
+    println!("====================================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| BrainError::Io { source: e })?;
+    
+    // Initialize repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(20));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("memory_storage_demo.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/memory_storage_demo.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service

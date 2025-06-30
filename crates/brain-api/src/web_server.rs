@@ -143,6 +143,45 @@ fn default_true() -> bool {
     true
 }
 
+/// Extract GitHub URL from a text message
+fn extract_github_url(text: &str) -> Option<String> {
+    // Look for GitHub URLs in the text
+    let patterns = [
+        "https://github.com/",
+        "http://github.com/",
+        "github.com/",
+    ];
+    
+    for pattern in patterns {
+        if let Some(start) = text.find(pattern) {
+            let url_start = if pattern.starts_with("http") {
+                start
+            } else {
+                // Add https:// prefix if not present
+                return Some(format!("https://{}", &text[start..]
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or("")));
+            };
+            
+            // Extract the URL (until whitespace or end)
+            let url_part = &text[url_start..]
+                .split_whitespace()
+                .next()
+                .unwrap_or("");
+                
+            // Clean up trailing punctuation
+            let url = url_part.trim_end_matches(['.', ',', '!', '?', ')', ']', '}']);
+            
+            if !url.is_empty() {
+                return Some(url.to_string());
+            }
+        }
+    }
+    
+    None
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProcessResponse {
     pub success: bool,
@@ -370,6 +409,44 @@ impl WebServer {
             }))
             .and_then(Self::handle_simple_chat_converse);
 
+        // API endpoints (for frontend compatibility)
+        let api_chat_learn = warp::path("api")
+            .and(warp::path("chat"))
+            .and(warp::path("learn"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let memory_repo = memory_repo.clone();
+                move || memory_repo.clone()
+            }))
+            .and(warp::any().map({
+                let concept_mgr = concept_mgr.clone();
+                move || concept_mgr.clone()
+            }))
+            .and_then(Self::handle_simple_chat_learn);
+
+        let api_chat_converse = warp::path("api")
+            .and(warp::path("chat"))
+            .and(warp::path("converse"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let memory_repo = memory_repo.clone();
+                move || memory_repo.clone()
+            }))
+            .and(warp::any().map({
+                let concept_mgr = concept_mgr.clone();
+                move || concept_mgr.clone()
+            }))
+            .and_then(Self::handle_simple_chat_converse);
+
+        // Static file serving
+        let static_files = warp::fs::dir("web");
+
+        let index = warp::path::end()
+            .and(warp::get())
+            .map(|| warp::redirect::found(warp::http::Uri::from_static("/chat.html")));
+
         // Code pattern analysis
         let code_analysis = warp::path("code")
             .and(warp::path("analyze"))
@@ -415,7 +492,8 @@ impl WebServer {
             .and_then(Self::handle_development_context_get);
 
         // Combine all routes
-        let routes = status
+        let routes = index
+            .or(status)
             .or(stats)
             .or(health)
             .or(learn)
@@ -423,9 +501,12 @@ impl WebServer {
             .or(chat)
             .or(simple_chat_learn)
             .or(simple_chat_converse)
+            .or(api_chat_learn)
+            .or(api_chat_converse)
             .or(code_analysis)
             .or(dev_context_create)
             .or(dev_context_get)
+            .or(static_files)
             .with(cors);
 
         println!("🧠 Brain AI Web Server starting on port {}", self.port);
@@ -472,34 +553,96 @@ impl WebServer {
         request: ProcessRequest,
         memory_repo: Arc<Mutex<WorkingMemoryRepository>>,
     ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // Process learning request
         let start_time = std::time::Instant::now();
         
-        // Process the learning request
-        let mut repo = memory_repo.lock().await;
+        // Check if this is a GitHub URL
+        let text_trimmed = request.text.trim();
+        let is_github_url = request.is_github_url || 
+            (text_trimmed.contains("github.com/") && 
+             (text_trimmed.starts_with("https://github.com/") || 
+              text_trimmed.starts_with("http://github.com/") ||
+              text_trimmed.starts_with("github.com/")));
         
-        // Create a working memory item from the text
-        let item = WorkingMemoryItem {
-            id: uuid::Uuid::new_v4(),
-            content: request.text.clone(),
-            priority: Priority::Medium,
-            created_at: chrono::Utc::now(),
-            last_accessed: chrono::Utc::now(),
-            access_count: 0,
-            decay_factor: 1.0,
-        };
+        if is_github_url {
+            // Handle GitHub repository learning
+            use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
+            use std::env;
+            
+            let github_token = env::var("GITHUB_TOKEN").ok();
+            let config = GitHubLearningConfig::default();
+            let github_engine = GitHubLearningEngine::new(github_token, Some(config));
+            
+            let mut repo = memory_repo.lock().await;
+            
+            // Ensure URL has proper https:// prefix
+            let github_url = if text_trimmed.starts_with("http") {
+                text_trimmed.to_string()
+            } else {
+                format!("https://{}", text_trimmed)
+            };
+            
+            match github_engine.learn_from_repository(&mut *repo, &github_url).await {
+                Ok(learning_result) => {
+                    let processing_time = start_time.elapsed().as_millis() as u64;
+                    
+                    let response = ProcessResponse {
+                        success: true,
+                        message: format!("Successfully learned from GitHub repository: {}", learning_result.repository),
+                        data: Some(serde_json::json!({
+                            "repository": learning_result.repository,
+                            "files_processed": learning_result.files_processed,
+                            "total_content_size": learning_result.total_content_size,
+                            "memory_entries_created": learning_result.memory_entries_created,
+                            "key_insights": learning_result.key_insights,
+                            "summary": learning_result.summary
+                        })),
+                        processing_time,
+                    };
+                    
+                    Ok(warp::reply::json(&response))
+                }
+                Err(e) => {
+                    let processing_time = start_time.elapsed().as_millis() as u64;
+                    
+                    let response = ProcessResponse {
+                        success: false,
+                        message: format!("Failed to learn from GitHub repository: {}", e),
+                        data: Some(serde_json::json!({"error": e.to_string()})),
+                        processing_time,
+                    };
+                    
+                    Ok(warp::reply::json(&response))
+                }
+            }
+        } else {
+            // Handle regular text learning
+            let mut repo = memory_repo.lock().await;
+            
+            // Create a working memory item from the text
+            let item = WorkingMemoryItem {
+                id: uuid::Uuid::new_v4(),
+                content: request.text.clone(),
+                priority: Priority::Medium,
+                created_at: chrono::Utc::now(),
+                last_accessed: chrono::Utc::now(),
+                access_count: 0,
+                decay_factor: 1.0,
+            };
 
-        repo.store_item(item).await.map_err(|_| warp::reject())?;
+            repo.store_item(item).await.map_err(|_| warp::reject())?;
 
-        let processing_time = start_time.elapsed().as_millis() as u64;
-        
-        let response = ProcessResponse {
-            success: true,
-            message: "Content learned successfully".to_string(),
-            data: Some(serde_json::json!({"text_length": request.text.len()})),
-            processing_time,
-        };
+            let processing_time = start_time.elapsed().as_millis() as u64;
+            
+            let response = ProcessResponse {
+                success: true,
+                message: "Content learned successfully".to_string(),
+                data: Some(serde_json::json!({"text_length": request.text.len()})),
+                processing_time,
+            };
 
-        Ok(warp::reply::json(&response))
+            Ok(warp::reply::json(&response))
+        }
     }
 
     async fn handle_memory_query(
@@ -546,39 +689,252 @@ impl WebServer {
         memory_repo: Arc<Mutex<WorkingMemoryRepository>>,
         _concept_mgr: Arc<Mutex<ConceptGraphManager>>,
     ) -> std::result::Result<impl Reply, warp::Rejection> {
-        let mut repo = memory_repo.lock().await;
+        // GitHub URL learning handler
+        // Check if this is a GitHub URL
+        let content_trimmed = request.content.trim();
+        let is_github_url = content_trimmed.contains("github.com/") && 
+            (content_trimmed.starts_with("https://github.com/") || 
+             content_trimmed.starts_with("http://github.com/") ||
+             content_trimmed.starts_with("github.com/"));
         
-        // Store the learning content
-        let item = WorkingMemoryItem {
-            id: uuid::Uuid::new_v4(),
-            content: request.content.clone(),
-            priority: Priority::Medium,
-            created_at: chrono::Utc::now(),
-            last_accessed: chrono::Utc::now(),
-            access_count: 0,
-            decay_factor: 1.0,
-        };
+        // GitHub URL detection and learning logic
+        
+        if is_github_url {
+            // Handle GitHub repository learning
+            use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
+            use std::env;
+            
+            let github_token = env::var("GITHUB_TOKEN").ok();
+            let config = GitHubLearningConfig::default();
+            let github_engine = GitHubLearningEngine::new(github_token, Some(config));
+            
+            let mut repo = memory_repo.lock().await;
+            
+            // Ensure URL has proper https:// prefix
+            let github_url = if content_trimmed.starts_with("http") {
+                content_trimmed.to_string()
+            } else {
+                format!("https://{}", content_trimmed)
+            };
+            
+            match github_engine.learn_from_repository(&mut *repo, &github_url).await {
+                Ok(learning_result) => {
+                    let response = SimpleChatResponse {
+                        response: format!("🎉 Successfully learned from GitHub repository: {}!\n\n📊 Processed {} files with {} total characters of content.\n\n🧠 Created {} memory entries and discovered key insights about the repository.", 
+                            learning_result.repository,
+                            learning_result.files_processed,
+                            learning_result.total_content_size,
+                            learning_result.memory_entries_created
+                        ),
+                        insights_learned: learning_result.key_insights,
+                        context_used: true,
+                    };
+                    
+                    Ok(warp::reply::json(&response))
+                }
+                Err(e) => {
+                    let response = SimpleChatResponse {
+                        response: format!("❌ Failed to learn from GitHub repository: {}\n\nTip: Make sure the repository URL is valid and accessible.", e),
+                        insights_learned: vec!["GitHub learning failed".to_string()],
+                        context_used: false,
+                    };
+                    
+                    Ok(warp::reply::json(&response))
+                }
+            }
+        } else {
+            // Handle regular text learning
+            let mut repo = memory_repo.lock().await;
+            
+            // Store the learning content
+            let item = WorkingMemoryItem {
+                id: uuid::Uuid::new_v4(),
+                content: request.content.clone(),
+                priority: Priority::Medium,
+                created_at: chrono::Utc::now(),
+                last_accessed: chrono::Utc::now(),
+                access_count: 0,
+                decay_factor: 1.0,
+            };
 
-        repo.store_item(item).await.map_err(|_| warp::reject())?;
+            repo.store_item(item).await.map_err(|_| warp::reject())?;
 
-        let response = SimpleChatResponse {
-            response: "Content learned successfully".to_string(),
-            insights_learned: vec!["New information stored".to_string()],
-            context_used: false,
-        };
+            let response = SimpleChatResponse {
+                response: "Content learned successfully".to_string(),
+                insights_learned: vec!["New information stored".to_string()],
+                context_used: false,
+            };
 
-        Ok(warp::reply::json(&response))
+            Ok(warp::reply::json(&response))
+        }
     }
 
     async fn handle_simple_chat_converse(
         request: SimpleChatConverseRequest,
-        _memory_repo: Arc<Mutex<WorkingMemoryRepository>>,
+        memory_repo: Arc<Mutex<WorkingMemoryRepository>>,
         _concept_mgr: Arc<Mutex<ConceptGraphManager>>,
     ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // Handle conversation with automatic GitHub learning
+        let message = request.message.to_lowercase();
+        
+        // Check if the message contains a GitHub URL and learn from it automatically
+        
+        if request.message.contains("github.com/") && 
+           (request.message.contains("https://") || request.message.contains("http://")) {
+            // Extract GitHub URL from the message
+            if let Some(github_url) = extract_github_url(&request.message) {
+                // Automatically learn from the GitHub repository
+                use brain_infra::{GitHubLearningEngine, GitHubLearningConfig};
+                use std::env;
+                
+                let github_token = env::var("GITHUB_TOKEN").ok();
+                let config = GitHubLearningConfig::default();
+                let github_engine = GitHubLearningEngine::new(github_token, Some(config));
+                
+                let mut repo = memory_repo.lock().await;
+                
+                // Try to learn from GitHub repository
+                match github_engine.learn_from_repository(&mut *repo, &github_url).await {
+                                         Ok(learning_result) => {
+                         // Successfully learned from GitHub
+                         let response = SimpleChatResponse {
+                            response: format!("🎉 I've automatically learned from the GitHub repository: {}!\n\n📊 I processed {} files and created {} memory entries with key insights:\n\n{}\n\nNow I can answer questions about this repository. What would you like to know?", 
+                                learning_result.repository,
+                                learning_result.files_processed,
+                                learning_result.memory_entries_created,
+                                learning_result.key_insights.join("\n• ")
+                            ),
+                            insights_learned: learning_result.key_insights,
+                            context_used: true,
+                        };
+                        
+                        return Ok(warp::reply::json(&response));
+                    }
+                                         Err(_e) => {
+                         // GitHub learning failed, but continue with regular conversation
+                    }
+                }
+                
+                drop(repo);
+            }
+        }
+        
+        // First, try to find relevant content in memory
+        let memory_repo_lock = memory_repo.lock().await;
+        
+        // Check if user is asking about something specific we might have learned
+        let mut found_content = Vec::new();
+        
+        // Try to extract key terms from the message for memory search
+        let search_terms = if message.contains("what") && (message.contains("learn") || message.contains("know")) {
+            // Extract what they're asking about - more flexible search
+            if let Some(start) = message.find("know about") {
+                let topic = message[start + 10..].trim().replace("?", "").to_lowercase();
+                if !topic.is_empty() {
+                    vec![topic]
+                } else { vec![] }
+            } else if let Some(start) = message.find("learn about") {
+                let topic = message[start + 11..].trim().replace("?", "").to_lowercase();
+                if !topic.is_empty() {
+                    vec![topic]
+                } else { vec![] }
+            } else {
+                // Try to extract any significant words from the question
+                let words: Vec<String> = message.split_whitespace()
+                    .filter(|w| w.len() > 3 && !["what", "learn", "know", "about", "tell", "from", "that", "this", "with", "have", "been"].contains(&w.to_lowercase().as_str()))
+                    .map(|w| w.replace("?", "").to_lowercase())
+                    .collect();
+                words
+            }
+        } else if message.contains("tell me about") {
+            // Extract the topic after "tell me about"
+            if let Some(start) = message.find("tell me about") {
+                let topic = message[start + 13..].trim().replace("?", "").to_lowercase();
+                if !topic.is_empty() {
+                    vec![topic]
+                } else { vec![] }
+            } else { vec![] }
+        } else {
+            // For any other message, try to extract meaningful words for search
+            let words: Vec<String> = message.split_whitespace()
+                .filter(|w| w.len() > 4 && !["what", "learn", "know", "about", "tell", "from", "that", "this", "with", "have", "been", "would", "could", "should"].contains(&w.to_lowercase().as_str()))
+                .map(|w| w.replace("?", "").replace("!", "").to_lowercase())
+                .take(3) // Limit to 3 terms to avoid too broad search
+                .collect();
+            words
+        };
+        
+        // Search memory for relevant content
+        let mut unique_content = std::collections::HashSet::new();
+        for term in &search_terms {
+            let query = WorkingMemoryQuery {
+                content_pattern: Some(term.clone()),
+                priority: None,
+                min_importance: Some(0.1),
+                created_after: None,
+                limit: Some(5),
+            };
+            
+            if let Ok(results) = memory_repo_lock.query_items(&query).await {
+                for item in results {
+                    // Only add unique content to avoid duplication
+                    if unique_content.insert(item.content.clone()) {
+                        found_content.push(item.content);
+                    }
+                }
+            }
+        }
+        
+        drop(memory_repo_lock);
+        
+        // Generate intelligent responses based on message content and memory
+        let memory_repo_lock = memory_repo.lock().await;
+        let stats = memory_repo_lock.stats().await.unwrap_or_else(|_| {
+            use brain_core::memory::MemoryStats;
+            use chrono::Utc;
+            MemoryStats {
+                total_items: 0,
+                size_bytes: 0,
+                last_access: Utc::now(),
+                access_count: 0,
+                consolidation_count: 0,
+            }
+        });
+        drop(memory_repo_lock);
+        
+        let response_text = if !found_content.is_empty() {
+            // We found relevant content in memory, provide intelligent response
+            let content_summary = found_content.join("\n\n");
+            format!("Based on what I've learned:\n\n{}\n\nI can tell you more about any specific aspect that interests you!", content_summary)
+        } else if message.contains("what") && (message.contains("learn") || message.contains("remember")) && stats.total_items > 0 {
+            // User is asking what we learned and we have content
+            format!("I have {} items in my memory system. Could you be more specific about what you'd like me to recall? Try asking about a specific topic or concept.", stats.total_items)
+        } else if stats.total_items == 0 && (message.contains("learn") || message.contains("teach") || message.contains("remember")) {
+            "I don't have any learned content yet. Share something with me and I'll analyze and remember it!".to_string()
+        } else {
+            // Generate more dynamic, varied responses
+            let responses = vec![
+                format!("That's an interesting question! I currently have {} items in my memory. What specific topic would you like to explore?", stats.total_items),
+                format!("I'm ready to help! With {} items in my knowledge base, I can discuss various topics. What are you curious about?", stats.total_items),
+                format!("Great question! I've learned {} different things so far. What would you like to know more about?", stats.total_items),
+                "I'm here to chat and learn! What topic interests you most right now?".to_string(),
+                "I'm ready for a conversation! What would you like to discuss or teach me about?".to_string(),
+                "Interesting! What specific aspect of that topic would you like to explore?".to_string(),
+            ];
+            
+            // Use the length of the message to pick a response (pseudo-random but consistent)
+            let index = message.len() % responses.len();
+            responses[index].clone()
+        };
+
         let response = SimpleChatResponse {
-            response: format!("I understand your message: '{}'", request.message),
-            insights_learned: vec![],
-            context_used: true,
+            response: response_text,
+            insights_learned: if !found_content.is_empty() { 
+                vec!["Found relevant content in memory".to_string()] 
+            } else { 
+                vec!["Memory available for learning".to_string()] 
+            },
+            context_used: !found_content.is_empty(),
         };
 
         Ok(warp::reply::json(&response))

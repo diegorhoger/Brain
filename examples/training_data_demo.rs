@@ -1,4 +1,4 @@
-use brain::MemoryService;
+use brain::{MemoryService, Result};
 use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use brain_cognitive::{
     RagOrchestrator, RagRequest, 
@@ -8,13 +8,16 @@ use brain_cognitive::{
 use chrono::{Utc, Duration};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     println!("🎓 Brain AI - Training Data Collection Demonstration");
     println!("==================================================");
     
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| brain::BrainError::Io { source: e })?;
+    
     // Create memory repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(100));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("training_data_demo.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/training_data_demo.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service
@@ -155,7 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn demonstrate_anonymization() -> Result<(), Box<dyn std::error::Error>> {
+async fn demonstrate_anonymization() -> Result<()> {
     println!("  🔒 Privacy Protection Features:");
     
     // Simulate messages with PII that would be anonymized
@@ -180,7 +183,7 @@ async fn demonstrate_anonymization() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn demonstrate_training_pipeline_readiness() -> Result<(), Box<dyn std::error::Error>> {
+async fn demonstrate_training_pipeline_readiness() -> Result<()> {
     println!("  🚀 Training Pipeline Integration:");
     println!("     ✅ Data Format: JSONL, CSV, and Parquet export support");
     println!("     ✅ Quality Metrics: Multi-dimensional scoring for filtering");

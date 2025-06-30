@@ -7,15 +7,19 @@ use brain::{MemoryService, Priority, WorkingMemoryQuery, Result};
 use brain_infra::memory::{WorkingMemoryRepository, EpisodicMemoryRepository, SemanticMemoryRepository};
 use std::time::Duration;
 use tokio;
+use brain::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("🧠 Brain Memory Module Demonstration");
-    println!("=======================================\n");
-
+    println!("===================================");
+    
+    // Ensure data directory exists
+    std::fs::create_dir_all("data").map_err(|e| BrainError::Io { source: e })?;
+    
     // Create memory repositories
     let working_repo = Box::new(WorkingMemoryRepository::new(10));
-    let episodic_repo = Box::new(EpisodicMemoryRepository::new("memory_demo.db").await?);
+    let episodic_repo = Box::new(EpisodicMemoryRepository::new("data/memory_demo.db").await?);
     let semantic_repo = Box::new(SemanticMemoryRepository::new());
     
     // Create memory service
