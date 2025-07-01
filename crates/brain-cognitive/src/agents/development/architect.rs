@@ -4,7 +4,6 @@
 //! system architecture designs, including component diagrams, technology selections,
 //! data flow designs, and architectural patterns guidance.
 
-use std::collections::HashMap;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use brain_types::error::BrainError;
