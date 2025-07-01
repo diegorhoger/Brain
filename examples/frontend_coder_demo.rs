@@ -4,11 +4,22 @@
 //! comprehensive frontend implementation code from UI/UX designs and API specifications.
 
 use brain_cognitive::agents::development::frontend_coder::FrontendCoder;
-use brain_cognitive::agents::traits::{BrainAgent, AgentInput, AgentOutput};
-use brain_cognitive::context::CognitiveContextBuilder;
+use brain_cognitive::agents::traits::{
+    BrainAgent, AgentInput, CognitiveContext, ProjectContext, 
+    CognitivePreferenceProfile
+};
+use brain_cognitive::meta::MetaMemoryRepository;
+use brain_cognitive::conversation::traits::ConversationService;
+use brain_core::{
+    memory::WorkingMemoryRepository,
+    concepts::ConceptRepository,
+    insights::InsightRepository,
+};
+use brain_types::BrainError;
 use serde_json::json;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use tokio;
+use async_trait::async_trait;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -156,24 +167,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "frontend-demo-session".to_string(),
     );
 
-    // Create a simple cognitive context for the demo
-    // Note: Using a basic context builder for demo purposes
-    let project_context = brain_cognitive::agents::traits::ProjectContext {
-        project_name: "Frontend Demo Project".to_string(),
-        project_version: "1.0.0".to_string(),
-        project_description: Some("Demo project for FrontendCoder agent".to_string()),
-        tech_stack: vec!["React".to_string(), "TypeScript".to_string()],
-        git_branch: Some("main".to_string()),
-        git_commit: Some("abc123def".to_string()),
-        active_files: vec!["src/App.tsx".to_string()],
-        recent_changes: vec!["Added new component structure".to_string()],
-        directory_structure: std::collections::HashMap::new(),
-    };
-    
-    let context = CognitiveContextBuilder::new()
-        .with_project_context(project_context)
-        .build()
-        .expect("Failed to create cognitive context");
+    // Create mock implementations for demo
+    let context = create_demo_context();
 
     println!("🎯 Frontend Implementation Request:");
     println!("- Framework: React with TypeScript");
@@ -287,6 +282,96 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// Note: This demo temporarily uses a simplified context due to complexity of 
-// mock implementations. In a full system, proper context initialization would 
-// include memory repositories, conversation services, etc. 
+// Mock implementations for demo purposes
+#[derive(Clone)]
+struct MockMetaMemoryRepository;
+
+#[async_trait]
+impl MetaMemoryRepository for MockMetaMemoryRepository {
+    async fn store_item(&mut self, _item: brain_cognitive::meta::MetaMemoryItem) -> brain_cognitive::meta::MetaMemoryResult<uuid::Uuid> {
+        Ok(uuid::Uuid::new_v4())
+    }
+
+    async fn get_item(&self, _id: uuid::Uuid) -> brain_cognitive::meta::MetaMemoryResult<Option<brain_cognitive::meta::MetaMemoryItem>> {
+        Ok(None)
+    }
+
+    async fn get_item_by_component(&self, _component_id: uuid::Uuid) -> brain_cognitive::meta::MetaMemoryResult<Option<brain_cognitive::meta::MetaMemoryItem>> {
+        Ok(None)
+    }
+
+    async fn query_items(&self, _query: &brain_cognitive::meta::MetaMemoryQuery) -> brain_cognitive::meta::MetaMemoryResult<Vec<brain_cognitive::meta::MetaMemoryItem>> {
+        Ok(vec![])
+    }
+
+    async fn remove_item(&mut self, _id: uuid::Uuid) -> brain_cognitive::meta::MetaMemoryResult<bool> {
+        Ok(false)
+    }
+
+    async fn batch_update(&mut self, _items: Vec<brain_cognitive::meta::MetaMemoryItem>) -> brain_cognitive::meta::MetaMemoryResult<Vec<uuid::Uuid>> {
+        Ok(vec![])
+    }
+
+    async fn count_items(&self) -> brain_cognitive::meta::MetaMemoryResult<usize> {
+        Ok(0)
+    }
+
+    async fn clear_all(&mut self) -> brain_cognitive::meta::MetaMemoryResult<usize> {
+        Ok(0)
+    }
+}
+
+#[derive(Clone)]
+struct MockConversationService;
+
+#[async_trait]
+impl ConversationService for MockConversationService {
+    async fn process_conversation(
+        &mut self,
+        _request: brain_cognitive::conversation::RagRequest,
+        _memory_repo: &mut dyn brain_core::memory::WorkingMemoryRepository,
+        _concept_repo: &mut dyn brain_core::concepts::ConceptRepository,
+        _insight_repo: &mut dyn brain_core::insights::InsightRepository,
+    ) -> Result<brain_cognitive::conversation::RagResponse, brain_types::BrainError> {
+        Ok(brain_cognitive::conversation::RagResponse {
+            response: "Mock response".to_string(),
+            conversation_id: "mock-conversation".to_string(),
+            context_used: vec![],
+            confidence_score: 0.8,
+            response_quality: brain_cognitive::conversation::response_quality::ResponseQuality::default(),
+        })
+    }
+
+    fn get_conversation_stats(&self) -> HashMap<String, usize> {
+        HashMap::new()
+    }
+
+    fn clear_conversation(&mut self, _conversation_id: &str) -> bool {
+        true
+    }
+}
+
+fn create_demo_context() -> CognitiveContext {
+    let meta_memory = Arc::new(MockMetaMemoryRepository);
+    let conversation_service = Arc::new(MockConversationService);
+
+    CognitiveContext {
+        meta_memory,
+        conversation_service,
+        project_context: ProjectContext {
+            project_name: "Frontend Demo Project".to_string(),
+            project_version: "1.0.0".to_string(),
+            project_description: Some("Demo project for FrontendCoder agent".to_string()),
+            tech_stack: vec!["React".to_string(), "TypeScript".to_string()],
+            git_branch: Some("main".to_string()),
+            git_commit: Some("abc123def".to_string()),
+            active_files: vec!["src/App.tsx".to_string()],
+            recent_changes: vec!["Added new component structure".to_string()],
+            directory_structure: HashMap::new(),
+        },
+        cognitive_profile: CognitivePreferenceProfile::default(),
+        session_history: vec![],
+        config: HashMap::new(),
+        working_directory: std::path::PathBuf::from("."),
+    }
+} 
