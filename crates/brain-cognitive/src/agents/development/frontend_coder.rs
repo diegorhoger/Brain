@@ -507,7 +507,7 @@ impl FrontendCoder {
     }
 
     /// Generate state management setup
-    fn generate_state_management(&self, _ui_design: &Value, api_specs: &Value, framework: &str) -> Value {
+    fn generate_state_management(&self, _ui_design: &Value, _api_specs: &Value, framework: &str) -> Value {
         match framework {
             "React" => json!({
                 "auth_store": {
@@ -543,7 +543,7 @@ impl FrontendCoder {
     }
 
     /// Generate styling system
-    fn generate_styling_system(&self, _ui_design: &Value, framework: &str) -> Value {
+    fn generate_styling_system(&self, _ui_design: &Value, _framework: &str) -> Value {
         json!({
             "tailwind_config": {
                 "file": "tailwind.config.js",
