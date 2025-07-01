@@ -1,14 +1,14 @@
 pub mod cyber_security;
-// pub mod prompt_security;
-// pub mod privacy_compliance;
-// pub mod data_privacy;
-// pub mod ethical_ai;
+pub mod prompt_security;
+pub mod privacy_compliance;
+pub mod data_privacy;
+pub mod ethical_ai;
 
 pub use cyber_security::CyberSecurityAgent;
-// pub use prompt_security::PromptSecurityAgent;
-// pub use privacy_compliance::PrivacyComplianceAgent;
-// pub use data_privacy::DataPrivacyAgent;
-// pub use ethical_ai::EthicalAIAgent;
+pub use prompt_security::PromptSecurityAgent;
+pub use privacy_compliance::PrivacyComplianceAgent;
+pub use data_privacy::DataPrivacyAgent;
+pub use ethical_ai::EthicalAIAgent;
 
 use std::collections::HashMap;
 use crate::agents::traits::AgentCapability;
@@ -26,8 +26,6 @@ pub fn get_security_agents() -> HashMap<String, Vec<AgentCapability>> {
         ]
     );
     
-    // Temporarily disabled - compilation issues
-    /*
     agents.insert(
         "PromptSecurityAgent".to_string(),
         vec![
@@ -63,7 +61,6 @@ pub fn get_security_agents() -> HashMap<String, Vec<AgentCapability>> {
             AgentCapability::EthicalAI,
         ]
     );
-    */
     
     agents
 }
@@ -81,9 +78,9 @@ pub enum SecurityAgentCategory {
 pub fn get_agents_by_category(category: SecurityAgentCategory) -> Vec<String> {
     match category {
         SecurityAgentCategory::Infrastructure => vec!["CyberSecurityAgent".to_string()],
-        SecurityAgentCategory::Application => vec![], // vec!["PromptSecurityAgent".to_string()],
-        SecurityAgentCategory::Data => vec![], // vec!["DataPrivacyAgent".to_string()],
-        SecurityAgentCategory::Compliance => vec![], // vec!["PrivacyComplianceAgent".to_string()],
-        SecurityAgentCategory::Ethics => vec![], // vec!["EthicalAIAgent".to_string()],
+        SecurityAgentCategory::Application => vec!["PromptSecurityAgent".to_string()],
+        SecurityAgentCategory::Data => vec!["DataPrivacyAgent".to_string()],
+        SecurityAgentCategory::Compliance => vec!["PrivacyComplianceAgent".to_string()],
+        SecurityAgentCategory::Ethics => vec!["EthicalAIAgent".to_string()],
     }
 } 

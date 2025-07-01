@@ -1,6 +1,6 @@
-use crate::agents::traits::{BrainAgent, AgentCapability, AgentMetadata, CognitivePreferences};
-use crate::context::CognitiveContext;
-use brain_types::{AgentOutput, AgentResult, BrainError};
+use crate::agents::traits::{BrainAgent, AgentMetadata, CognitivePreferences, CognitiveContext, AgentInput, AgentOutput, BrainResult};
+use async_trait::async_trait;
+use brain_types::BrainError;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
@@ -150,19 +150,40 @@ impl DataPrivacyAgent {
 
         Self {
             metadata: AgentMetadata {
+                id: "data-privacy-agent".to_string(),
                 name: "DataPrivacyAgent".to_string(),
-                version: "1.0.0".to_string(),
+                persona: "I am a data privacy specialist focused on data classification, encryption, and privacy protection.".to_string(),
                 description: "Data classification, encryption, and privacy protection agent".to_string(),
+                version: "1.0.0".to_string(),
+                supported_input_types: vec![
+                    "data_classification".to_string(),
+                    "encryption_management".to_string(),
+                    "data_anonymization".to_string(),
+                    "privacy_preserving_analytics".to_string(),
+                    "secure_data_sharing".to_string(),
+                ],
+                supported_output_types: vec![
+                    "classification_report".to_string(),
+                    "encryption_strategy".to_string(),
+                    "anonymization_plan".to_string(),
+                    "privacy_analysis".to_string(),
+                ],
                 capabilities: vec![
-                    AgentCapability::DataGovernance,
-                    AgentCapability::Security,
-                    AgentCapability::Analysis,
+                    "DataGovernance".to_string(),
+                    "Security".to_string(),
+                    "Analysis".to_string(),
                 ],
                 dependencies: vec!["privacy-compliance-agent".to_string()],
+                tags: vec!["privacy".to_string(), "data-protection".to_string(), "encryption".to_string(), "anonymization".to_string()],
+                base_confidence: 0.94,
             },
             preferences: CognitivePreferences {
-                creativity_level: 0.3,
+                verbosity: crate::agents::traits::VerbosityLevel::Detailed,
                 risk_tolerance: 0.08, // Very low risk tolerance for data privacy
+                collaboration_preference: 0.85,
+                learning_enabled: true,
+                adaptation_rate: 0.04,
+                creativity_level: 0.3,
                 detail_level: 0.97,   // Very high detail for privacy protection
                 collaboration_style: "privacy-first".to_string(),
             },
@@ -174,7 +195,7 @@ impl DataPrivacyAgent {
     }
 
     /// Perform automated data classification and labeling
-    pub fn classify_data(&self, dataset: &Value) -> AgentResult<Value> {
+    pub fn classify_data(&self, dataset: &Value) -> BrainResult<Value> {
         let sensitivity_classification = self.classify_by_sensitivity(dataset);
         let personal_data_classification = self.classify_personal_data(dataset);
         let regulatory_classification = self.classify_by_regulation(dataset);
@@ -200,7 +221,7 @@ impl DataPrivacyAgent {
     }
 
     /// Implement comprehensive encryption management
-    pub fn manage_encryption(&self, encryption_request: &Value) -> AgentResult<Value> {
+    pub fn manage_encryption(&self, encryption_request: &Value) -> BrainResult<Value> {
         let encryption_strategy = self.design_encryption_strategy(encryption_request);
         let key_management = self.implement_key_management(encryption_request);
         let encryption_implementation = self.implement_encryption(encryption_request);
@@ -216,7 +237,7 @@ impl DataPrivacyAgent {
     }
 
     /// Implement data anonymization and pseudonymization
-    pub fn anonymize_data(&self, anonymization_request: &Value) -> AgentResult<Value> {
+    pub fn anonymize_data(&self, anonymization_request: &Value) -> BrainResult<Value> {
         let anonymization_strategy = self.design_anonymization_strategy(anonymization_request);
         let privacy_analysis = self.analyze_privacy_risks(anonymization_request);
         let utility_analysis = self.analyze_data_utility(anonymization_request);
@@ -233,7 +254,7 @@ impl DataPrivacyAgent {
     }
 
     /// Implement privacy-preserving analytics
-    pub fn implement_privacy_preserving_analytics(&self, analytics_request: &Value) -> AgentResult<Value> {
+    pub fn implement_privacy_preserving_analytics(&self, analytics_request: &Value) -> BrainResult<Value> {
         let privacy_technique = self.select_privacy_technique(analytics_request);
         let implementation_design = self.design_privacy_analytics(analytics_request);
         let privacy_budget = self.calculate_privacy_budget(analytics_request);
@@ -249,7 +270,7 @@ impl DataPrivacyAgent {
     }
 
     /// Implement secure data sharing protocols
-    pub fn implement_secure_data_sharing(&self, sharing_request: &Value) -> AgentResult<Value> {
+    pub fn implement_secure_data_sharing(&self, sharing_request: &Value) -> BrainResult<Value> {
         let sharing_protocol = self.design_sharing_protocol(sharing_request);
         let access_controls = self.implement_sharing_access_controls(sharing_request);
         let audit_framework = self.create_sharing_audit_framework(sharing_request);
@@ -1029,17 +1050,22 @@ impl Default for DataPrivacyAgent {
     }
 }
 
+#[async_trait]
 impl BrainAgent for DataPrivacyAgent {
     fn metadata(&self) -> &AgentMetadata {
         &self.metadata
     }
 
-    fn preferences(&self) -> &CognitivePreferences {
+    fn cognitive_preferences(&self) -> &CognitivePreferences {
         &self.preferences
     }
 
-    fn process(&self, input: &str, context: &CognitiveContext) -> AgentResult<AgentOutput> {
-        let request: Value = serde_json::from_str(input)
+    fn confidence_threshold(&self) -> f32 {
+        0.85
+    }
+
+    async fn execute(&self, input: AgentInput, context: &CognitiveContext) -> BrainResult<AgentOutput> {
+        let request: Value = serde_json::from_str(&input.content)
             .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
 
         let action = request.get("action")
@@ -1048,28 +1074,33 @@ impl BrainAgent for DataPrivacyAgent {
 
         let result = match action {
             "classify_data" => {
+                let default_dataset = json!({});
                 let dataset = request.get("dataset")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_dataset);
                 self.classify_data(dataset)?
             },
             "manage_encryption" => {
+                let default_request = json!({});
                 let encryption_request = request.get("encryption_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_request);
                 self.manage_encryption(encryption_request)?
             },
             "anonymize_data" => {
+                let default_request = json!({});
                 let anonymization_request = request.get("anonymization_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_request);
                 self.anonymize_data(anonymization_request)?
             },
             "privacy_preserving_analytics" => {
+                let default_request = json!({});
                 let analytics_request = request.get("analytics_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_request);
                 self.implement_privacy_preserving_analytics(analytics_request)?
             },
             "secure_data_sharing" => {
+                let default_request = json!({});
                 let sharing_request = request.get("sharing_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_request);
                 self.implement_secure_data_sharing(sharing_request)?
             },
             _ => {
@@ -1080,28 +1111,40 @@ impl BrainAgent for DataPrivacyAgent {
         };
 
         let confidence = match action {
-            "classify_data" => 94,
-            "manage_encryption" => 92,
-            "anonymize_data" => 89,
-            "privacy_preserving_analytics" => 87,
-            "secure_data_sharing" => 85,
-            _ => 80,
+            "classify_data" => 0.94,
+            "manage_encryption" => 0.92,
+            "anonymize_data" => 0.89,
+            "privacy_preserving_analytics" => 0.87,
+            "secure_data_sharing" => 0.85,
+            _ => 0.80,
         };
 
         Ok(AgentOutput::new(
-            result,
+            "DataPrivacyAgent".to_string(),
+            action.to_string(),
+            result.to_string(),
             confidence,
-            vec!["data-privacy".to_string(), "encryption".to_string(), "anonymization".to_string()],
-            context.clone(),
         ))
     }
 
-    fn capabilities(&self) -> Vec<AgentCapability> {
-        vec![
-            AgentCapability::DataGovernance,
-            AgentCapability::Security,
-            AgentCapability::Analysis,
-        ]
+    async fn assess_confidence(&self, input: &AgentInput, _context: &CognitiveContext) -> BrainResult<f32> {
+        let request: Value = serde_json::from_str(&input.content)
+            .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
+
+        let action = request.get("action")
+            .and_then(|v| v.as_str())
+            .unwrap_or("classify_data");
+
+        let confidence = match action {
+            "classify_data" => 0.94,
+            "manage_encryption" => 0.92,
+            "anonymize_data" => 0.89,
+            "privacy_preserving_analytics" => 0.87,
+            "secure_data_sharing" => 0.85,
+            _ => 0.80,
+        };
+
+        Ok(confidence)
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::agents::traits::{BrainAgent, AgentMetadata, CognitivePreferences, AgentInput, AgentOutput, CognitiveContext, BrainResult, VerbosityLevel};
 use brain_types::error::BrainError;
+use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
@@ -310,10 +311,10 @@ impl PromptSecurityAgent {
     }
 
     fn calculate_complexity_score(&self, prompt: &str) -> f64 {
-        let length_factor = (prompt.len() as f64 / 1000.0).min(1.0);
+        let length_factor = (prompt.len() as f64 / 1000.0).min(1.0_f64);
         let instruction_count = prompt.matches("instruction").count() as f64;
         let complexity = length_factor + (instruction_count * 0.1);
-        complexity.min(1.0)
+        complexity.min(1.0_f64)
     }
 
     fn generate_security_recommendations(&self, prompt: &str) -> Vec<String> {
@@ -668,6 +669,7 @@ impl Default for PromptSecurityAgent {
     }
 }
 
+#[async_trait]
 impl BrainAgent for PromptSecurityAgent {
     fn metadata(&self) -> &AgentMetadata {
         &self.metadata
@@ -687,7 +689,7 @@ impl BrainAgent for PromptSecurityAgent {
         // Adjust confidence based on input complexity
         let complexity_penalty = if input.content.len() > 1000 { -0.1 } else { 0.0 };
         
-        Ok((base_confidence + complexity_penalty).max(0.5))
+        Ok((base_confidence + complexity_penalty).max(0.5_f32))
     }
 
     async fn execute(&self, input: AgentInput, _context: &CognitiveContext) -> BrainResult<AgentOutput> {
@@ -703,8 +705,9 @@ impl BrainAgent for PromptSecurityAgent {
                 let prompt = request.get("prompt")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
+                let default_context = json!({});
                 let prompt_context = request.get("context")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_context);
                 self.analyze_prompt_security(prompt, prompt_context)?
             },
             "validate_output" => {
@@ -735,10 +738,12 @@ impl BrainAgent for PromptSecurityAgent {
                 self.generate_adversarial_tests(model_type, target_domain)?
             },
             "safety_alignment" => {
+                let default_config = json!({});
+                let default_context = json!({});
                 let model_config = request.get("model_config")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_config);
                 let deployment_context = request.get("deployment_context")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_context);
                 self.verify_safety_alignment(model_config, deployment_context)?
             },
             _ => {

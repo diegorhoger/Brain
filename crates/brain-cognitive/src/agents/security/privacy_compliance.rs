@@ -1,6 +1,6 @@
-use crate::agents::traits::{BrainAgent, AgentCapability, AgentMetadata, CognitivePreferences};
-use crate::context::CognitiveContext;
-use brain_types::{AgentOutput, AgentResult, BrainError};
+use crate::agents::traits::{BrainAgent, AgentMetadata, CognitivePreferences, CognitiveContext, AgentInput, AgentOutput, BrainResult, VerbosityLevel};
+use brain_types::BrainError;
+use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
@@ -114,19 +114,40 @@ impl PrivacyComplianceAgent {
 
         Self {
             metadata: AgentMetadata {
+                id: "privacy-compliance-agent".to_string(),
                 name: "PrivacyComplianceAgent".to_string(),
-                version: "1.0.0".to_string(),
+                persona: "I am a privacy compliance specialist focused on GDPR, CCPA, and other privacy regulations.".to_string(),
                 description: "Privacy compliance automation for GDPR, CCPA, and other privacy regulations".to_string(),
+                version: "1.0.0".to_string(),
+                supported_input_types: vec![
+                    "privacy_impact_assessment".to_string(),
+                    "data_subject_request".to_string(),
+                    "consent_management".to_string(),
+                    "retention_policy".to_string(),
+                    "data_transfer_validation".to_string(),
+                ],
+                supported_output_types: vec![
+                    "compliance_report".to_string(),
+                    "privacy_assessment".to_string(),
+                    "consent_framework".to_string(),
+                    "retention_schedule".to_string(),
+                ],
                 capabilities: vec![
-                    AgentCapability::Analysis,
-                    AgentCapability::Compliance,
-                    AgentCapability::DataGovernance,
+                    "Analysis".to_string(),
+                    "Compliance".to_string(),
+                    "DataGovernance".to_string(),
                 ],
                 dependencies: vec!["data-privacy-agent".to_string()],
+                tags: vec!["privacy".to_string(), "compliance".to_string(), "gdpr".to_string(), "ccpa".to_string()],
+                base_confidence: 0.95,
             },
             preferences: CognitivePreferences {
-                creativity_level: 0.2,
+                verbosity: crate::agents::traits::VerbosityLevel::Detailed,
                 risk_tolerance: 0.05, // Very low risk tolerance for compliance
+                collaboration_preference: 0.8,
+                learning_enabled: true,
+                adaptation_rate: 0.03, // Conservative adaptation for compliance
+                creativity_level: 0.2,
                 detail_level: 0.99,   // Maximum detail for legal compliance
                 collaboration_style: "compliance-focused".to_string(),
             },
@@ -138,7 +159,7 @@ impl PrivacyComplianceAgent {
     }
 
     /// Conduct comprehensive privacy impact assessment
-    pub fn conduct_privacy_impact_assessment(&self, project_details: &Value) -> AgentResult<Value> {
+    pub fn conduct_privacy_impact_assessment(&self, project_details: &Value) -> BrainResult<Value> {
         let data_processing_analysis = self.analyze_data_processing(project_details);
         let risk_assessment = self.assess_privacy_risks(project_details);
         let compliance_gaps = self.identify_compliance_gaps(project_details);
@@ -165,7 +186,7 @@ impl PrivacyComplianceAgent {
     }
 
     /// Process data subject rights requests
-    pub fn process_data_subject_request(&self, request: &Value) -> AgentResult<Value> {
+    pub fn process_data_subject_request(&self, request: &Value) -> BrainResult<Value> {
         let request_type = request.get("type")
             .and_then(|v| v.as_str())
             .unwrap_or("access");
@@ -195,7 +216,7 @@ impl PrivacyComplianceAgent {
     }
 
     /// Implement automated consent management
-    pub fn manage_consent_automation(&self, consent_scenario: &Value) -> AgentResult<Value> {
+    pub fn manage_consent_automation(&self, consent_scenario: &Value) -> BrainResult<Value> {
         let consent_requirements = self.analyze_consent_requirements(consent_scenario);
         let consent_mechanisms = self.design_consent_mechanisms(consent_scenario);
         let tracking_system = self.implement_consent_tracking(consent_scenario);
@@ -215,7 +236,7 @@ impl PrivacyComplianceAgent {
     }
 
     /// Enforce data retention policies
-    pub fn enforce_retention_policies(&self, data_inventory: &Value) -> AgentResult<Value> {
+    pub fn enforce_retention_policies(&self, data_inventory: &Value) -> BrainResult<Value> {
         let retention_analysis = self.analyze_retention_requirements(data_inventory);
         let policy_enforcement = self.implement_policy_enforcement(data_inventory);
         let deletion_schedule = self.create_deletion_schedule(data_inventory);
@@ -231,7 +252,7 @@ impl PrivacyComplianceAgent {
     }
 
     /// Validate cross-border data transfers
-    pub fn validate_data_transfers(&self, transfer_details: &Value) -> AgentResult<Value> {
+    pub fn validate_data_transfers(&self, transfer_details: &Value) -> BrainResult<Value> {
         let adequacy_assessment = self.assess_adequacy_decisions(transfer_details);
         let safeguards_analysis = self.analyze_transfer_safeguards(transfer_details);
         let compliance_validation = self.validate_transfer_compliance(transfer_details);
@@ -570,6 +591,10 @@ impl PrivacyComplianceAgent {
 
     fn generate_request_id(&self) -> String {
         format!("DSR-{}", chrono::Utc::now().timestamp())
+    }
+
+    fn determine_legal_basis(&self, _scenario: &Value) -> String {
+        "consent".to_string() // Simplified for demo
     }
 
     // Consent management methods
@@ -1001,17 +1026,31 @@ impl Default for PrivacyComplianceAgent {
     }
 }
 
+#[async_trait]
 impl BrainAgent for PrivacyComplianceAgent {
     fn metadata(&self) -> &AgentMetadata {
         &self.metadata
     }
 
-    fn preferences(&self) -> &CognitivePreferences {
+    fn confidence_threshold(&self) -> f32 {
+        0.95
+    }
+
+    fn cognitive_preferences(&self) -> &CognitivePreferences {
         &self.preferences
     }
 
-    fn process(&self, input: &str, context: &CognitiveContext) -> AgentResult<AgentOutput> {
-        let request: Value = serde_json::from_str(input)
+    async fn assess_confidence(&self, input: &AgentInput, _context: &CognitiveContext) -> BrainResult<f32> {
+        let base_confidence = 0.95_f32;
+        
+        // Adjust confidence based on input complexity
+        let complexity_penalty = if input.content.len() > 2000 { -0.05 } else { 0.0 };
+        
+        Ok((base_confidence + complexity_penalty).max(0.8_f32))
+    }
+
+    async fn execute(&self, input: AgentInput, _context: &CognitiveContext) -> BrainResult<AgentOutput> {
+        let request: Value = serde_json::from_str(&input.content)
             .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
 
         let action = request.get("action")
@@ -1020,28 +1059,33 @@ impl BrainAgent for PrivacyComplianceAgent {
 
         let result = match action {
             "privacy_impact_assessment" => {
+                let default_details = json!({});
                 let project_details = request.get("project_details")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_details);
                 self.conduct_privacy_impact_assessment(project_details)?
             },
             "data_subject_request" => {
+                let default_details = json!({});
                 let request_details = request.get("request_details")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_details);
                 self.process_data_subject_request(request_details)?
             },
             "consent_management" => {
+                let default_scenario = json!({});
                 let consent_scenario = request.get("consent_scenario")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_scenario);
                 self.manage_consent_automation(consent_scenario)?
             },
             "retention_policy" => {
+                let default_inventory = json!({});
                 let data_inventory = request.get("data_inventory")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_inventory);
                 self.enforce_retention_policies(data_inventory)?
             },
             "data_transfer" => {
+                let default_details = json!({});
                 let transfer_details = request.get("transfer_details")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_details);
                 self.validate_data_transfers(transfer_details)?
             },
             _ => {
@@ -1052,29 +1096,23 @@ impl BrainAgent for PrivacyComplianceAgent {
         };
 
         let confidence = match action {
-            "privacy_impact_assessment" => 93,
-            "data_subject_request" => 95,
-            "consent_management" => 91,
-            "retention_policy" => 89,
-            "data_transfer" => 87,
-            _ => 80,
+            "privacy_impact_assessment" => 0.93,
+            "data_subject_request" => 0.95,
+            "consent_management" => 0.91,
+            "retention_policy" => 0.89,
+            "data_transfer" => 0.87,
+            _ => 0.80,
         };
 
         Ok(AgentOutput::new(
-            result,
+            self.metadata.id.clone(),
+            "privacy_compliance".to_string(),
+            serde_json::to_string(&result).unwrap_or_default(),
             confidence,
-            vec!["privacy-compliance".to_string(), "gdpr".to_string(), "ccpa".to_string()],
-            context.clone(),
         ))
     }
 
-    fn capabilities(&self) -> Vec<AgentCapability> {
-        vec![
-            AgentCapability::Analysis,
-            AgentCapability::Compliance,
-            AgentCapability::DataGovernance,
-        ]
-    }
+
 }
 
 #[cfg(test)]

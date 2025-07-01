@@ -1,6 +1,6 @@
-use crate::agents::traits::{BrainAgent, AgentCapability, AgentMetadata, CognitivePreferences};
-use crate::context::CognitiveContext;
-use brain_types::{AgentOutput, AgentResult, BrainError};
+use crate::agents::traits::{BrainAgent, AgentMetadata, CognitivePreferences, CognitiveContext, AgentInput, AgentOutput, BrainResult, VerbosityLevel};
+use brain_types::BrainError;
+use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
@@ -89,19 +89,37 @@ impl EthicalAIAgent {
 
         Self {
             metadata: AgentMetadata {
+                id: "ethical-ai-agent".to_string(),
                 name: "EthicalAIAgent".to_string(),
-                version: "1.0.0".to_string(),
+                persona: "I am an ethical AI specialist focused on detecting bias, ensuring fairness, and promoting responsible AI deployment.".to_string(),
                 description: "AI bias detection, fairness auditing, and ethical compliance agent".to_string(),
+                version: "1.0.0".to_string(),
+                supported_input_types: vec![
+                    "bias_analysis".to_string(),
+                    "fairness_audit".to_string(),
+                    "ethical_assessment".to_string(),
+                ],
+                supported_output_types: vec![
+                    "bias_report".to_string(),
+                    "fairness_metrics".to_string(),
+                    "ethical_guidelines".to_string(),
+                ],
                 capabilities: vec![
-                    AgentCapability::Analysis,
-                    AgentCapability::Compliance,
-                    AgentCapability::EthicalAI,
+                    "Analysis".to_string(),
+                    "Compliance".to_string(),
+                    "EthicalAI".to_string(),
                 ],
                 dependencies: vec!["data-privacy-agent".to_string()],
+                tags: vec!["ethics".to_string(), "fairness".to_string(), "bias".to_string()],
+                base_confidence: 0.91,
             },
             preferences: CognitivePreferences {
-                creativity_level: 0.4,
+                verbosity: VerbosityLevel::Detailed,
                 risk_tolerance: 0.1, // Low risk tolerance for ethical issues
+                collaboration_preference: 0.85,
+                learning_enabled: true,
+                adaptation_rate: 0.03,
+                creativity_level: 0.4,
                 detail_level: 0.95,  // High detail for ethical analysis
                 collaboration_style: "ethical-governance".to_string(),
             },
@@ -113,7 +131,7 @@ impl EthicalAIAgent {
     }
 
     /// Conduct comprehensive bias detection and analysis
-    pub fn detect_bias(&self, model_data: &Value) -> AgentResult<Value> {
+    pub fn detect_bias(&self, model_data: &Value) -> BrainResult<Value> {
         let statistical_analysis = self.analyze_statistical_bias(model_data);
         let fairness_assessment = self.assess_fairness_metrics(model_data);
         let intersectional_analysis = self.analyze_intersectional_bias(model_data);
@@ -135,7 +153,7 @@ impl EthicalAIAgent {
     }
 
     /// Implement fairness auditing framework
-    pub fn audit_fairness(&self, audit_request: &Value) -> AgentResult<Value> {
+    pub fn audit_fairness(&self, audit_request: &Value) -> BrainResult<Value> {
         let fairness_evaluation = self.evaluate_fairness_criteria(audit_request);
         let stakeholder_impact = self.analyze_stakeholder_impact(audit_request);
         let remediation_plan = self.create_remediation_plan(audit_request);
@@ -674,16 +692,30 @@ impl Default for EthicalAIAgent {
     }
 }
 
+#[async_trait]
 impl BrainAgent for EthicalAIAgent {
     fn metadata(&self) -> &AgentMetadata {
         &self.metadata
     }
 
-    fn preferences(&self) -> &CognitivePreferences {
+    fn confidence_threshold(&self) -> f32 {
+        0.91
+    }
+
+    fn cognitive_preferences(&self) -> &CognitivePreferences {
         &self.preferences
     }
 
-    fn process(&self, input: &str, context: &CognitiveContext) -> AgentResult<AgentOutput> {
+    async fn assess_confidence(&self, input: &AgentInput, _context: &CognitiveContext) -> BrainResult<f32> {
+        let base_confidence = 0.91_f32;
+        
+        // Adjust confidence based on input complexity
+        let complexity_penalty = if input.content.len() > 1500 { -0.05 } else { 0.0 };
+        
+        Ok((base_confidence + complexity_penalty).max(0.8_f32))
+    }
+
+    async fn execute(&self, input: AgentInput, _context: &CognitiveContext) -> BrainResult<AgentOutput> {
         let request: Value = serde_json::from_str(input)
             .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
 
@@ -735,13 +767,7 @@ impl BrainAgent for EthicalAIAgent {
         ))
     }
 
-    fn capabilities(&self) -> Vec<AgentCapability> {
-        vec![
-            AgentCapability::Analysis,
-            AgentCapability::Compliance,
-            AgentCapability::EthicalAI,
-        ]
-    }
+
 }
 
 #[cfg(test)]
