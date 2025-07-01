@@ -217,7 +217,7 @@ impl DocAgent {
     }
 
     /// Generate implementation guidance and best practices
-    fn generate_implementation_guidance(&self, strategy: &Value) -> Value {
+    fn generate_implementation_guidance(&self, _strategy: &Value) -> Value {
         json!({
             "implementation_approach": "systematic_documentation_development",
             "best_practices": {

@@ -5,7 +5,7 @@
 
 use brain_cognitive::agents::{
     development::DocAgent,
-    traits::{BrainAgent, AgentMetadata},
+    traits::BrainAgent,
 };
 use serde_json::json;
 use std::error::Error;

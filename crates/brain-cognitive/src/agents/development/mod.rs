@@ -13,6 +13,8 @@ pub mod frontend_coder;
 pub mod backend_coder;
 pub mod refactor;
 pub mod doc;
+pub mod deployer;
+pub mod maintainer;
 
 // Re-export development agents for easier access
 pub use planner::PlannerAgent;
@@ -24,10 +26,8 @@ pub use frontend_coder::FrontendCoder;
 pub use backend_coder::BackendCoder;
 pub use refactor::RefactorAgent;
 pub use doc::DocAgent;
-
-// TODO: Add remaining development agents:
-// pub mod deployer;
-// pub mod maintainer;
+pub use deployer::DeployerAgent;
+pub use maintainer::MaintainerAgent;
 
 /// Collection of all development lifecycle agents
 pub struct DevelopmentAgents;
@@ -45,6 +45,8 @@ impl DevelopmentAgents {
             Box::new(BackendCoder::new()),
             Box::new(RefactorAgent::new()),
             Box::new(DocAgent::new()),
+            Box::new(DeployerAgent::new()),
+            Box::new(MaintainerAgent::new()),
         ]
     }
 
@@ -167,6 +169,32 @@ impl DevelopmentAgents {
             "documentation_versioning".to_string(),
             "integration_guide_creation".to_string(),
             "documentation_maintenance".to_string(),
+        ]);
+
+        capabilities.insert("deployer-agent".to_string(), vec![
+            "deployment_orchestration".to_string(),
+            "infrastructure_automation".to_string(),
+            "container_management".to_string(),
+            "ci_cd_pipeline_creation".to_string(),
+            "environment_provisioning".to_string(),
+            "zero_downtime_deployment".to_string(),
+            "rollback_strategy_design".to_string(),
+            "health_monitoring_setup".to_string(),
+            "security_compliance_automation".to_string(),
+            "scaling_automation".to_string(),
+        ]);
+
+        capabilities.insert("maintainer-agent".to_string(), vec![
+            "system_health_monitoring".to_string(),
+            "performance_optimization".to_string(),
+            "security_patch_management".to_string(),
+            "database_maintenance".to_string(),
+            "log_management".to_string(),
+            "backup_recovery_validation".to_string(),
+            "capacity_planning".to_string(),
+            "incident_response_automation".to_string(),
+            "system_upgrade_coordination".to_string(),
+            "operational_excellence_optimization".to_string(),
         ]);
 
         capabilities
