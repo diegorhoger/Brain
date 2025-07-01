@@ -2,16 +2,10 @@ pub mod development;
 pub mod security;
 pub mod testing;
 pub mod ops;
+pub mod intelligence;
+pub mod platform;
 pub mod registry;
 pub mod traits;
-
-// Agent categories
-// pub mod development;
-// pub mod security;
-// pub mod testing;
-// pub mod ops;
-// pub mod intelligence;
-// pub mod platform;
 
 // Re-exports for convenience
 pub use traits::{BrainAgent, AgentMetadata, AgentInput, AgentOutput, CognitiveContext, AgentCapability};
@@ -23,4 +17,6 @@ pub use security::{CyberSecurityAgent}; // Temporarily disabled: PromptSecurityA
 pub use development::*;
 pub use security::*;
 pub use testing::*;
-pub use ops::*; 
+pub use ops::*;
+pub use intelligence::*;
+pub use platform::*; 
