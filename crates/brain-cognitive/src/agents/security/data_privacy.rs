@@ -18,9 +18,13 @@ use std::collections::HashMap;
 pub struct DataPrivacyAgent {
     metadata: AgentMetadata,
     preferences: CognitivePreferences,
+    #[allow(dead_code)]
     classification_schemes: HashMap<String, Value>,
+    #[allow(dead_code)]
     encryption_standards: HashMap<String, Value>,
+    #[allow(dead_code)]
     privacy_techniques: Vec<String>,
+    #[allow(dead_code)]
     anonymization_methods: HashMap<String, Value>,
 }
 
@@ -286,8 +290,8 @@ impl DataPrivacyAgent {
     }
 
     // Private helper methods for data classification
-    fn classify_by_sensitivity(&self, dataset: &Value) -> Value {
-        let sensitivity_indicators = self.analyze_sensitivity_indicators(dataset);
+    fn classify_by_sensitivity(&self, _dataset: &Value) -> Value {
+        let sensitivity_indicators = self.analyze_sensitivity_indicators(_dataset);
         let classification_confidence = self.calculate_classification_confidence(&sensitivity_indicators);
 
         json!({
@@ -298,20 +302,20 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn classify_personal_data(&self, dataset: &Value) -> Value {
-        let personal_data_elements = self.identify_personal_data_elements(dataset);
-        let special_categories = self.identify_special_categories(dataset);
+    fn classify_personal_data(&self, _dataset: &Value) -> Value {
+        let personal_data_elements = self.identify_personal_data_elements(_dataset);
+        let special_categories = self.identify_special_categories(_dataset);
 
         json!({
             "category": "personal",
             "personal_data_elements": personal_data_elements,
             "special_categories": special_categories,
-            "data_subjects": self.identify_data_subjects(dataset),
-            "processing_purposes": self.identify_processing_purposes(dataset)
+            "data_subjects": self.identify_data_subjects(_dataset),
+            "processing_purposes": self.identify_processing_purposes(_dataset)
         })
     }
 
-    fn classify_by_regulation(&self, dataset: &Value) -> Value {
+    fn classify_by_regulation(&self, _dataset: &Value) -> Value {
         json!({
             "applicable_regulations": ["GDPR", "CCPA", "PIPEDA"],
             "primary_regulation": "GDPR",
@@ -325,7 +329,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn determine_protection_requirements(&self, dataset: &Value) -> Value {
+    fn determine_protection_requirements(&self, _dataset: &Value) -> Value {
         json!({
             "encryption_required": true,
             "encryption_standard": "AES-256-GCM",
@@ -337,7 +341,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn recommend_data_controls(&self, dataset: &Value) -> Value {
+    fn recommend_data_controls(&self, _dataset: &Value) -> Value {
         json!({
             "technical_controls": [
                 "Data encryption at rest and in transit",
@@ -361,7 +365,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn analyze_compliance_implications(&self, dataset: &Value) -> Value {
+    fn analyze_compliance_implications(&self, _dataset: &Value) -> Value {
         json!({
             "gdpr_implications": {
                 "lawful_basis_required": true,
@@ -379,7 +383,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn trace_data_lineage(&self, dataset: &Value) -> Value {
+    fn trace_data_lineage(&self, _dataset: &Value) -> Value {
         json!({
             "data_sources": [
                 "Customer registration system",
@@ -416,8 +420,8 @@ impl DataPrivacyAgent {
 
     // Encryption management methods
     fn design_encryption_strategy(&self, request: &Value) -> Value {
-        let data_sensitivity = request.get("sensitivity").unwrap_or(&json!("confidential"));
-        let performance_requirements = request.get("performance").unwrap_or(&json!("standard"));
+        let _data_sensitivity = request.get("sensitivity").unwrap_or(&json!("confidential"));
+        let _performance_requirements = request.get("performance").unwrap_or(&json!("standard"));
 
         json!({
             "encryption_layers": {
@@ -437,7 +441,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_key_management(&self, request: &Value) -> Value {
+    fn implement_key_management(&self, _request: &Value) -> Value {
         json!({
             "key_management_system": {
                 "type": "Hardware Security Module (HSM)",
@@ -467,7 +471,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_encryption(&self, request: &Value) -> Value {
+    fn implement_encryption(&self, _request: &Value) -> Value {
         json!({
             "implementation_phases": [
                 "Encryption architecture design",
@@ -492,7 +496,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn assess_performance_impact(&self, request: &Value) -> Value {
+    fn assess_performance_impact(&self, _request: &Value) -> Value {
         json!({
             "performance_metrics": {
                 "throughput_impact": "5-15% reduction",
@@ -515,7 +519,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn validate_encryption_compliance(&self, request: &Value) -> Value {
+    fn validate_encryption_compliance(&self, _request: &Value) -> Value {
         json!({
             "compliance_standards": {
                 "fips_140_2": "Level 2 compliance",
@@ -534,7 +538,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn define_encryption_monitoring(&self, request: &Value) -> Value {
+    fn define_encryption_monitoring(&self, _request: &Value) -> Value {
         json!({
             "monitoring_scope": [
                 "Encryption operation success/failure",
@@ -560,8 +564,8 @@ impl DataPrivacyAgent {
 
     // Anonymization methods
     fn design_anonymization_strategy(&self, request: &Value) -> Value {
-        let data_type = request.get("data_type").unwrap_or(&json!("personal"));
-        let use_case = request.get("use_case").unwrap_or(&json!("analytics"));
+        let _data_type = request.get("data_type").unwrap_or(&json!("personal"));
+        let _use_case = request.get("use_case").unwrap_or(&json!("analytics"));
 
         json!({
             "strategy_overview": {
@@ -584,7 +588,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn analyze_privacy_risks(&self, request: &Value) -> Value {
+    fn analyze_privacy_risks(&self, _request: &Value) -> Value {
         json!({
             "risk_categories": {
                 "re_identification": {
@@ -616,7 +620,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn analyze_data_utility(&self, request: &Value) -> Value {
+    fn analyze_data_utility(&self, _request: &Value) -> Value {
         json!({
             "utility_metrics": {
                 "data_completeness": 0.92,
@@ -638,7 +642,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn create_anonymization_implementation(&self, request: &Value) -> Value {
+    fn create_anonymization_implementation(&self, _request: &Value) -> Value {
         json!({
             "implementation_steps": [
                 "Data profiling and analysis",
@@ -664,7 +668,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn design_anonymization_qa(&self, request: &Value) -> Value {
+    fn design_anonymization_qa(&self, _request: &Value) -> Value {
         json!({
             "quality_checks": [
                 "Privacy requirement validation",
@@ -687,7 +691,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_reversibility_controls(&self, request: &Value) -> Value {
+    fn implement_reversibility_controls(&self, _request: &Value) -> Value {
         json!({
             "reversibility_approach": "Secure key-based pseudonymization",
             "key_management": {
@@ -712,8 +716,8 @@ impl DataPrivacyAgent {
 
     // Privacy-preserving analytics methods
     fn select_privacy_technique(&self, request: &Value) -> Value {
-        let analytics_type = request.get("analytics_type").unwrap_or(&json!("statistical"));
-        let privacy_requirements = request.get("privacy_requirements").unwrap_or(&json!("high"));
+        let _analytics_type = request.get("analytics_type").unwrap_or(&json!("statistical"));
+        let _privacy_requirements = request.get("privacy_requirements").unwrap_or(&json!("high"));
 
         json!({
             "recommended_technique": "Differential Privacy",
@@ -732,7 +736,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn design_privacy_analytics(&self, request: &Value) -> Value {
+    fn design_privacy_analytics(&self, _request: &Value) -> Value {
         json!({
             "architecture_design": {
                 "data_collection": "Local noise injection",
@@ -755,7 +759,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn calculate_privacy_budget(&self, request: &Value) -> Value {
+    fn calculate_privacy_budget(&self, _request: &Value) -> Value {
         json!({
             "budget_allocation": {
                 "total_epsilon": 10.0,
@@ -786,7 +790,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn analyze_accuracy_tradeoffs(&self, request: &Value) -> Value {
+    fn analyze_accuracy_tradeoffs(&self, _request: &Value) -> Value {
         json!({
             "accuracy_impact": {
                 "statistical_queries": "5-10% accuracy reduction",
@@ -807,7 +811,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn design_deployment_architecture(&self, request: &Value) -> Value {
+    fn design_deployment_architecture(&self, _request: &Value) -> Value {
         json!({
             "deployment_model": "Hybrid cloud architecture",
             "components": {
@@ -830,7 +834,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn create_privacy_monitoring_framework(&self, request: &Value) -> Value {
+    fn create_privacy_monitoring_framework(&self, _request: &Value) -> Value {
         json!({
             "monitoring_scope": [
                 "Privacy budget consumption",
@@ -855,7 +859,7 @@ impl DataPrivacyAgent {
     }
 
     // Secure data sharing methods
-    fn design_sharing_protocol(&self, request: &Value) -> Value {
+    fn design_sharing_protocol(&self, _request: &Value) -> Value {
         json!({
             "protocol_framework": "Zero-trust data sharing",
             "sharing_mechanisms": [
@@ -879,7 +883,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_sharing_access_controls(&self, request: &Value) -> Value {
+    fn implement_sharing_access_controls(&self, _request: &Value) -> Value {
         json!({
             "access_control_model": "Attribute-based access control (ABAC)",
             "authentication_requirements": {
@@ -902,7 +906,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn create_sharing_audit_framework(&self, request: &Value) -> Value {
+    fn create_sharing_audit_framework(&self, _request: &Value) -> Value {
         json!({
             "audit_scope": [
                 "Data access events",
@@ -926,7 +930,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn design_data_preparation(&self, request: &Value) -> Value {
+    fn design_data_preparation(&self, _request: &Value) -> Value {
         json!({
             "preparation_pipeline": [
                 "Data quality assessment",
@@ -951,7 +955,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_recipient_validation(&self, request: &Value) -> Value {
+    fn implement_recipient_validation(&self, _request: &Value) -> Value {
         json!({
             "validation_requirements": {
                 "identity_verification": "Legal entity verification",
@@ -974,7 +978,7 @@ impl DataPrivacyAgent {
         })
     }
 
-    fn implement_usage_monitoring(&self, request: &Value) -> Value {
+    fn implement_usage_monitoring(&self, _request: &Value) -> Value {
         json!({
             "monitoring_capabilities": [
                 "Real-time usage tracking",
@@ -999,7 +1003,7 @@ impl DataPrivacyAgent {
     }
 
     // Helper methods for analysis
-    fn analyze_sensitivity_indicators(&self, dataset: &Value) -> Vec<String> {
+    fn analyze_sensitivity_indicators(&self, _dataset: &Value) -> Vec<String> {
         vec![
             "Contains personal identifiers".to_string(),
             "Includes financial information".to_string(),
@@ -1008,11 +1012,11 @@ impl DataPrivacyAgent {
         ]
     }
 
-    fn calculate_classification_confidence(&self, indicators: &[String]) -> f64 {
+    fn calculate_classification_confidence(&self, _indicators: &[String]) -> f64 {
         0.92 // High confidence based on clear indicators
     }
 
-    fn identify_personal_data_elements(&self, dataset: &Value) -> Vec<String> {
+    fn identify_personal_data_elements(&self, _dataset: &Value) -> Vec<String> {
         vec![
             "Names".to_string(),
             "Email addresses".to_string(),
@@ -1022,11 +1026,11 @@ impl DataPrivacyAgent {
         ]
     }
 
-    fn identify_special_categories(&self, dataset: &Value) -> Vec<String> {
+    fn identify_special_categories(&self, _dataset: &Value) -> Vec<String> {
         vec![] // No special categories detected in this example
     }
 
-    fn identify_data_subjects(&self, dataset: &Value) -> Vec<String> {
+    fn identify_data_subjects(&self, _dataset: &Value) -> Vec<String> {
         vec![
             "Customers".to_string(),
             "Prospects".to_string(),
@@ -1034,7 +1038,7 @@ impl DataPrivacyAgent {
         ]
     }
 
-    fn identify_processing_purposes(&self, dataset: &Value) -> Vec<String> {
+    fn identify_processing_purposes(&self, _dataset: &Value) -> Vec<String> {
         vec![
             "Service provision".to_string(),
             "Customer support".to_string(),
@@ -1064,7 +1068,7 @@ impl BrainAgent for DataPrivacyAgent {
         0.85
     }
 
-    async fn execute(&self, input: AgentInput, context: &CognitiveContext) -> BrainResult<AgentOutput> {
+    async fn execute(&self, input: AgentInput, _context: &CognitiveContext) -> BrainResult<AgentOutput> {
         let request: Value = serde_json::from_str(&input.content)
             .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
 

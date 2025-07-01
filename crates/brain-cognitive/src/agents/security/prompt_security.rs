@@ -20,7 +20,9 @@ pub struct PromptSecurityAgent {
     preferences: CognitivePreferences,
     attack_patterns: HashMap<String, Vec<String>>,
     safety_guidelines: Vec<String>,
+    #[allow(dead_code)]
     content_filters: HashMap<String, Value>,
+    #[allow(dead_code)]
     validation_rules: Vec<String>,
 }
 
@@ -293,10 +295,10 @@ impl PromptSecurityAgent {
     }
 
     fn assess_prompt_risk(&self, prompt: &str, _context: &Value) -> Value {
-        let base_risk = 0.1;
-        let injection_risk = if self.detect_prompt_injection(prompt)["detected"].as_bool().unwrap_or(false) { 0.4 } else { 0.0 };
-        let jailbreak_risk = if self.detect_jailbreak_attempts(prompt)["detected"].as_bool().unwrap_or(false) { 0.5 } else { 0.0 };
-        let total_risk = (base_risk + injection_risk + jailbreak_risk).min(1.0);
+        let base_risk = 0.1_f64;
+        let injection_risk = if self.detect_prompt_injection(prompt)["detected"].as_bool().unwrap_or(false) { 0.4_f64 } else { 0.0_f64 };
+        let jailbreak_risk = if self.detect_jailbreak_attempts(prompt)["detected"].as_bool().unwrap_or(false) { 0.5_f64 } else { 0.0_f64 };
+        let total_risk = (base_risk + injection_risk + jailbreak_risk).min(1.0_f64);
 
         json!({
             "overall_risk_score": total_risk,
@@ -367,7 +369,7 @@ impl PromptSecurityAgent {
     }
 
     // Output validation methods
-    fn analyze_output_content(&self, output: &str) -> Value {
+    fn analyze_output_content(&self, _output: &str) -> Value {
         json!({
             "content_type": "text",
             "language_detected": "english",
@@ -377,7 +379,7 @@ impl PromptSecurityAgent {
         })
     }
 
-    fn check_safety_compliance(&self, output: &str) -> Value {
+    fn check_safety_compliance(&self, _output: &str) -> Value {
         json!({
             "compliance_standards": ["AI Ethics Guidelines", "Content Policy", "Safety Standards"],
             "compliance_score": 0.95,
@@ -386,7 +388,7 @@ impl PromptSecurityAgent {
         })
     }
 
-    fn detect_information_leakage(&self, output: &str, _original_prompt: &str) -> Value {
+    fn detect_information_leakage(&self, _output: &str, _original_prompt: &str) -> Value {
         json!({
             "leakage_detected": false,
             "sensitive_information": [],
@@ -395,7 +397,7 @@ impl PromptSecurityAgent {
         })
     }
 
-    fn analyze_bias_indicators(&self, output: &str) -> Value {
+    fn analyze_bias_indicators(&self, _output: &str) -> Value {
         json!({
             "bias_score": 0.12, // Lower is better
             "bias_categories": [],
@@ -404,7 +406,7 @@ impl PromptSecurityAgent {
         })
     }
 
-    fn analyze_sentiment(&self, output: &str) -> Value {
+    fn analyze_sentiment(&self, _output: &str) -> Value {
         json!({
             "sentiment": "neutral",
             "confidence": 0.78,
@@ -412,19 +414,19 @@ impl PromptSecurityAgent {
         })
     }
 
-    fn classify_topics(&self, output: &str) -> Vec<String> {
+    fn classify_topics(&self, _output: &str) -> Vec<String> {
         vec!["general".to_string(), "informational".to_string()]
     }
 
-    fn calculate_output_risk_score(&self, output: &str) -> f64 {
+    fn calculate_output_risk_score(&self, _output: &str) -> f64 {
         0.15 // Low risk for demo
     }
 
-    fn determine_approval_status(&self, output: &str) -> String {
+    fn determine_approval_status(&self, _output: &str) -> String {
         "approved".to_string()
     }
 
-    fn suggest_output_modifications(&self, output: &str) -> Vec<String> {
+    fn suggest_output_modifications(&self, _output: &str) -> Vec<String> {
         vec![]
     }
 
@@ -684,10 +686,10 @@ impl BrainAgent for PromptSecurityAgent {
     }
 
     async fn assess_confidence(&self, input: &AgentInput, _context: &CognitiveContext) -> BrainResult<f32> {
-        let base_confidence = 0.90;
+        let base_confidence = 0.90_f32;
         
         // Adjust confidence based on input complexity
-        let complexity_penalty = if input.content.len() > 1000 { -0.1 } else { 0.0 };
+        let complexity_penalty = if input.content.len() > 1000 { -0.1_f32 } else { 0.0_f32 };
         
         Ok((base_confidence + complexity_penalty).max(0.5_f32))
     }

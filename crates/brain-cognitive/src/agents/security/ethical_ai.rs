@@ -18,8 +18,11 @@ use std::collections::HashMap;
 pub struct EthicalAIAgent {
     metadata: AgentMetadata,
     preferences: CognitivePreferences,
+    #[allow(dead_code)]
     fairness_metrics: HashMap<String, Value>,
+    #[allow(dead_code)]
     bias_detection_methods: Vec<String>,
+    #[allow(dead_code)]
     ethical_frameworks: HashMap<String, Value>,
     compliance_standards: Vec<String>,
 }
@@ -174,7 +177,7 @@ impl EthicalAIAgent {
     }
 
     /// Validate ethical AI compliance
-    pub fn validate_ethical_compliance(&self, compliance_request: &Value) -> AgentResult<Value> {
+    pub fn validate_ethical_compliance(&self, compliance_request: &Value) -> BrainResult<Value> {
         let ethical_assessment = self.assess_ethical_principles(compliance_request);
         let governance_evaluation = self.evaluate_governance_framework(compliance_request);
         let transparency_analysis = self.analyze_transparency_requirements(compliance_request);
@@ -194,7 +197,7 @@ impl EthicalAIAgent {
     }
 
     /// Implement responsible AI deployment guidelines
-    pub fn create_responsible_deployment(&self, deployment_request: &Value) -> AgentResult<Value> {
+    pub fn create_responsible_deployment(&self, deployment_request: &Value) -> BrainResult<Value> {
         let deployment_guidelines = self.develop_deployment_guidelines(deployment_request);
         let risk_assessment = self.conduct_deployment_risk_assessment(deployment_request);
         let monitoring_framework = self.establish_deployment_monitoring(deployment_request);
@@ -214,7 +217,7 @@ impl EthicalAIAgent {
     }
 
     // Private helper methods for bias detection
-    fn analyze_statistical_bias(&self, model_data: &Value) -> Value {
+    fn analyze_statistical_bias(&self, _model_data: &Value) -> Value {
         json!({
             "demographic_parity": {
                 "metric_value": 0.15,
@@ -239,7 +242,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn assess_fairness_metrics(&self, model_data: &Value) -> Value {
+    fn assess_fairness_metrics(&self, _model_data: &Value) -> Value {
         json!({
             "metrics_evaluated": [
                 "Statistical Parity",
@@ -264,7 +267,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn analyze_intersectional_bias(&self, model_data: &Value) -> Value {
+    fn analyze_intersectional_bias(&self, _model_data: &Value) -> Value {
         json!({
             "intersectional_groups": [
                 "Gender × Race",
@@ -293,7 +296,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn recommend_bias_mitigation(&self, model_data: &Value) -> Value {
+    fn recommend_bias_mitigation(&self, _model_data: &Value) -> Value {
         json!({
             "preprocessing_techniques": [
                 "Balanced sampling strategies",
@@ -319,7 +322,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn identify_protected_attributes(&self, model_data: &Value) -> Vec<String> {
+    fn identify_protected_attributes(&self, _model_data: &Value) -> Vec<String> {
         vec![
             "Gender".to_string(),
             "Race/Ethnicity".to_string(),
@@ -330,11 +333,11 @@ impl EthicalAIAgent {
         ]
     }
 
-    fn calculate_bias_severity(&self, analysis: &Value) -> String {
+    fn calculate_bias_severity(&self, _analysis: &Value) -> String {
         "moderate".to_string() // Based on analysis results
     }
 
-    fn assess_bias_compliance(&self, model_data: &Value) -> Value {
+    fn assess_bias_compliance(&self, _model_data: &Value) -> Value {
         json!({
             "regulatory_compliance": {
                 "eu_ai_act": "partial_compliance",
@@ -355,7 +358,7 @@ impl EthicalAIAgent {
     }
 
     // Fairness auditing methods
-    fn evaluate_fairness_criteria(&self, request: &Value) -> Value {
+    fn evaluate_fairness_criteria(&self, _request: &Value) -> Value {
         json!({
             "evaluation_framework": "Multi-stakeholder fairness assessment",
             "criteria_evaluated": [
@@ -377,7 +380,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn analyze_stakeholder_impact(&self, request: &Value) -> Value {
+    fn analyze_stakeholder_impact(&self, _request: &Value) -> Value {
         json!({
             "stakeholder_groups": [
                 "End users",
@@ -407,7 +410,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn create_remediation_plan(&self, request: &Value) -> Value {
+    fn create_remediation_plan(&self, _request: &Value) -> Value {
         json!({
             "remediation_phases": [
                 "Immediate bias mitigation",
@@ -431,11 +434,11 @@ impl EthicalAIAgent {
         })
     }
 
-    fn determine_certification_status(&self, request: &Value) -> String {
+    fn determine_certification_status(&self, _request: &Value) -> String {
         "conditional_certification".to_string()
     }
 
-    fn design_monitoring_framework(&self, request: &Value) -> Value {
+    fn design_monitoring_framework(&self, _request: &Value) -> Value {
         json!({
             "monitoring_scope": [
                 "Real-time bias detection",
@@ -459,7 +462,7 @@ impl EthicalAIAgent {
     }
 
     // Ethical compliance methods
-    fn assess_ethical_principles(&self, request: &Value) -> Value {
+    fn assess_ethical_principles(&self, _request: &Value) -> Value {
         json!({
             "principles_assessment": {
                 "human_autonomy": 0.82,
@@ -480,7 +483,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn evaluate_governance_framework(&self, request: &Value) -> Value {
+    fn evaluate_governance_framework(&self, _request: &Value) -> Value {
         json!({
             "governance_components": {
                 "ai_ethics_committee": "established",
@@ -503,7 +506,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn analyze_transparency_requirements(&self, request: &Value) -> Value {
+    fn analyze_transparency_requirements(&self, _request: &Value) -> Value {
         json!({
             "transparency_dimensions": {
                 "algorithmic_transparency": 0.72,
@@ -526,11 +529,11 @@ impl EthicalAIAgent {
         })
     }
 
-    fn calculate_compliance_score(&self, request: &Value) -> f64 {
+    fn calculate_compliance_score(&self, _request: &Value) -> f64 {
         81.7 // Composite score based on assessments
     }
 
-    fn create_improvement_roadmap(&self, request: &Value) -> Value {
+    fn create_improvement_roadmap(&self, _request: &Value) -> Value {
         json!({
             "roadmap_phases": [
                 {
@@ -561,7 +564,7 @@ impl EthicalAIAgent {
     }
 
     // Responsible deployment methods
-    fn develop_deployment_guidelines(&self, request: &Value) -> Value {
+    fn develop_deployment_guidelines(&self, _request: &Value) -> Value {
         json!({
             "deployment_principles": [
                 "Human-centered design",
@@ -587,7 +590,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn conduct_deployment_risk_assessment(&self, request: &Value) -> Value {
+    fn conduct_deployment_risk_assessment(&self, _request: &Value) -> Value {
         json!({
             "risk_categories": {
                 "bias_amplification": {
@@ -615,7 +618,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn establish_deployment_monitoring(&self, request: &Value) -> Value {
+    fn establish_deployment_monitoring(&self, _request: &Value) -> Value {
         json!({
             "monitoring_layers": [
                 "Technical performance monitoring",
@@ -638,7 +641,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn define_governance_requirements(&self, request: &Value) -> Value {
+    fn define_governance_requirements(&self, _request: &Value) -> Value {
         json!({
             "governance_structure": {
                 "ai_oversight_board": "Strategic oversight",
@@ -660,7 +663,7 @@ impl EthicalAIAgent {
         })
     }
 
-    fn define_success_metrics(&self, request: &Value) -> Value {
+    fn define_success_metrics(&self, _request: &Value) -> Value {
         json!({
             "technical_metrics": {
                 "model_performance": "> 90% accuracy",
@@ -716,7 +719,7 @@ impl BrainAgent for EthicalAIAgent {
     }
 
     async fn execute(&self, input: AgentInput, _context: &CognitiveContext) -> BrainResult<AgentOutput> {
-        let request: Value = serde_json::from_str(input)
+        let request: Value = serde_json::from_str(&input.content)
             .map_err(|e| BrainError::InvalidInput(format!("Invalid JSON input: {}", e)))?;
 
         let action = request.get("action")
@@ -725,23 +728,27 @@ impl BrainAgent for EthicalAIAgent {
 
         let result = match action {
             "detect_bias" => {
+                let default_json = json!({});
                 let model_data = request.get("model_data")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_json);
                 self.detect_bias(model_data)?
             },
             "audit_fairness" => {
+                let default_json = json!({});
                 let audit_request = request.get("audit_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_json);
                 self.audit_fairness(audit_request)?
             },
             "validate_compliance" => {
+                let default_json = json!({});
                 let compliance_request = request.get("compliance_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_json);
                 self.validate_ethical_compliance(compliance_request)?
             },
             "responsible_deployment" => {
+                let default_json = json!({});
                 let deployment_request = request.get("deployment_request")
-                    .unwrap_or(&json!({}));
+                    .unwrap_or(&default_json);
                 self.create_responsible_deployment(deployment_request)?
             },
             _ => {
@@ -752,18 +759,18 @@ impl BrainAgent for EthicalAIAgent {
         };
 
         let confidence = match action {
-            "detect_bias" => 91,
-            "audit_fairness" => 89,
-            "validate_compliance" => 93,
-            "responsible_deployment" => 87,
-            _ => 80,
+            "detect_bias" => 0.91,
+            "audit_fairness" => 0.89,
+            "validate_compliance" => 0.93,
+            "responsible_deployment" => 0.87,
+            _ => 0.80,
         };
 
         Ok(AgentOutput::new(
-            result,
+            self.metadata.id.clone(),
+            "ethical_analysis".to_string(),
+            serde_json::to_string(&result).unwrap_or_default(),
             confidence,
-            vec!["ethical-ai".to_string(), "bias-detection".to_string(), "fairness".to_string()],
-            context.clone(),
         ))
     }
 

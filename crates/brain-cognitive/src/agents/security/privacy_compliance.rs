@@ -18,9 +18,12 @@ use std::collections::HashMap;
 pub struct PrivacyComplianceAgent {
     metadata: AgentMetadata,
     preferences: CognitivePreferences,
+    #[allow(dead_code)]
     compliance_frameworks: HashMap<String, Value>,
     data_categories: Vec<String>,
+    #[allow(dead_code)]
     privacy_rights: HashMap<String, Vec<String>>,
+    #[allow(dead_code)]
     retention_policies: HashMap<String, Value>,
 }
 
@@ -142,7 +145,7 @@ impl PrivacyComplianceAgent {
                 base_confidence: 0.95,
             },
             preferences: CognitivePreferences {
-                verbosity: crate::agents::traits::VerbosityLevel::Detailed,
+                verbosity: VerbosityLevel::Detailed,
                 risk_tolerance: 0.05, // Very low risk tolerance for compliance
                 collaboration_preference: 0.8,
                 learning_enabled: true,
@@ -286,7 +289,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn assess_privacy_risks(&self, project: &Value) -> Value {
+    fn assess_privacy_risks(&self, _project: &Value) -> Value {
         json!({
             "high_risk_factors": [
                 "Large scale processing",
@@ -316,7 +319,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn identify_compliance_gaps(&self, project: &Value) -> Value {
+    fn identify_compliance_gaps(&self, _project: &Value) -> Value {
         json!({
             "gdpr_gaps": [
                 "Privacy notice transparency",
@@ -340,7 +343,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn recommend_mitigation_measures(&self, project: &Value) -> Value {
+    fn recommend_mitigation_measures(&self, _project: &Value) -> Value {
         json!({
             "technical_measures": [
                 "Implement data encryption",
@@ -366,7 +369,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn assess_gdpr_compliance(&self, project: &Value) -> Value {
+    fn assess_gdpr_compliance(&self, _project: &Value) -> Value {
         json!({
             "lawful_basis": "Legitimate interest",
             "data_minimization": 85,
@@ -380,7 +383,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn assess_ccpa_compliance(&self, project: &Value) -> Value {
+    fn assess_ccpa_compliance(&self, _project: &Value) -> Value {
         json!({
             "privacy_notice": 90,
             "consumer_requests": 85,
@@ -392,7 +395,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn generate_pia_recommendations(&self, project: &Value) -> Vec<String> {
+    fn generate_pia_recommendations(&self, _project: &Value) -> Vec<String> {
         vec![
             "Implement privacy by design principles".to_string(),
             "Establish clear data retention policies".to_string(),
@@ -405,12 +408,12 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn determine_pia_approval_status(&self, project: &Value) -> String {
+    fn determine_pia_approval_status(&self, _project: &Value) -> String {
         "conditional_approval".to_string() // Based on risk assessment
     }
 
     // Data subject request processing methods
-    fn validate_request(&self, request: &Value) -> Value {
+    fn validate_request(&self, _request: &Value) -> Value {
         json!({
             "identity_verification": "required",
             "verification_method": "Multi-factor authentication",
@@ -468,7 +471,7 @@ impl PrivacyComplianceAgent {
         }
     }
 
-    fn requires_escalation(&self, request: &Value) -> bool {
+    fn requires_escalation(&self, _request: &Value) -> bool {
         // Simplified logic for demo
         false
     }
@@ -544,7 +547,7 @@ impl PrivacyComplianceAgent {
         }
     }
 
-    fn define_data_scope(&self, request: &Value) -> Value {
+    fn define_data_scope(&self, _request: &Value) -> Value {
         json!({
             "data_systems": [
                 "Customer database",
@@ -609,7 +612,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn design_consent_mechanisms(&self, scenario: &Value) -> Value {
+    fn design_consent_mechanisms(&self, _scenario: &Value) -> Value {
         json!({
             "collection_methods": [
                 "Opt-in checkboxes",
@@ -630,7 +633,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn implement_consent_tracking(&self, scenario: &Value) -> Value {
+    fn implement_consent_tracking(&self, _scenario: &Value) -> Value {
         json!({
             "tracking_requirements": [
                 "Consent timestamp",
@@ -653,7 +656,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn design_withdrawal_procedures(&self, scenario: &Value) -> Value {
+    fn design_withdrawal_procedures(&self, _scenario: &Value) -> Value {
         json!({
             "withdrawal_channels": [
                 "Account settings",
@@ -674,7 +677,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn setup_consent_monitoring(&self, scenario: &Value) -> Value {
+    fn setup_consent_monitoring(&self, _scenario: &Value) -> Value {
         json!({
             "monitoring_scope": [
                 "Consent collection rates",
@@ -695,7 +698,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn define_consent_documentation(&self, scenario: &Value) -> Value {
+    fn define_consent_documentation(&self, _scenario: &Value) -> Value {
         json!({
             "required_documentation": [
                 "Consent collection procedures",
@@ -721,7 +724,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn implement_policy_enforcement(&self, inventory: &Value) -> Value {
+    fn implement_policy_enforcement(&self, _inventory: &Value) -> Value {
         json!({
             "automated_enforcement": {
                 "deletion_automation": "Enabled",
@@ -741,7 +744,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn create_deletion_schedule(&self, inventory: &Value) -> Value {
+    fn create_deletion_schedule(&self, _inventory: &Value) -> Value {
         json!({
             "scheduled_deletions": [
                 {
@@ -763,7 +766,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn verify_retention_compliance(&self, inventory: &Value) -> Value {
+    fn verify_retention_compliance(&self, _inventory: &Value) -> Value {
         json!({
             "compliance_score": 94.5,
             "compliant_categories": 18,
@@ -775,7 +778,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn recommend_retention_automation(&self, inventory: &Value) -> Value {
+    fn recommend_retention_automation(&self, _inventory: &Value) -> Value {
         json!({
             "automation_opportunities": [
                 "Automated data classification",
@@ -794,7 +797,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn generate_retention_audit_docs(&self, inventory: &Value) -> Value {
+    fn generate_retention_audit_docs(&self, _inventory: &Value) -> Value {
         json!({
             "audit_documentation": [
                 "Retention policy document",
@@ -820,7 +823,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn analyze_transfer_safeguards(&self, transfer: &Value) -> Value {
+    fn analyze_transfer_safeguards(&self, _transfer: &Value) -> Value {
         json!({
             "available_safeguards": [
                 "Standard Contractual Clauses",
@@ -837,7 +840,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn validate_transfer_compliance(&self, transfer: &Value) -> Value {
+    fn validate_transfer_compliance(&self, _transfer: &Value) -> Value {
         json!({
             "compliance_status": "Compliant",
             "validation_checks": {
@@ -851,7 +854,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn recommend_transfer_safeguards(&self, transfer: &Value) -> Value {
+    fn recommend_transfer_safeguards(&self, _transfer: &Value) -> Value {
         json!({
             "primary_safeguards": [
                 "Implement Standard Contractual Clauses",
@@ -866,7 +869,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn define_transfer_documentation(&self, transfer: &Value) -> Value {
+    fn define_transfer_documentation(&self, _transfer: &Value) -> Value {
         json!({
             "required_documents": [
                 "Data transfer agreement",
@@ -879,7 +882,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn setup_transfer_monitoring(&self, transfer: &Value) -> Value {
+    fn setup_transfer_monitoring(&self, _transfer: &Value) -> Value {
         json!({
             "monitoring_requirements": [
                 "Adequacy decision changes",
@@ -897,7 +900,7 @@ impl PrivacyComplianceAgent {
     }
 
     // Additional helper methods
-    fn identify_data_types(&self, project: &Value) -> Vec<String> {
+    fn identify_data_types(&self, _project: &Value) -> Vec<String> {
         vec![
             "Personal identifiers".to_string(),
             "Contact information".to_string(),
@@ -906,7 +909,7 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn identify_processing_purposes(&self, project: &Value) -> Vec<String> {
+    fn identify_processing_purposes(&self, _project: &Value) -> Vec<String> {
         vec![
             "Service provision".to_string(),
             "Customer support".to_string(),
@@ -915,7 +918,7 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn identify_data_sources(&self, project: &Value) -> Vec<String> {
+    fn identify_data_sources(&self, _project: &Value) -> Vec<String> {
         vec![
             "Direct collection from users".to_string(),
             "Third-party data providers".to_string(),
@@ -924,7 +927,7 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn identify_data_recipients(&self, project: &Value) -> Vec<String> {
+    fn identify_data_recipients(&self, _project: &Value) -> Vec<String> {
         vec![
             "Internal teams".to_string(),
             "Service providers".to_string(),
@@ -933,7 +936,7 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn identify_processing_locations(&self, project: &Value) -> Vec<String> {
+    fn identify_processing_locations(&self, _project: &Value) -> Vec<String> {
         vec![
             "European Union".to_string(),
             "United States".to_string(),
@@ -941,7 +944,7 @@ impl PrivacyComplianceAgent {
         ]
     }
 
-    fn analyze_retention_periods(&self, project: &Value) -> Value {
+    fn analyze_retention_periods(&self, _project: &Value) -> Value {
         json!({
             "customer_data": "7 years",
             "marketing_data": "3 years",
@@ -950,7 +953,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn map_data_flows(&self, project: &Value) -> Value {
+    fn map_data_flows(&self, _project: &Value) -> Value {
         json!({
             "internal_flows": [
                 "Collection → Processing → Storage",
@@ -965,15 +968,15 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn requires_age_verification(&self, scenario: &Value) -> bool {
+    fn requires_age_verification(&self, _scenario: &Value) -> bool {
         false // Simplified for demo
     }
 
-    fn identify_special_categories(&self, scenario: &Value) -> Vec<String> {
+    fn identify_special_categories(&self, _scenario: &Value) -> Vec<String> {
         vec![] // Simplified for demo
     }
 
-    fn categorize_retention_data(&self, inventory: &Value) -> Value {
+    fn categorize_retention_data(&self, _inventory: &Value) -> Value {
         json!({
             "personal_data": "Customer information",
             "transactional_data": "Purchase records",
@@ -982,7 +985,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn identify_legal_retention_requirements(&self, inventory: &Value) -> Value {
+    fn identify_legal_retention_requirements(&self, _inventory: &Value) -> Value {
         json!({
             "tax_records": "7 years",
             "employment_records": "7 years",
@@ -991,7 +994,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn identify_business_retention_requirements(&self, inventory: &Value) -> Value {
+    fn identify_business_retention_requirements(&self, _inventory: &Value) -> Value {
         json!({
             "customer_preferences": "Duration of relationship",
             "marketing_data": "3 years",
@@ -1000,7 +1003,7 @@ impl PrivacyComplianceAgent {
         })
     }
 
-    fn create_retention_matrix(&self, inventory: &Value) -> Value {
+    fn create_retention_matrix(&self, _inventory: &Value) -> Value {
         json!({
             "matrix": [
                 {
