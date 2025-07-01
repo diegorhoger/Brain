@@ -10,8 +10,16 @@ use brain_cognitive::agents::{
     development::SchemaAgent,
 };
 use brain_cognitive::meta::MetaMemoryRepository;
-use brain_cognitive::conversation::ConversationService;
+use brain_cognitive::conversation::traits::ConversationService;
+use brain_cognitive::conversation::{RagRequest, RagResponse};
+use brain_core::{
+    memory::WorkingMemoryRepository,
+    concepts::ConceptRepository,
+    insights::InsightRepository,
+};
+use brain_types::BrainError;
 use serde_json::json;
+use async_trait::async_trait;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -371,6 +379,7 @@ impl MockMetaMemoryRepository {
     }
 }
 
+#[async_trait]
 impl MetaMemoryRepository for MockMetaMemoryRepository {
     async fn store_item(&mut self, _item: brain_cognitive::meta::MetaMemoryItem) -> brain_cognitive::meta::MetaMemoryResult<uuid::Uuid> {
         Ok(uuid::Uuid::new_v4())
@@ -414,17 +423,30 @@ impl MockConversationService {
     }
 }
 
+#[async_trait]
 impl ConversationService for MockConversationService {
-    fn process_conversation(&self, _content: &str) -> Result<brain_cognitive::conversation::response_quality::ResponseQuality, brain_types::error::BrainError> {
-        Ok(brain_cognitive::conversation::response_quality::ResponseQuality::default())
+    async fn process_conversation(
+        &mut self,
+        _request: RagRequest,
+        _memory_repo: &mut dyn WorkingMemoryRepository,
+        _concept_repo: &mut dyn ConceptRepository,
+        _insight_repo: &mut dyn InsightRepository,
+    ) -> Result<RagResponse, BrainError> {
+        Ok(RagResponse {
+            response: "Mock response".to_string(),
+            conversation_id: "mock-conversation".to_string(),
+            context_used: vec![],
+            confidence_score: 0.8,
+            response_quality: brain_cognitive::conversation::response_quality::ResponseQuality::default(),
+        })
     }
 
-    fn get_conversation_stats(&self) -> Result<std::collections::HashMap<String, serde_json::Value>, brain_types::error::BrainError> {
-        Ok(std::collections::HashMap::new())
+    fn get_conversation_stats(&self) -> HashMap<String, usize> {
+        HashMap::new()
     }
 
-    fn clear_conversation(&self) -> Result<(), brain_types::error::BrainError> {
-        Ok(())
+    fn clear_conversation(&mut self, _conversation_id: &str) -> bool {
+        true
     }
 }
 
