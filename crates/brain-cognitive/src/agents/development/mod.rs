@@ -12,6 +12,7 @@ pub mod api;
 pub mod frontend_coder;
 pub mod backend_coder;
 pub mod refactor;
+pub mod doc;
 
 // Re-export development agents for easier access
 pub use planner::PlannerAgent;
@@ -22,9 +23,9 @@ pub use api::APIAgent;
 pub use frontend_coder::FrontendCoder;
 pub use backend_coder::BackendCoder;
 pub use refactor::RefactorAgent;
+pub use doc::DocAgent;
 
 // TODO: Add remaining development agents:
-// pub mod doc;
 // pub mod deployer;
 // pub mod maintainer;
 
@@ -43,6 +44,7 @@ impl DevelopmentAgents {
             Box::new(FrontendCoder::new()),
             Box::new(BackendCoder::new()),
             Box::new(RefactorAgent::new()),
+            Box::new(DocAgent::new()),
         ]
     }
 
@@ -152,6 +154,19 @@ impl DevelopmentAgents {
             "security_vulnerability_fixes".to_string(),
             "maintainability_enhancement".to_string(),
             "automated_refactoring".to_string(),
+        ]);
+
+        capabilities.insert("doc-agent".to_string(), vec![
+            "automated_doc_generation".to_string(),
+            "api_documentation_creation".to_string(),
+            "user_guide_development".to_string(),
+            "technical_manual_writing".to_string(),
+            "code_comment_generation".to_string(),
+            "documentation_quality_assessment".to_string(),
+            "multi_format_publishing".to_string(),
+            "documentation_versioning".to_string(),
+            "integration_guide_creation".to_string(),
+            "documentation_maintenance".to_string(),
         ]);
 
         capabilities
