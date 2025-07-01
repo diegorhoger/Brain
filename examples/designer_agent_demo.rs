@@ -220,7 +220,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         
         // Parse and display key design components
         if let Ok(design_data) = serde_json::from_str::<serde_json::Value>(&result.content) {
-            if let Some(wireframes) = design_data.get("wireframes") {
+            if let Some(_wireframes) = design_data.get("wireframes") {
                 if let Some(screen_count) = design_data.get("screen_count") {
                     println!("   🖼️ Wireframes Created: {} screens", screen_count);
                 }
@@ -344,13 +344,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Parse and display design system components
     if let Ok(brand_data) = serde_json::from_str::<serde_json::Value>(&brand_result.content) {
-        if let Some(typography) = brand_data.get("typography") {
+        if let Some(_typography) = brand_data.get("typography") {
             println!("   📝 Typography System: Defined");
         }
-        if let Some(colors) = brand_data.get("color_palette") {
+        if let Some(_colors) = brand_data.get("color_palette") {
             println!("   🎨 Color Palette: Integrated");
         }
-        if let Some(spacing) = brand_data.get("spacing_system") {
+        if let Some(_spacing) = brand_data.get("spacing_system") {
             println!("   📏 Spacing System: Defined");
         }
     }

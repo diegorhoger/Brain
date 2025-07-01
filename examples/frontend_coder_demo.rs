@@ -10,12 +10,7 @@ use brain_cognitive::agents::traits::{
 };
 use brain_cognitive::meta::MetaMemoryRepository;
 use brain_cognitive::conversation::traits::ConversationService;
-use brain_core::{
-    memory::WorkingMemoryRepository,
-    concepts::ConceptRepository,
-    insights::InsightRepository,
-};
-use brain_types::BrainError;
+
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
 use tokio;
@@ -209,23 +204,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         
-        if let Some(routing) = frontend_codebase.get("routing") {
+        if let Some(_routing) = frontend_codebase.get("routing") {
             println!("- Routing configuration: ✅");
         }
         
-        if let Some(state_mgmt) = frontend_codebase.get("state_management") {
+        if let Some(_state_mgmt) = frontend_codebase.get("state_management") {
             println!("- State management: ✅");
         }
         
-        if let Some(api_integration) = frontend_codebase.get("api_integration") {
+        if let Some(_api_integration) = frontend_codebase.get("api_integration") {
             println!("- API integration layer: ✅");
         }
         
-        if let Some(styling) = frontend_codebase.get("styling_system") {
+        if let Some(_styling) = frontend_codebase.get("styling_system") {
             println!("- Styling system: ✅");
         }
         
-        if let Some(a11y) = frontend_codebase.get("accessibility_features") {
+        if let Some(_a11y) = frontend_codebase.get("accessibility_features") {
             println!("- Accessibility features: ✅");
         }
     }

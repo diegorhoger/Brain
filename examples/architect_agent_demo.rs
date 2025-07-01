@@ -5,8 +5,8 @@ use brain_cognitive::{
     meta::{MetaMemoryRepository, MetaMemoryItem, MetaMemoryQuery},
     conversation::{
         traits::ConversationService,
-        RagRequest, RagResponse, ConversationContext,
-        ResponseQuality, SafetyFlags, SourceAttribution,
+        RagRequest, RagResponse,
+        ResponseQuality,
     },
 };
 use brain_core::{
