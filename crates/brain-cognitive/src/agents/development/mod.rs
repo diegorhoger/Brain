@@ -11,6 +11,7 @@ pub mod schema;
 pub mod api;
 pub mod frontend_coder;
 pub mod backend_coder;
+pub mod refactor;
 
 // Re-export development agents for easier access
 pub use planner::PlannerAgent;
@@ -20,9 +21,9 @@ pub use schema::SchemaAgent;
 pub use api::APIAgent;
 pub use frontend_coder::FrontendCoder;
 pub use backend_coder::BackendCoder;
+pub use refactor::RefactorAgent;
 
 // TODO: Add remaining development agents:
-// pub mod refactor;
 // pub mod doc;
 // pub mod deployer;
 // pub mod maintainer;
@@ -41,6 +42,7 @@ impl DevelopmentAgents {
             Box::new(APIAgent::new()),
             Box::new(FrontendCoder::new()),
             Box::new(BackendCoder::new()),
+            Box::new(RefactorAgent::new()),
         ]
     }
 
@@ -137,6 +139,19 @@ impl DevelopmentAgents {
             "deployment_configuration".to_string(),
             "monitoring_setup".to_string(),
             "scalability_design".to_string(),
+        ]);
+
+        capabilities.insert("refactor-agent".to_string(), vec![
+            "code_smell_detection".to_string(),
+            "performance_optimization".to_string(),
+            "code_quality_improvement".to_string(),
+            "design_pattern_application".to_string(),
+            "duplicate_code_elimination".to_string(),
+            "dead_code_removal".to_string(),
+            "dependency_optimization".to_string(),
+            "security_vulnerability_fixes".to_string(),
+            "maintainability_enhancement".to_string(),
+            "automated_refactoring".to_string(),
         ]);
 
         capabilities
