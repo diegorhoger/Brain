@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use brain_types::error::BrainError;
 use crate::meta::MetaMemoryRepository;
 use crate::conversation::ConversationService;
 use crate::agents::traits::{
     AgentOutput, ProjectContext, CognitivePreferenceProfile, 
-    InteractionMode, DetailLevel, EmotionalSensitivity, AutonomyLevel, 
-    CommunicationStyle, CognitiveLoadSettings, PacingPreference, BrainResult
+    InteractionMode, DetailLevel, AutonomyLevel, BrainResult
 };
 
 /// Builder for creating cognitive context
