@@ -716,7 +716,7 @@
           "id": 5,
           "title": "Development Context API",
           "description": "Implement API for tracking development sessions and context",
-          "status": "pending",
+          "status": "in-progress",
           "dependencies": [
             4
           ],

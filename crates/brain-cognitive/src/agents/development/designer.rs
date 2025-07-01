@@ -28,6 +28,7 @@ impl DesignerAgent {
             id: "designer-agent".to_string(),
             name: "UI/UX Designer".to_string(),
             persona: "A creative UI/UX design specialist who transforms system architectures into intuitive user interfaces. Expert in user experience design, accessibility standards, component libraries, and design systems that bridge user needs with technical capabilities.".to_string(),
+            description: "UI/UX design agent specializing in user interface design, user experience optimization, and design system creation.".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec![
                 "design_requirements".to_string(),
@@ -74,11 +75,11 @@ impl DesignerAgent {
             collaboration_preference: 0.95, // Very high collaboration for design feedback
             learning_enabled: true,
             adaptation_rate: 0.2, // Moderate adaptation to incorporate user feedback
-        };
-
-        Self { metadata, preferences }
+            creativity_level: 0.95, // Very high creativity for innovative design solutions
+            detail_level: 0.8, // High detail level for design specifications
+            collaboration_style: "creative".to_string(), // Creative collaboration style for design work        };
+        };        Self { metadata, preferences }
     }
-
     /// Create wireframes based on requirements and architecture
     async fn create_wireframes(&self, content: &str, _context: &CognitiveContext) -> BrainResult<Value> {
         let requirements = self.extract_design_requirements(content);

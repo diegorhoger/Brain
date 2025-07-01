@@ -26,7 +26,7 @@ impl DocAgent {
                 name: "DocAgent".to_string(),
                 persona: "Expert technical documentation specialist with comprehensive knowledge of documentation best practices, automated generation tools, and multi-format publishing. Focused on creating clear, comprehensive, and maintainable documentation that enhances project accessibility and team productivity.".to_string(),
                 version: "1.0.0".to_string(),
-                supported_input_types: vec![
+                description: "Technical documentation agent specializing in automated documentation generation, API documentation, and comprehensive project documentation.".to_string(),                supported_input_types: vec![
                     "codebase_documentation".to_string(),
                     "api_documentation".to_string(),
                     "user_guide_generation".to_string(),

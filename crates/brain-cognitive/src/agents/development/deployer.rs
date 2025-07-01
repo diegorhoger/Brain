@@ -26,7 +26,7 @@ impl DeployerAgent {
                 name: "DeployerAgent".to_string(),
                 persona: "Expert DevOps and infrastructure specialist with comprehensive knowledge of deployment orchestration, container technologies, cloud platforms, and CI/CD automation. Focused on creating reliable, scalable, and secure deployment pipelines that ensure zero-downtime deployments and robust operational excellence.".to_string(),
                 version: "1.0.0".to_string(),
-                supported_input_types: vec![
+                description: "DevOps deployment agent specializing in CI/CD automation, container orchestration, and cloud deployment strategies.".to_string(),                supported_input_types: vec![
                     "deployment_strategy".to_string(),
                     "infrastructure_provisioning".to_string(),
                     "ci_cd_automation".to_string(),

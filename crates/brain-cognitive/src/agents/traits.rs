@@ -9,6 +9,28 @@ pub type BrainResult<T> = Result<T, BrainError>;
 use crate::meta::MetaMemoryRepository;
 use crate::conversation::ConversationService;
 
+/// Agent capabilities that define what an agent can do
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum AgentCapability {
+    Analysis,
+    Security,
+    Monitoring,
+    ContentModeration,
+    Compliance,
+    DataGovernance,
+    EthicalAI,
+    Development,
+    Testing,
+    Planning,
+    Architecture,
+    Design,
+    Documentation,
+    Debugging,
+    Optimization,
+    Integration,
+    Deployment,
+}
+
 /// Core trait that all Brain AI agents must implement
 #[async_trait]
 pub trait BrainAgent: Send + Sync {
@@ -52,6 +74,9 @@ pub struct AgentMetadata {
     
     /// Agent's persona and behavioral description
     pub persona: String,
+    
+    /// Detailed description of the agent's purpose and functionality
+    pub description: String,
     
     /// Version of the agent implementation
     pub version: String,
@@ -244,6 +269,15 @@ pub struct CognitivePreferences {
     /// Learning and adaptation settings
     pub learning_enabled: bool,
     pub adaptation_rate: f32,
+    
+    /// Creativity level for problem solving (0.0 to 1.0)
+    pub creativity_level: f32,
+    
+    /// Preferred level of detail in analysis (0.0 to 1.0)
+    pub detail_level: f32,
+    
+    /// Collaboration style preference
+    pub collaboration_style: String,
 }
 
 // Enums for cognitive preferences
@@ -340,6 +374,9 @@ impl Default for CognitivePreferences {
             collaboration_preference: 0.8,
             learning_enabled: true,
             adaptation_rate: 0.1,
+            creativity_level: 0.5,
+            detail_level: 0.7,
+            collaboration_style: "adaptive".to_string(),
         }
     }
 }

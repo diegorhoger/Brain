@@ -488,6 +488,7 @@ impl InsightExtractionManager {
 }
 
 /// Enhanced in-memory implementation of InsightRepository with advanced features
+#[derive(Debug)]
 pub struct InMemoryInsightRepository {
     insights: Arc<RwLock<HashMap<Uuid, Insight>>>,
     /// Index by insight type for efficient retrieval

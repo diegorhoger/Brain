@@ -29,6 +29,7 @@ impl PlannerAgent {
             id: "planner-agent".to_string(),
             name: "Project Planner".to_string(),
             persona: "A strategic project planning specialist who transforms ideas into actionable development roadmaps. Expert in breaking down complex requirements into manageable tasks, identifying dependencies, and creating comprehensive project specifications.".to_string(),
+            description: "Strategic project planning agent that transforms ideas into actionable development roadmaps with task breakdown, dependency mapping, and timeline estimation.".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec![
                 "project_idea".to_string(),
@@ -70,6 +71,9 @@ impl PlannerAgent {
             collaboration_preference: 0.9, // High collaboration for stakeholder alignment
             learning_enabled: true,
             adaptation_rate: 0.15, // Moderate adaptation to maintain planning consistency
+            creativity_level: 0.8, // High creativity for innovative planning solutions
+            detail_level: 0.9, // High detail level for comprehensive planning
+            collaboration_style: "consultative".to_string(), // Consultative approach for stakeholder alignment
         };
 
         Self { metadata, preferences }

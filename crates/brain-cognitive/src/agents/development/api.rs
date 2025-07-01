@@ -28,6 +28,7 @@ impl APIAgent {
             id: "api-agent".to_string(),
             name: "API Designer and Documenter".to_string(),
             persona: "An expert API architect who transforms database schemas and system architecture into comprehensive API specifications. Specializes in RESTful design, GraphQL, authentication, rate limiting, and developer-first documentation.".to_string(),
+            description: "API development agent specializing in RESTful API design, GraphQL implementation, and API documentation.".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec![
                 "database_schema".to_string(),
@@ -73,12 +74,13 @@ impl APIAgent {
             collaboration_preference: 0.88, // High collaboration for API design
             learning_enabled: true,
             adaptation_rate: 0.15, // Moderate adaptation for API stability
+            creativity_level: 0.7, // Balanced creativity for API design
+            detail_level: 0.85, // High detail level for API specifications
+            collaboration_style: "technical".to_string(), // Technical collaboration for API development        };
         };
 
         Self { metadata, preferences }
-    }
-
-    /// Design comprehensive API specification from database schema and architecture
+    }    /// Design comprehensive API specification from database schema and architecture
     async fn design_api_specification(&self, schema: &Value, architecture: &Value, _context: &CognitiveContext) -> BrainResult<Value> {
         let mut api_spec = HashMap::new();
         

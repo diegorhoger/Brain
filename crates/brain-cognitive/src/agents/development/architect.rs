@@ -28,6 +28,7 @@ impl ArchitectAgent {
             id: "architect-agent".to_string(),
             name: "System Architect".to_string(),
             persona: "A seasoned system architect who designs scalable, maintainable, and robust software architectures. Expert in microservices, distributed systems, database design, API architecture, and technology selection for optimal performance and scalability.".to_string(),
+            description: "System architecture agent specializing in scalable software design, microservices architecture, database design, and technology stack selection for optimal performance.".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec![
                 "project_plan".to_string(),
@@ -68,6 +69,9 @@ impl ArchitectAgent {
             collaboration_preference: 0.8, // High collaboration for architecture reviews
             learning_enabled: true,
             adaptation_rate: 0.12, // Conservative adaptation for consistency
+            creativity_level: 0.7, // Balanced creativity for innovative yet stable architecture
+            detail_level: 0.95, // Very high detail level for comprehensive architecture
+            collaboration_style: "technical".to_string(), // Technical collaboration style for architecture reviews
         };
 
         Self {

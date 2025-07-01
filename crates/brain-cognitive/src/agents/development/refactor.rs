@@ -26,7 +26,7 @@ impl RefactorAgent {
                 name: "RefactorAgent".to_string(),
                 persona: "Expert software refactoring specialist with deep knowledge of code quality, performance optimization, and design patterns. Focused on improving code maintainability, readability, and efficiency through intelligent analysis and automated transformations.".to_string(),
                 version: "1.0.0".to_string(),
-                supported_input_types: vec![
+                description: "Code refactoring agent specializing in code quality improvement, performance optimization, and design pattern implementation.".to_string(),                supported_input_types: vec![
                     "codebase_analysis".to_string(),
                     "performance_optimization".to_string(),
                     "security_remediation".to_string(),

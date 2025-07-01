@@ -117,6 +117,7 @@ impl DemoCodeAgent {
             id: "demo-code-agent".to_string(),
             name: "Demo Code Agent".to_string(),
             persona: "A helpful coding assistant that can analyze and generate code".to_string(),
+            description: "A demonstration agent that showcases code generation and analysis capabilities".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec!["code_request".to_string(), "code_analysis".to_string()],
             supported_output_types: vec!["code_response".to_string(), "analysis_report".to_string()],
@@ -136,6 +137,9 @@ impl DemoCodeAgent {
             collaboration_preference: 0.8,
             learning_enabled: true,
             adaptation_rate: 0.1,
+            creativity_level: 0.6,
+            detail_level: 0.8,
+            collaboration_style: "cooperative".to_string(),
         };
 
         Self { metadata, preferences }

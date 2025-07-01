@@ -25,6 +25,7 @@ impl MaintainerAgent {
             id: "maintainer-agent".to_string(),
             name: "MaintainerAgent".to_string(),
             persona: "Expert DevOps engineer and system administrator with comprehensive knowledge of system maintenance, performance optimization, security patching, and operational excellence. Focused on ensuring system reliability, performance, and continuous operational improvement through proactive monitoring and automated maintenance procedures.".to_string(),
+            description: "Software maintenance agent specializing in code maintenance, bug fixes, performance optimization, and system monitoring.".to_string(),
             version: "1.0.0".to_string(),
             capabilities: vec![
                 "system_health_monitoring".to_string(),
@@ -63,8 +64,10 @@ impl MaintainerAgent {
             collaboration_preference: 0.85, // High collaboration with ops teams
             learning_enabled: true,
             adaptation_rate: 0.75, // Moderate adaptation for operational stability
+            creativity_level: 0.5, // Moderate creativity for maintenance solutions
+            detail_level: 0.85, // High detail level for thorough maintenance
+            collaboration_style: "methodical".to_string(), // Methodical approach for maintenance work
         };
-
         Self {
             metadata,
             confidence_threshold: 0.80, // High threshold for maintenance confidence

@@ -172,6 +172,7 @@ pub struct GraphStatistics {
 }
 
 /// Advanced concept graph manager with Neo4j integration and sophisticated algorithms
+#[derive(Debug)]
 pub struct ConceptGraphManager {
     /// Connection configuration
     #[allow(dead_code)]

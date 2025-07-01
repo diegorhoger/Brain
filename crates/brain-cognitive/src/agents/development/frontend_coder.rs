@@ -27,6 +27,7 @@ impl FrontendCoder {
         let metadata = AgentMetadata {
             name: "Frontend Implementation Specialist".to_string(),
             id: "frontend-coder".to_string(),
+            description: "Frontend development agent specializing in React, Vue.js, responsive design, and modern frontend technologies.".to_string(),
             version: "1.0.0".to_string(),
             persona: "Transforms UI/UX designs and API specifications into production-ready frontend code".to_string(),
             capabilities: vec![
@@ -68,6 +69,9 @@ impl FrontendCoder {
             collaboration_preference: 0.8, // High collaboration
             learning_enabled: true,
             adaptation_rate: 0.5,
+            creativity_level: 0.85, // High creativity for frontend solutions
+            detail_level: 0.75, // Good detail level for implementation
+            collaboration_style: "iterative".to_string(), // Iterative collaboration for frontend development
         };
 
         Self { metadata, preferences }

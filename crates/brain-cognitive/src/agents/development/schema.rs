@@ -28,6 +28,7 @@ impl SchemaAgent {
             id: "schema-agent".to_string(),
             name: "Database Schema Designer".to_string(),
             persona: "An expert database architect who transforms system requirements into optimized database schemas. Specializes in entity relationship design, data normalization, performance optimization, and multi-database support across SQL and NoSQL systems.".to_string(),
+            description: "Database schema design agent specializing in data modeling, database optimization, and schema evolution strategies.".to_string(),
             version: "1.0.0".to_string(),
             supported_input_types: vec![
                 "system_architecture".to_string(),
@@ -73,6 +74,9 @@ impl SchemaAgent {
             collaboration_preference: 0.85, // High collaboration for schema validation
             learning_enabled: true,
             adaptation_rate: 0.12, // Conservative adaptation for schema stability
+            creativity_level: 0.6, // Moderate creativity for balanced schema design
+            detail_level: 0.9, // High detail level for precise schema specifications
+            collaboration_style: "analytical".to_string(), // Analytical approach for data modeling
         };
 
         Self { metadata, preferences }

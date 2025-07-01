@@ -14,6 +14,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 /// Advanced working memory implementation with priority queues and decay
+#[derive(Debug)]
 pub struct WorkingMemoryRepository {
     items: HashMap<Uuid, WorkingMemoryItem>,
     priority_queue: BinaryHeap<(u64, Uuid)>, // (score * 1000 as int, id)

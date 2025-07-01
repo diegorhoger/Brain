@@ -28,6 +28,7 @@ impl BackendCoder {
         let metadata = AgentMetadata {
             name: "Backend Implementation Specialist".to_string(),
             id: "backend-coder".to_string(),
+            description: "Backend development agent specializing in server-side logic, database integration, and scalable backend architectures.".to_string(),
             version: "1.0.0".to_string(),
             persona: "Transforms API specifications and system requirements into production-ready backend architecture and code".to_string(),
             capabilities: vec![
@@ -69,8 +70,10 @@ impl BackendCoder {
             collaboration_preference: 0.85, // High collaboration for system integration
             learning_enabled: true,
             adaptation_rate: 0.4, // Stable adaptation for production systems
+            creativity_level: 0.7, // Balanced creativity for backend solutions
+            detail_level: 0.8, // High detail level for backend implementation
+            collaboration_style: "systematic".to_string(), // Systematic approach for backend development
         };
-
         Self { metadata, preferences }
     }
 

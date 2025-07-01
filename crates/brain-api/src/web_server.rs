@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{Filter, Reply};
+use std::path::{Path, PathBuf};
+use std::fs;
 
 // Request/Response structures
 #[derive(Debug, Serialize, Deserialize)]
@@ -215,8 +217,8 @@ pub struct HealthResponse {
     pub last_backup: String,
 }
 
-// Development Context API structures
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// Enhanced Development Context API structures
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DevelopmentContextRequest {
     pub session_id: Option<String>,
     pub files_accessed: Vec<FileAccess>,
@@ -225,18 +227,23 @@ pub struct DevelopmentContextRequest {
     pub project_context: Option<ProjectContext>,
     #[serde(default = "default_true")]
     pub auto_save: bool,
+    #[serde(default)]
+    pub merge_with_existing: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileAccess {
     pub file_path: String,
     pub access_type: FileAccessType,
     pub timestamp: chrono::DateTime<chrono::Utc>,
     pub line_numbers: Option<Vec<u32>>,
     pub content_preview: Option<String>,
+    pub file_size: Option<u64>,
+    pub language: Option<String>,
+    pub change_type: Option<ChangeType>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FileAccessType {
     Read,
     Write,
@@ -244,15 +251,31 @@ pub enum FileAccessType {
     Delete,
     Execute,
     Navigate,
+    Debug,
+    Test,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ChangeType {
+    Addition,
+    Modification,
+    Deletion,
+    Refactor,
+    BugFix,
+    Feature,
+    Documentation,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectContext {
     pub project_root: String,
     pub current_branch: Option<String>,
     pub active_features: Vec<String>,
     pub technology_stack: Vec<String>,
     pub recent_commits: Vec<String>,
+    pub dependencies: Option<Vec<String>>,
+    pub build_system: Option<String>,
+    pub test_framework: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -263,9 +286,11 @@ pub struct DevelopmentContextResponse {
     pub insights_generated: Vec<String>,
     pub recommendations: Vec<String>,
     pub processing_time_ms: u64,
+    pub intent_recognized: Option<DevelopmentIntent>,
+    pub patterns_detected: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevelopmentSession {
     pub session_id: String,
     pub start_time: chrono::DateTime<chrono::Utc>,
@@ -277,6 +302,50 @@ pub struct DevelopmentSession {
     pub insights: Vec<String>,
     pub patterns_discovered: Vec<String>,
     pub confidence_score: f64,
+    pub session_tags: Vec<String>,
+    pub focus_areas: Vec<String>,
+    pub productivity_metrics: ProductivityMetrics,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProductivityMetrics {
+    pub files_modified: u32,
+    pub lines_added: u32,
+    pub lines_removed: u32,
+    pub commits_made: u32,
+    pub tests_written: u32,
+    pub bugs_fixed: u32,
+    pub session_duration_minutes: u32,
+}
+
+impl Default for ProductivityMetrics {
+    fn default() -> Self {
+        Self {
+            files_modified: 0,
+            lines_added: 0,
+            lines_removed: 0,
+            commits_made: 0,
+            tests_written: 0,
+            bugs_fixed: 0,
+            session_duration_minutes: 0,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DevelopmentIntent {
+    FeatureDevelopment,
+    BugFixing,
+    Refactoring,
+    Testing,
+    Documentation,
+    CodeReview,
+    Architecture,
+    Performance,
+    Security,
+    Debugging,
+    Learning,
+    Experimentation,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -287,36 +356,254 @@ pub struct DevelopmentContextQueryResponse {
     pub related_sessions: Vec<String>,
     pub context_summary: Option<String>,
     pub processing_time_ms: u64,
+    pub recommendations: Vec<String>,
 }
 
-/// Comprehensive Web Server for Brain AI System
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionListResponse {
+    pub success: bool,
+    pub sessions: Vec<SessionSummary>,
+    pub total_count: usize,
+    pub active_sessions: usize,
+    pub processing_time_ms: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionSummary {
+    pub session_id: String,
+    pub start_time: chrono::DateTime<chrono::Utc>,
+    pub last_updated: chrono::DateTime<chrono::Utc>,
+    pub files_count: usize,
+    pub intent: Option<String>,
+    pub tags: Vec<String>,
+    pub duration_minutes: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ContextAnalysisRequest {
+    pub project_root: Option<String>,
+    pub time_window_hours: Option<u32>,
+    pub include_patterns: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ContextAnalysisResponse {
+    pub success: bool,
+    pub analysis_summary: String,
+    pub development_patterns: Vec<DevelopmentPattern>,
+    pub productivity_insights: Vec<String>,
+    pub recommendations: Vec<String>,
+    pub focus_areas: Vec<String>,
+    pub processing_time_ms: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevelopmentPattern {
+    pub pattern_type: String,
+    pub description: String,
+    pub frequency: u32,
+    pub confidence: f64,
+    pub impact: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionUpdateRequest {
+    pub development_intent: Option<String>,
+    pub development_goal: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub additional_files: Option<Vec<FileAccess>>,
+    pub project_context: Option<ProjectContext>,
+}
+
+#[derive(Debug)]
 pub struct WebServer {
     port: u16,
     memory_repository: Arc<Mutex<WorkingMemoryRepository>>,
     concept_manager: Arc<Mutex<ConceptGraphManager>>,
     insight_repository: Arc<Mutex<InMemoryInsightRepository>>,
     development_sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+    sessions_file_path: PathBuf,
 }
 
 impl WebServer {
     /// Create a new web server instance
     pub async fn new(port: u16) -> Result<Self> {
         let memory_repository = Arc::new(Mutex::new(WorkingMemoryRepository::new(1000)));
-        let concept_config = ConceptGraphConfig::default();
+        let concept_config = ConceptGraphConfig {
+            uri: "bolt://localhost:7687".to_string(),
+            username: "neo4j".to_string(),
+            password: "password".to_string(),
+            database: None,
+            pool_size: 10,
+            timeout_seconds: 30,
+        };
         let concept_manager = Arc::new(Mutex::new(ConceptGraphManager::new(concept_config).await?));
         let insight_repository = Arc::new(Mutex::new(InMemoryInsightRepository::new()));
         let development_sessions = Arc::new(Mutex::new(HashMap::new()));
-
-        Ok(Self {
+        
+        // Create sessions directory if it doesn't exist
+        let sessions_dir = Path::new("data/sessions");
+        if !sessions_dir.exists() {
+            fs::create_dir_all(sessions_dir).map_err(|e| BrainError::Io { source: e })?;
+        }
+        
+        let sessions_file_path = sessions_dir.join("development_sessions.json");
+        
+        // Load existing sessions if file exists
+        let mut server = Self {
             port,
             memory_repository,
             concept_manager,
             insight_repository,
             development_sessions,
-        })
+            sessions_file_path,
+        };
+        
+        server.load_sessions().await?;
+        
+        Ok(server)
     }
 
-    /// Start the web server with all routes
+    /// Load sessions from persistent storage
+    async fn load_sessions(&mut self) -> Result<()> {
+        if self.sessions_file_path.exists() {
+            match fs::read_to_string(&self.sessions_file_path) {
+                Ok(content) => {
+                    match serde_json::from_str::<HashMap<String, DevelopmentSession>>(&content) {
+                        Ok(sessions) => {
+                            let mut sessions_map = self.development_sessions.lock().await;
+                            *sessions_map = sessions;
+                            println!("Loaded {} development sessions", sessions_map.len());
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to parse sessions file: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to read sessions file: {}", e);
+                }
+            }
+        }
+        Ok(())
+    }
+
+
+
+    /// Analyze file access patterns to recognize development intent
+    fn recognize_intent(files_accessed: &[FileAccess], _project_context: &Option<ProjectContext>) -> Option<DevelopmentIntent> {
+        let file_paths: Vec<&str> = files_accessed.iter().map(|f| f.file_path.as_str()).collect();
+        let access_types: Vec<&FileAccessType> = files_accessed.iter().map(|f| &f.access_type).collect();
+        
+        // Test-related patterns
+        if file_paths.iter().any(|p| p.contains("test") || p.contains("spec")) ||
+           access_types.iter().any(|t| matches!(t, FileAccessType::Test)) {
+            return Some(DevelopmentIntent::Testing);
+        }
+        
+        // Documentation patterns
+        if file_paths.iter().any(|p| p.ends_with(".md") || p.ends_with(".txt") || p.contains("doc")) {
+            return Some(DevelopmentIntent::Documentation);
+        }
+        
+        // Configuration and build patterns
+        if file_paths.iter().any(|p| p.contains("config") || p.contains("Cargo.toml") || p.contains("package.json")) {
+            return Some(DevelopmentIntent::Architecture);
+        }
+        
+        // Debug patterns
+        if access_types.iter().any(|t| matches!(t, FileAccessType::Debug)) {
+            return Some(DevelopmentIntent::Debugging);
+        }
+        
+        // Bug fixing patterns (looking for specific change types)
+        if files_accessed.iter().any(|f| matches!(f.change_type, Some(ChangeType::BugFix))) {
+            return Some(DevelopmentIntent::BugFixing);
+        }
+        
+        // Refactoring patterns
+        if files_accessed.iter().any(|f| matches!(f.change_type, Some(ChangeType::Refactor))) {
+            return Some(DevelopmentIntent::Refactoring);
+        }
+        
+        // Feature development (default for new files and modifications)
+        if access_types.iter().any(|t| matches!(t, FileAccessType::Create | FileAccessType::Write)) {
+            return Some(DevelopmentIntent::FeatureDevelopment);
+        }
+        
+        None
+    }
+
+    /// Generate insights based on session data
+    fn generate_insights(session: &DevelopmentSession) -> Vec<String> {
+        let mut insights = Vec::new();
+        
+        // File access patterns
+        if session.files_accessed.len() > 10 {
+            insights.push("High file activity detected - consider focusing on fewer files for better productivity".to_string());
+        }
+        
+        // Language diversity
+        let languages: std::collections::HashSet<_> = session.files_accessed
+            .iter()
+            .filter_map(|f| f.language.as_ref())
+            .collect();
+        if languages.len() > 3 {
+            insights.push(format!("Working with {} different languages - context switching may impact productivity", languages.len()));
+        }
+        
+        // Time-based insights
+        let duration = chrono::Utc::now().signed_duration_since(session.start_time);
+        if duration.num_hours() > 4 {
+            insights.push("Long development session detected - consider taking breaks for better focus".to_string());
+        }
+        
+        // File type patterns
+        let test_files = session.files_accessed.iter().filter(|f| 
+            f.file_path.contains("test") || f.file_path.contains("spec")
+        ).count();
+        let total_files = session.files_accessed.len();
+        
+        if total_files > 0 && test_files as f64 / (total_files as f64) < 0.2 {
+            insights.push("Low test file activity - consider adding more tests for better code quality".to_string());
+        }
+        
+        insights
+    }
+
+    /// Generate recommendations based on session analysis
+    fn generate_recommendations(session: &DevelopmentSession) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        
+        // Based on intent
+        match session.development_intent.as_deref() {
+            Some("FeatureDevelopment") => {
+                recommendations.push("Consider writing tests for new features".to_string());
+                recommendations.push("Document new functionality for future reference".to_string());
+            }
+            Some("BugFixing") => {
+                recommendations.push("Add regression tests to prevent similar bugs".to_string());
+                recommendations.push("Update documentation if behavior changed".to_string());
+            }
+            Some("Refactoring") => {
+                recommendations.push("Ensure all tests pass after refactoring".to_string());
+                recommendations.push("Update documentation to reflect structural changes".to_string());
+            }
+            _ => {}
+        }
+        
+        // File-based recommendations
+        let has_rust_files = session.files_accessed.iter().any(|f| f.file_path.ends_with(".rs"));
+        let has_cargo_toml = session.files_accessed.iter().any(|f| f.file_path.contains("Cargo.toml"));
+        
+        if has_rust_files && !has_cargo_toml {
+            recommendations.push("Consider checking Cargo.toml for dependency updates".to_string());
+        }
+        
+        recommendations
+    }
+
+    /// Start the web server
     pub async fn start(&self) -> Result<()> {
         let cors = warp::cors()
             .allow_any_origin()
@@ -328,6 +615,7 @@ impl WebServer {
         let concept_mgr = self.concept_manager.clone();
         let insight_repo = self.insight_repository.clone();
         let dev_sessions = self.development_sessions.clone();
+        let sessions_file_path = self.sessions_file_path.clone();
 
         // Health and status endpoints
         let status = warp::path("status")
@@ -462,8 +750,9 @@ impl WebServer {
             }))
             .and_then(Self::handle_code_pattern_analysis);
 
-        // Development context endpoints
-        let dev_context_create = warp::path("dev")
+        // Enhanced Development context endpoints
+        let dev_context_create = warp::path("api")
+            .and(warp::path("dev"))
             .and(warp::path("context"))
             .and(warp::post())
             .and(warp::body::json())
@@ -479,9 +768,100 @@ impl WebServer {
                 let dev_sessions = dev_sessions.clone();
                 move || dev_sessions.clone()
             }))
+            .and(warp::any().map({
+                let sessions_file_path = sessions_file_path.clone();
+                move || sessions_file_path.clone()
+            }))
             .and_then(Self::handle_development_context_create);
 
-        let dev_context_get = warp::path("dev")
+        let dev_context_get = warp::path("api")
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path::param::<String>())
+            .and(warp::get())
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and_then(Self::handle_development_context_get);
+
+        let dev_context_update = warp::path("api")
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path::param::<String>())
+            .and(warp::put())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and(warp::any().map({
+                let sessions_file_path = sessions_file_path.clone();
+                move || sessions_file_path.clone()
+            }))
+            .and_then(Self::handle_development_context_update);
+
+        let dev_context_delete = warp::path("api")
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path::param::<String>())
+            .and(warp::delete())
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and(warp::any().map({
+                let sessions_file_path = sessions_file_path.clone();
+                move || sessions_file_path.clone()
+            }))
+            .and_then(Self::handle_development_context_delete);
+
+        let dev_sessions_list = warp::path("api")
+            .and(warp::path("dev"))
+            .and(warp::path("sessions"))
+            .and(warp::get())
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and_then(Self::handle_development_sessions_list);
+
+        let dev_context_analyze = warp::path("api")
+            .and(warp::path("dev"))
+            .and(warp::path("context"))
+            .and(warp::path("analyze"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and_then(Self::handle_development_context_analyze);
+
+        // Legacy endpoints for backward compatibility
+        let legacy_dev_context_create = warp::path("dev")
+            .and(warp::path("context"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let memory_repo = memory_repo.clone();
+                move || memory_repo.clone()
+            }))
+            .and(warp::any().map({
+                let concept_mgr = concept_mgr.clone();
+                move || concept_mgr.clone()
+            }))
+            .and(warp::any().map({
+                let dev_sessions = dev_sessions.clone();
+                move || dev_sessions.clone()
+            }))
+            .and(warp::any().map({
+                let sessions_file_path = sessions_file_path.clone();
+                move || sessions_file_path.clone()
+            }))
+            .and_then(Self::handle_development_context_create);
+
+        let legacy_dev_context_get = warp::path("dev")
             .and(warp::path("context"))
             .and(warp::path::param::<String>())
             .and(warp::get())
@@ -506,10 +886,24 @@ impl WebServer {
             .or(code_analysis)
             .or(dev_context_create)
             .or(dev_context_get)
+            .or(dev_context_update)
+            .or(dev_context_delete)
+            .or(dev_sessions_list)
+            .or(dev_context_analyze)
+            .or(legacy_dev_context_create)
+            .or(legacy_dev_context_get)
             .or(static_files)
             .with(cors);
 
         println!("🧠 Brain AI Web Server starting on port {}", self.port);
+        println!("📊 Development Context API endpoints:");
+        println!("  POST /api/dev/context - Create/update development session");
+        println!("  GET  /api/dev/context/{{id}} - Get development session");
+        println!("  PUT  /api/dev/context/{{id}} - Update development session");
+        println!("  DELETE /api/dev/context/{{id}} - Delete development session");
+        println!("  GET  /api/dev/sessions - List all sessions");
+        println!("  POST /api/dev/context/analyze - Analyze development patterns");
+        
         warp::serve(routes)
             .run(([127, 0, 0, 1], self.port))
             .await;
@@ -982,25 +1376,47 @@ impl WebServer {
         _memory_repo: Arc<Mutex<WorkingMemoryRepository>>,
         _concept_mgr: Arc<Mutex<ConceptGraphManager>>,
         sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+        sessions_file_path: PathBuf,
     ) -> std::result::Result<impl Reply, warp::Rejection> {
         let start_time = std::time::Instant::now();
         let session_id = request.session_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        
+        // Recognize intent from file access patterns
+        let intent_recognized = Self::recognize_intent(&request.files_accessed, &request.project_context);
         
         let session = DevelopmentSession {
             session_id: session_id.clone(),
             start_time: chrono::Utc::now(),
             last_updated: chrono::Utc::now(),
-            files_accessed: request.files_accessed,
-            development_intent: request.current_intent,
+            files_accessed: request.files_accessed.clone(),
+            development_intent: request.current_intent.or_else(|| {
+                intent_recognized.as_ref().map(|i| format!("{:?}", i))
+            }),
             development_goal: request.development_goal,
             project_context: request.project_context,
             insights: vec!["Session created".to_string()],
             patterns_discovered: vec![],
             confidence_score: 0.7,
+            session_tags: vec![],
+            focus_areas: vec![],
+            productivity_metrics: ProductivityMetrics::default(),
         };
+
+        // Generate insights and recommendations
+        let insights = Self::generate_insights(&session);
+        let recommendations = Self::generate_recommendations(&session);
+        let patterns_detected = vec!["Initial session pattern".to_string()];
 
         let mut sessions_map = sessions.lock().await;
         sessions_map.insert(session_id.clone(), session);
+        drop(sessions_map);
+
+        // Save sessions to file if auto_save is enabled
+        if request.auto_save {
+            if let Err(e) = Self::save_sessions_to_file(&sessions, &sessions_file_path).await {
+                eprintln!("Failed to save sessions: {}", e);
+            }
+        }
 
         let processing_time = start_time.elapsed().as_millis() as u64;
         
@@ -1008,9 +1424,11 @@ impl WebServer {
             success: true,
             session_id,
             context_preserved: true,
-            insights_generated: vec!["Development session initialized".to_string()],
-            recommendations: vec!["Continue with your development workflow".to_string()],
+            insights_generated: insights,
+            recommendations,
             processing_time_ms: processing_time,
+            intent_recognized,
+            patterns_detected,
         };
 
         Ok(warp::reply::json(&response))
@@ -1026,6 +1444,12 @@ impl WebServer {
         let session = sessions_map.get(&session_id).cloned();
         let processing_time = start_time.elapsed().as_millis() as u64;
         
+        let recommendations = if let Some(ref session) = session {
+            Self::generate_recommendations(session)
+        } else {
+            vec![]
+        };
+        
         let response = DevelopmentContextQueryResponse {
             success: true,
             session_found: session.is_some(),
@@ -1033,9 +1457,251 @@ impl WebServer {
             related_sessions: vec![],
             context_summary: Some("Development session found".to_string()),
             processing_time_ms: processing_time,
+            recommendations,
         };
 
         Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_development_context_update(
+        session_id: String,
+        request: SessionUpdateRequest,
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+        sessions_file_path: PathBuf,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        let mut sessions_map = sessions.lock().await;
+        
+        let mut success = false;
+        let mut intent_recognized = None;
+        let mut insights_generated = vec![];
+        let mut recommendations = vec![];
+
+        if let Some(session) = sessions_map.get_mut(&session_id) {
+            // Update session fields
+            if let Some(intent) = request.development_intent {
+                session.development_intent = Some(intent);
+            }
+            if let Some(goal) = request.development_goal {
+                session.development_goal = Some(goal);
+            }
+            if let Some(tags) = request.tags {
+                session.session_tags = tags;
+            }
+            if let Some(additional_files) = request.additional_files {
+                session.files_accessed.extend(additional_files);
+                intent_recognized = Self::recognize_intent(&session.files_accessed, &session.project_context);
+            }
+            if let Some(project_context) = request.project_context {
+                session.project_context = Some(project_context);
+            }
+            
+            session.last_updated = chrono::Utc::now();
+            
+            // Generate new insights and recommendations
+            insights_generated = Self::generate_insights(session);
+            recommendations = Self::generate_recommendations(session);
+            success = true;
+        }
+        
+        drop(sessions_map);
+
+        // Save sessions to file
+        if let Err(e) = Self::save_sessions_to_file(&sessions, &sessions_file_path).await {
+            eprintln!("Failed to save sessions: {}", e);
+        }
+
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = DevelopmentContextResponse {
+            success,
+            session_id,
+            context_preserved: success,
+            insights_generated,
+            recommendations,
+            processing_time_ms: processing_time,
+            intent_recognized,
+            patterns_detected: vec!["Session updated".to_string()],
+        };
+
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_development_context_delete(
+        session_id: String,
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+        sessions_file_path: PathBuf,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        let mut sessions_map = sessions.lock().await;
+        
+        let removed = sessions_map.remove(&session_id).is_some();
+        drop(sessions_map);
+
+        // Save sessions to file
+        if let Err(e) = Self::save_sessions_to_file(&sessions, &sessions_file_path).await {
+            eprintln!("Failed to save sessions: {}", e);
+        }
+
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = DevelopmentContextResponse {
+            success: removed,
+            session_id,
+            context_preserved: false,
+            insights_generated: vec!["Session deleted".to_string()],
+            recommendations: vec![],
+            processing_time_ms: processing_time,
+            intent_recognized: None,
+            patterns_detected: vec![],
+        };
+
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_development_sessions_list(
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        let sessions_map = sessions.lock().await;
+        
+        let session_summaries: Vec<SessionSummary> = sessions_map.iter()
+            .map(|(id, session)| SessionSummary {
+                session_id: id.clone(),
+                start_time: session.start_time,
+                last_updated: session.last_updated,
+                files_count: session.files_accessed.len(),
+                intent: session.development_intent.clone(),
+                tags: session.session_tags.clone(),
+                duration_minutes: (session.last_updated - session.start_time).num_minutes() as u32,
+            })
+            .collect();
+        
+        let response = SessionListResponse {
+            success: true,
+            sessions: session_summaries,
+            total_count: sessions_map.len(),
+            active_sessions: sessions_map.len(),
+            processing_time_ms: start_time.elapsed().as_millis() as u64,
+        };
+
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_development_context_analyze(
+        request: ContextAnalysisRequest,
+        sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        let start_time = std::time::Instant::now();
+        let sessions_map = sessions.lock().await;
+        
+        // Analyze all sessions or filter by project root if specified
+        let relevant_sessions: Vec<&DevelopmentSession> = sessions_map.values()
+            .filter(|session| {
+                if let Some(ref project_root) = request.project_root {
+                    session.project_context.as_ref()
+                        .map_or(false, |ctx| ctx.project_root == *project_root)
+                } else {
+                    true
+                }
+            })
+            .collect();
+
+        // Generate development patterns
+        let mut development_patterns = vec![];
+        let mut productivity_insights = vec![];
+        let mut recommendations = vec![];
+        let mut focus_areas = vec![];
+
+        if !relevant_sessions.is_empty() {
+            // Analyze file type patterns
+            let mut file_types = std::collections::HashMap::new();
+            for session in &relevant_sessions {
+                for file_access in &session.files_accessed {
+                    if let Some(ext) = std::path::Path::new(&file_access.file_path).extension() {
+                        if let Some(ext_str) = ext.to_str() {
+                            *file_types.entry(ext_str.to_string()).or_insert(0) += 1;
+                        }
+                    }
+                }
+            }
+
+            for (file_type, count) in file_types {
+                development_patterns.push(DevelopmentPattern {
+                    pattern_type: "FileType".to_string(),
+                    description: format!("Frequent {} file access", file_type),
+                    frequency: count,
+                    confidence: 0.8,
+                    impact: "Medium".to_string(),
+                });
+            }
+
+            // Generate productivity insights
+            let total_files: usize = relevant_sessions.iter()
+                .map(|s| s.files_accessed.len())
+                .sum();
+            
+            productivity_insights.push(format!("Analyzed {} sessions with {} total file accesses", 
+                relevant_sessions.len(), total_files));
+
+            if total_files > 50 {
+                productivity_insights.push("High file activity detected across sessions".to_string());
+                recommendations.push("Consider organizing files better for easier navigation".to_string());
+            }
+
+            // Analyze session durations
+            let avg_duration: i64 = relevant_sessions.iter()
+                .map(|s| (s.last_updated - s.start_time).num_minutes())
+                .sum::<i64>() / relevant_sessions.len() as i64;
+            
+            if avg_duration > 240 { // More than 4 hours
+                productivity_insights.push("Long development sessions detected".to_string());
+                recommendations.push("Consider taking more breaks for better productivity".to_string());
+            }
+
+            // Identify focus areas
+            let mut intents = std::collections::HashMap::new();
+            for session in &relevant_sessions {
+                if let Some(ref intent) = session.development_intent {
+                    *intents.entry(intent.clone()).or_insert(0) += 1;
+                }
+            }
+
+            for (intent, count) in intents {
+                if count > 1 {
+                    focus_areas.push(format!("{} ({}x)", intent, count));
+                }
+            }
+        }
+
+        let processing_time = start_time.elapsed().as_millis() as u64;
+        
+        let response = ContextAnalysisResponse {
+            success: true,
+            analysis_summary: format!("Analyzed {} development sessions", relevant_sessions.len()),
+            development_patterns,
+            productivity_insights,
+            recommendations,
+            focus_areas,
+            processing_time_ms: processing_time,
+        };
+
+        Ok(warp::reply::json(&response))
+    }
+
+    /// Helper method to save sessions to file
+    async fn save_sessions_to_file(
+        sessions: &Arc<Mutex<HashMap<String, DevelopmentSession>>>,
+        sessions_file_path: &PathBuf,
+    ) -> Result<()> {
+        let sessions_map = sessions.lock().await;
+        let content = serde_json::to_string_pretty(&*sessions_map)
+            .map_err(|e| BrainError::Serialization { source: Box::new(e) })?;
+        
+        fs::write(sessions_file_path, content)
+            .map_err(|e| BrainError::Io { source: e })?;
+        
+        Ok(())
     }
 }
 
@@ -1088,6 +1754,9 @@ mod tests {
             insights: vec![],
             patterns_discovered: vec![],
             confidence_score: 0.8,
+            session_tags: vec![],
+            focus_areas: vec![],
+            productivity_metrics: ProductivityMetrics::default(),
         };
         assert_eq!(session.session_id, "test-123");
         assert_eq!(session.confidence_score, 0.8);
