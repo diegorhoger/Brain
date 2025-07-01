@@ -103,7 +103,7 @@ impl APIAgent {
     }
 
     /// Design RESTful API endpoints based on database schema
-    fn design_rest_endpoints(&self, schema: &Value, _architecture: &Value) -> Value {
+    fn design_rest_endpoints(&self, _schema: &Value, _architecture: &Value) -> Value {
         let mut paths = HashMap::new();
         
         // User management endpoints
