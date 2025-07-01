@@ -29,6 +29,31 @@ pub enum AgentCapability {
     Optimization,
     Integration,
     Deployment,
+    // Testing & QA capabilities
+    QualityAssurance,
+    PerformanceAnalysis,
+    ReportGeneration,
+    Infrastructure,
+    // Operations capabilities
+    BuildOptimization,
+    CICDManagement,
+    CostOptimization,
+    EmergencyResponse,
+    RollbackManagement,
+    IncidentManagement,
+    DatabaseManagement,
+    AutoScaling,
+    ReplicationManagement,
+    PerformanceOptimization,
+    DriftDetection,
+    ComplianceMonitoring,
+    AutoRemediation,
+    RiskAssessment,
+    BackupManagement,
+    DisasterRecovery,
+    DataProtection,
+    Analytics,
+    AlertManagement,
 }
 
 /// Core trait that all Brain AI agents must implement
@@ -176,7 +201,7 @@ pub struct ExecutionMetadata {
 }
 
 /// Status of agent execution
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ExecutionStatus {
     Success,
     PartialSuccess,
@@ -281,7 +306,7 @@ pub struct CognitivePreferences {
 }
 
 // Enums for cognitive preferences
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum InteractionMode {
     Focused,
     Collaborative,
@@ -297,7 +322,7 @@ pub enum DetailLevel {
     Comprehensive,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EmotionalSensitivity {
     Low,
     Medium,
@@ -305,7 +330,7 @@ pub enum EmotionalSensitivity {
     Adaptive,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AutonomyLevel {
     Manual,        // User confirms every action
     ConfirmFirst,  // Ask before major actions
@@ -313,7 +338,7 @@ pub enum AutonomyLevel {
     FullAuto,      // Proceed autonomously within confidence thresholds
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CommunicationStyle {
     Formal,
     Casual,
@@ -321,7 +346,7 @@ pub enum CommunicationStyle {
     Adaptive,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum VerbosityLevel {
     Minimal,
     Standard,
@@ -341,7 +366,7 @@ pub struct CognitiveLoadSettings {
     pub progressive_disclosure: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PacingPreference {
     Fast,
     Medium,

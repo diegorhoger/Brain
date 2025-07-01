@@ -1,9 +1,13 @@
-pub mod traits;
-pub mod registry;
-
-// Agent categories
 pub mod development;
 pub mod security;
+pub mod testing;
+pub mod ops;
+pub mod registry;
+pub mod traits;
+
+// Agent categories
+// pub mod development;
+// pub mod security;
 // pub mod testing;
 // pub mod ops;
 // pub mod intelligence;
@@ -14,3 +18,9 @@ pub use traits::{BrainAgent, AgentMetadata, AgentInput, AgentOutput, CognitiveCo
 pub use registry::AgentRegistry;
 pub use development::{PlannerAgent, ArchitectAgent, DesignerAgent};
 pub use security::{CyberSecurityAgent}; // Temporarily disabled: PromptSecurityAgent, PrivacyComplianceAgent, DataPrivacyAgent, EthicalAIAgent 
+
+// Re-export all agents for easy access
+pub use development::*;
+pub use security::*;
+pub use testing::*;
+pub use ops::*; 
