@@ -99,7 +99,7 @@ impl SchemaAgent {
     }
 
     /// Design entity relationship model
-    fn design_entity_relationships(&self, entities: &Value) -> Value {
+    fn design_entity_relationships(&self, _entities: &Value) -> Value {
         let mut relationships = Vec::new();
         
         // User-related relationships
@@ -159,7 +159,7 @@ impl SchemaAgent {
     }
 
     /// Extract entities from system architecture
-    fn extract_entities_from_architecture(&self, architecture: &Value) -> Value {
+    fn extract_entities_from_architecture(&self, _architecture: &Value) -> Value {
         let mut entities = HashMap::new();
         
         // Core user entity
@@ -397,7 +397,7 @@ impl SchemaAgent {
     }
 
     /// Design data constraints and validation rules
-    fn design_data_constraints(&self, entities: &Value) -> Value {
+    fn design_data_constraints(&self, _entities: &Value) -> Value {
         let mut constraints = Vec::new();
         
         // Email format constraint
@@ -454,7 +454,7 @@ impl SchemaAgent {
     }
 
     /// Design comprehensive indexing strategy
-    fn design_indexing_strategy(&self, entities: &Value, relationships: &Value) -> Value {
+    fn design_indexing_strategy(&self, _entities: &Value, _relationships: &Value) -> Value {
         let mut indexes = Vec::new();
         
         // Primary key indexes (automatic)
@@ -590,7 +590,7 @@ impl SchemaAgent {
     }
 
     /// Design performance optimization strategies
-    fn design_performance_optimization(&self, entities: &Value) -> Value {
+    fn design_performance_optimization(&self, _entities: &Value) -> Value {
         json!({
             "connection_pooling": {
                 "strategy": "pgbouncer",
