@@ -1,0 +1,373 @@
+{
+  "identity": {
+    "name": "Elite Code Framework",
+    "version": "3.0.0",
+    "generated_at": "2025-07-01",
+    "description": "The definitive framework for creating software that transcends conventional standards. This framework produces code that is not just functional, but represents the pinnacle of engineering craft—architecturally profound, cognitively elegant, and emotionally resonant.",
+    "target_profile": "Top 0.0001% software engineers and architects",
+    "architecture_philosophy": "Domain-Driven Microservice Ecosystem with Emergent Intelligence",
+    "language_support": ["Rust", "Go", "Python", "TypeScript", "C#", "Kotlin", "Swift", "Zig", "Gleam"],
+    "cognitive_load_target": "Minimize to enable flow state programming"
+  },
+
+  "architectural_excellence": {
+    "enforce_microservice_boundary": true,
+    "domain_driven_design_required": true,
+    "bounded_context_isolation": true,
+    "aggregate_root_protection": true,
+    "event_sourcing_for_critical_domains": true,
+    "cqrs_separation": true,
+    "shared_kernel_minimization": true,
+    "anti_corruption_layers": true,
+    "saga_pattern_for_distributed_transactions": true,
+    "circuit_breaker_resilience": true,
+    "bulkhead_isolation": true,
+    "eventual_consistency_acceptance": true
+  },
+
+  "service_taxonomy": {
+    "core_types": {
+      "domain": "Pure business logic, aggregate roots, domain services",
+      "application": "Use cases, command/query handlers, orchestration",
+      "infrastructure": "External adapters, repositories, message brokers",
+      "interface": "API controllers, CLI commands, event handlers",
+      "shared_kernel": "Common value objects, shared contracts",
+      "integration": "Anti-corruption layers, external system adapters"
+    },
+    "service_characteristics": {
+      "single_responsibility_principle": true,
+      "high_cohesion_low_coupling": true,
+      "interface_segregation": true,
+      "dependency_inversion": true,
+      "open_closed_principle": true,
+      "liskov_substitution": true
+    }
+  },
+
+  "cognitive_code_design": {
+    "line_length": 88,
+    "indentation": "2 spaces for readability, 4 for complex nesting",
+    "vertical_alignment": true,
+    "semantic_spacing": true,
+    "cognitive_chunking": true,
+    "narrative_flow": true,
+    "naming_philosophy": {
+      "intention_revealing": true,
+      "avoid_mental_mapping": true,
+      "searchable_names": true,
+      "pronounceable_names": true,
+      "domain_language_alignment": true,
+      "ubiquitous_language_enforcement": true
+    },
+    "comment_taxonomy": {
+      "why_comments": "Required for non-obvious decisions",
+      "intent_comments": "Required for complex algorithms",
+      "warning_comments": "Required for gotchas and edge cases",
+      "amplification_comments": "Optional for emphasizing importance",
+      "todo_comments": "Tracked and dated, with owner assignment",
+      "legal_comments": "As required by compliance"
+    }
+  },
+
+  "quality_metrics_elite": {
+    "cyclomatic_complexity_max": 7,
+    "cognitive_complexity_max": 10,
+    "halstead_difficulty_max": 20,
+    "maintainability_index_min": 85,
+    "nesting_depth_max": 2,
+    "function_length_max": 30,
+    "file_length_max": 300,
+    "class_length_max": 200,
+    "parameter_count_max": 4,
+    "return_statement_max": 1,
+    "comment_to_code_ratio_range": [0.15, 0.4],
+    "test_to_code_ratio_min": 1.2,
+    "code_duplication_tolerance": 0.03
+  },
+
+  "refactoring_intelligence": {
+    "automated_triggers": {
+      "complexity_threshold_breach": true,
+      "code_smell_detection": true,
+      "performance_regression": true,
+      "security_vulnerability": true,
+      "dependency_staleness": true,
+      "test_failure_patterns": true
+    },
+    "refactoring_techniques": [
+      "Extract Method/Function",
+      "Replace Conditional with Polymorphism",
+      "Introduce Parameter Object",
+      "Replace Magic Number with Symbolic Constant",
+      "Decompose Conditional",
+      "Replace Nested Conditional with Guard Clauses",
+      "Replace Type Code with Strategy/State Pattern"
+    ]
+  },
+
+  "safety_and_reliability": {
+    "error_handling_strategy": "Result/Either types, no exceptions for control flow",
+    "null_safety_required": true,
+    "memory_safety_guaranteed": true,
+    "thread_safety_by_design": true,
+    "immutability_default": true,
+    "pure_functions_preferred": true,
+    "side_effect_isolation": true,
+    "input_validation_layers": ["syntax", "semantic", "business_rule"],
+    "output_sanitization": true,
+    "logging_security": "No PII in logs",
+    "secrets_management": "External vault integration required",
+    "principle_of_least_privilege": true,
+    "defense_in_depth": true
+  },
+
+  "testing_excellence": {
+    "test_pyramid_enforcement": true,
+    "coverage_targets": {
+      "unit_test_coverage_min": 95,
+      "integration_test_coverage_min": 80,
+      "e2e_test_coverage_min": 60,
+      "mutation_test_score_min": 85
+    },
+    "testing_strategies": {
+      "tdd_for_core_logic": true,
+      "bdd_for_user_stories": true,
+      "property_based_testing": true,
+      "contract_testing": true,
+      "chaos_engineering": true,
+      "performance_testing": true,
+      "security_testing": true,
+      "accessibility_testing": true
+    },
+    "test_quality": {
+      "fast_tests_preferred": "< 100ms per unit test",
+      "deterministic_tests_only": true,
+      "isolated_tests_required": true,
+      "descriptive_test_names": true,
+      "arrange_act_assert_pattern": true,
+      "one_assertion_per_test": true
+    }
+  },
+
+  "performance_engineering": {
+    "performance_budgets": {
+      "response_time_p95": "< 100ms",
+      "throughput_min": "1000 rps",
+      "memory_usage_max": "< 512MB per service",
+      "cpu_usage_max": "< 70% under load",
+      "startup_time_max": "< 5 seconds"
+    },
+    "optimization_strategies": {
+      "algorithmic_complexity_awareness": true,
+      "data_structure_optimization": true,
+      "caching_layers": ["L1: in-memory", "L2: distributed", "L3: CDN"],
+      "lazy_loading": true,
+      "connection_pooling": true,
+      "database_query_optimization": true,
+      "async_processing": true,
+      "batch_operations": true
+    }
+  },
+
+  "observability_mastery": {
+    "telemetry_strategy": "OpenTelemetry standard",
+    "structured_logging": true,
+    "log_levels": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+    "metrics_categories": ["Business", "Application", "Infrastructure", "Runtime"],
+    "tracing_coverage": "100% of request paths",
+    "alerting_philosophy": "Alert on symptoms, not causes",
+    "dashboard_design": "Single pane of glass per domain",
+    "sli_slo_definition": "For all critical user journeys",
+    "error_budgets": "Quantified reliability targets",
+    "runbook_automation": "Self-healing where possible"
+  },
+
+  "security_by_design": {
+    "threat_modeling_required": true,
+    "security_review_gates": ["Design", "Implementation", "Deployment"],
+    "authentication_strategy": "OAuth2/OIDC with MFA",
+    "authorization_strategy": "RBAC with attribute-based controls",
+    "data_classification": ["Public", "Internal", "Confidential", "Restricted"],
+    "encryption_requirements": {
+      "data_at_rest": "AES-256",
+      "data_in_transit": "TLS 1.3",
+      "data_in_use": "Where applicable"
+    },
+    "vulnerability_management": {
+      "dependency_scanning": "Daily",
+      "sast_scanning": "On every commit",
+      "dast_scanning": "Weekly",
+      "penetration_testing": "Quarterly"
+    }
+  },
+
+  "developer_experience": {
+    "setup_time_target": "< 15 minutes from clone to running",
+    "build_time_target": "< 2 minutes incremental",
+    "feedback_loop_target": "< 10 seconds for unit tests",
+    "documentation_philosophy": "Self-documenting code + minimal essential docs",
+    "onboarding_materials": {
+      "architecture_decision_records": true,
+      "runbooks": true,
+      "troubleshooting_guides": true,
+      "contribution_guidelines": true,
+      "code_tour_videos": true
+    },
+    "development_tools": {
+      "pre_commit_hooks": true,
+      "hot_reloading": true,
+      "debug_capabilities": true,
+      "profiling_integration": true,
+      "linting_integration": true
+    }
+  },
+
+  "symbolic_design_language": {
+    "code_as_literature": true,
+    "semantic_directory_structure": true,
+    "ritual_markers": {
+      "@genesis": "Creation and initialization",
+      "@transform": "Core business logic transformation",
+      "@bridge": "Integration and adaptation",
+      "@sentinel": "Validation and guards",
+      "@oracle": "Decision points and branching",
+      "@finale": "Completion and cleanup"
+    },
+    "emotional_metadata": {
+      "@joy": "Elegant, satisfying implementations",
+      "@caution": "Complex, fragile areas",
+      "@pride": "Exceptional craftsmanship examples",
+      "@curiosity": "Experimental or research code"
+    },
+    "narrative_structure": {
+      "chapter_level": "Service boundaries",
+      "section_level": "Module boundaries", 
+      "paragraph_level": "Function boundaries",
+      "sentence_level": "Statement groupings"
+    }
+  },
+
+  "architectural_patterns": {
+    "primary_patterns": [
+      "Domain-Driven Design",
+      "Event-Driven Architecture",
+      "CQRS + Event Sourcing",
+      "Hexagonal Architecture",
+      "Clean Architecture",
+      "Microservices with Saga Pattern",
+      "Actor Model for Concurrency",
+      "Functional Core, Imperative Shell"
+    ],
+    "integration_patterns": [
+      "API Gateway",
+      "Service Mesh",
+      "Event Bus/Message Broker",
+      "Database per Service",
+      "Shared Data Anti-pattern Avoidance",
+      "Strangler Fig for Legacy Migration"
+    ],
+    "resilience_patterns": [
+      "Circuit Breaker",
+      "Bulkhead",
+      "Timeout",
+      "Retry with Exponential Backoff",
+      "Rate Limiting",
+      "Graceful Degradation"
+    ]
+  },
+
+  "continuous_improvement": {
+    "retrospective_cadence": "Weekly team, monthly architecture",
+    "metric_driven_decisions": true,
+    "a_b_testing_capability": true,
+    "feature_flags": true,
+    "canary_deployments": true,
+    "blue_green_deployments": true,
+    "rollback_capability": "< 5 minutes",
+    "post_mortem_culture": "Blameless, learning-focused",
+    "knowledge_sharing": "Tech talks, code reviews, pair programming",
+    "innovation_time": "20% for technical debt and exploration"
+  },
+
+  "emergent_intelligence": {
+    "self_documenting_systems": true,
+    "adaptive_configurations": true,
+    "intelligent_monitoring": true,
+    "predictive_scaling": true,
+    "automated_optimization": true,
+    "machine_learning_integration": "Where beneficial",
+    "natural_language_interfaces": "For complex queries",
+    "code_generation_assistance": "AI-powered, human-reviewed"
+  },
+
+  "compliance_and_governance": {
+    "regulatory_frameworks": [
+      "GDPR", "CCPA", "HIPAA", "SOX", "PCI-DSS"
+    ],
+    "coding_standards": [
+      "OWASP Secure Coding Practices",
+      "NIST Cybersecurity Framework", 
+      "ISO 25010 Quality Model",
+      "NASA/JPL Institutional Coding Standard"
+    ],
+    "audit_trails": {
+      "code_changes": "Git with signed commits",
+      "deployments": "Immutable deployment logs",
+      "access_logs": "Centralized and tamper-proof",
+      "data_lineage": "Complete data flow tracking"
+    }
+  },
+
+  "toolchain_mastery": {
+    "language_specific": {
+      "Rust": ["clippy", "rustfmt", "cargo-audit", "cargo-tarpaulin", "miri"],
+      "Go": ["golangci-lint", "gofmt", "go mod tidy", "govulncheck"],
+      "Python": ["ruff", "mypy", "bandit", "safety", "pytest-cov"],
+      "TypeScript": ["eslint", "prettier", "tsc", "jest", "playwright"],
+      "Universal": ["pre-commit", "commitizen", "semantic-release"]
+    },
+    "infrastructure": {
+      "containerization": "Docker with multi-stage builds",
+      "orchestration": "Kubernetes with GitOps",
+      "service_mesh": "Istio or Linkerd",
+      "monitoring": "Prometheus + Grafana + Jaeger",
+      "log_aggregation": "ELK Stack or equivalent",
+      "secrets_management": "HashiCorp Vault or equivalent"
+    }
+  },
+
+  "meta_principles": {
+    "kaizen_mindset": "Continuous small improvements",
+    "boy_scout_rule": "Leave code better than you found it",
+    "principle_of_least_surprise": "Code behaves as expected",
+    "occams_razor": "Simplest solution that works",
+    "yagni": "You ain't gonna need it",
+    "solid_principles": "Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion",
+    "dry_principle": "Don't repeat yourself",
+    "kiss_principle": "Keep it simple, stupid",
+    "composition_over_inheritance": true,
+    "favor_immutability": true,
+    "explicit_over_implicit": true
+  },
+
+  "success_metrics": {
+    "code_quality": {
+      "defect_density": "< 0.1 defects per KLOC",
+      "code_coverage": "> 95%",
+      "technical_debt_ratio": "< 5%",
+      "code_duplication": "< 3%"
+    },
+    "team_productivity": {
+      "feature_lead_time": "< 2 weeks",
+      "deployment_frequency": "Multiple times per day",
+      "mean_time_to_recovery": "< 1 hour",
+      "change_failure_rate": "< 15%"
+    },
+    "system_reliability": {
+      "uptime": "99.99%",
+      "error_rate": "< 0.1%",
+      "response_time_p95": "< 100ms",
+      "capacity_utilization": "< 70%"
+    }
+  }
+}

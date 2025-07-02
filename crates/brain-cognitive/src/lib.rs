@@ -28,6 +28,9 @@ pub mod orchestrator;
 // Cognitive Preference Profiles system
 pub mod profiles;
 
+// Self-Evolution System
+pub mod evolution;
+
 // Re-export key conversation types
 pub use conversation::{
     RagOrchestrator, RagRequest, RagResponse, ConversationContext,
@@ -153,4 +156,23 @@ pub use orchestrator::{
     WorkflowExecutionStatus, WorkflowStepResult, StepExecutionStatus,
     WorkflowRequirements, AgentRequirement, WorkflowConstraints,
     WorkflowStepDefinition,
+};
+
+// Re-export evolution types
+pub use evolution::{
+    // Core evolution structures
+    EvolutionOrchestrator, EvolutionConfig, EvolutionMemory,
+    ImprovementRecord, LearningInsight,
+    // Performance monitoring
+    AgentPerformanceMonitor, AgentPerformanceMetrics,
+    AgentPerformanceSnapshot, PerformanceTrends, PerformanceIssue,
+    PerformanceBenchmarks, ExecutionBenchmarks, QualityBenchmarks,
+    ResourceBenchmarks, UserBenchmarks,
+    // Meta-agent framework
+    MetaAgent, AgentAnalysis, ImprovementSuggestions, OptimizationResult,
+    ValidationResult, PerformanceAnalysisMetaAgent,
+    // Learning loop
+    LearningLoopEngine, PatternRecognizer, ConfidenceCalibrator,
+    FeedbackIntegrator, ParameterTuner, LearningState,
+    LearningStrategy,
 };
