@@ -139,10 +139,15 @@ pub use orchestrator::{
     ScheduleDecision, ResourceConstraints,
     // Memory management
     OrchestratorMemory, AgentMemoryNamespace, MemoryRegistry,
-    CrossAgentMemoryShare, MemoryAccessControl,
+    CrossAgentMemoryShare, MemoryAccessControl, SharePermissions, MemoryOperation,
+    // New orchestration memory types
+    OrchestrationMemoryConfig, ExecutionMetadata, OrchestrationDecisionType,
+    OrchestrationMemoryStats,
     // Communication system
     AgentCommunicationBus, MessageBus, AgentMessage,
-    CommunicationProtocol, EventTrigger,
+    CommunicationProtocol, EventTrigger, MessageType, EventType, TriggerCondition,
+    // New comprehensive communication types
+    CommunicationConfig, CommunicationMetrics, StoredMessage, DeliveryStatus,
     // Workflow integration (Task 4.1.5)
     WorkflowAdapter, ConvertedWorkflow, EnhancedWorkflowResult,
     WorkflowExecutionStatus, WorkflowStepResult, StepExecutionStatus,

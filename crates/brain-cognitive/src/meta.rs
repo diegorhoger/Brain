@@ -55,6 +55,17 @@ pub enum KnowledgeType {
     ConversationContext,
     /// Independent intelligence responses
     IntelligenceResponse,
+    /// Orchestration-specific knowledge types
+    /// Agent memory namespace
+    OrchestrationNamespace,
+    /// Agent execution result
+    AgentExecution,
+    /// DAG execution outcome
+    DAGExecution,
+    /// Execution plan
+    ExecutionPlan,
+    /// Orchestration decision
+    OrchestrationDecision,
 }
 
 impl std::fmt::Display for KnowledgeType {
@@ -72,6 +83,11 @@ impl std::fmt::Display for KnowledgeType {
             KnowledgeType::TrainingData => write!(f, "TrainingData"),
             KnowledgeType::ConversationContext => write!(f, "ConversationContext"),
             KnowledgeType::IntelligenceResponse => write!(f, "IntelligenceResponse"),
+            KnowledgeType::OrchestrationNamespace => write!(f, "OrchestrationNamespace"),
+            KnowledgeType::AgentExecution => write!(f, "AgentExecution"),
+            KnowledgeType::DAGExecution => write!(f, "DAGExecution"),
+            KnowledgeType::ExecutionPlan => write!(f, "ExecutionPlan"),
+            KnowledgeType::OrchestrationDecision => write!(f, "OrchestrationDecision"),
         }
     }
 }

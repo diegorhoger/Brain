@@ -27,12 +27,17 @@ pub use scheduler::{
 
 pub use memory::{
     OrchestratorMemory, AgentMemoryNamespace, MemoryRegistry,
-    CrossAgentMemoryShare, MemoryAccessControl
+    CrossAgentMemoryShare, MemoryAccessControl, SharePermissions, MemoryOperation,
+    // New orchestration memory types
+    OrchestrationMemoryConfig, ExecutionMetadata, OrchestrationDecisionType,
+    OrchestrationMemoryStats,
 };
 
 pub use communication::{
     AgentCommunicationBus, MessageBus, AgentMessage,
-    CommunicationProtocol, EventTrigger
+    CommunicationProtocol, EventTrigger, MessageType, EventType, TriggerCondition,
+    // New comprehensive communication types
+    CommunicationConfig, CommunicationMetrics, StoredMessage, DeliveryStatus,
 };
 
 use crate::agents::traits::{BrainAgent, CognitiveContext, AgentInput, AgentOutput, BrainResult};
@@ -44,7 +49,7 @@ use serde::{Deserialize, Serialize};
 
 // Add missing dependencies for integration
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 /// Configuration for the agent orchestration system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -385,6 +390,15 @@ impl AgentOrchestrator {
         workflow_id: &str,
         steps: Vec<WorkflowStepDefinition>,
     ) -> BrainResult<ConvertedWorkflow> {
+        // Check workflow cache first
+        if let Some(adapter) = &self.workflow_adapter {
+            if let Ok(cache) = adapter.workflow_cache.read() {
+                if let Some(cached_workflow) = cache.get(workflow_id) {
+                    return Ok(cached_workflow.clone());
+                }
+            }
+        }
+        
         let mut agents = Vec::new();
         let mut inputs = Vec::new();
         let mut dependencies = HashMap::new();
@@ -415,13 +429,22 @@ impl AgentOrchestrator {
             }
         }
         
-        Ok(ConvertedWorkflow {
+        let converted_workflow = ConvertedWorkflow {
             workflow_id: workflow_id.to_string(),
             agents,
             inputs,
             dependencies,
             created_at: Utc::now(),
-        })
+        };
+        
+        // Cache the converted workflow
+        if let Some(adapter) = &self.workflow_adapter {
+            if let Ok(mut cache) = adapter.workflow_cache.write() {
+                cache.insert(workflow_id.to_string(), converted_workflow.clone());
+            }
+        }
+        
+        Ok(converted_workflow)
     }
     
     /// Map agent outputs back to workflow step results
