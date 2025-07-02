@@ -202,7 +202,7 @@ impl CognitiveContext {
     
     /// Get the maximum items per chunk based on cognitive load settings
     pub fn max_items_per_chunk(&self) -> usize {
-        self.cognitive_profile.cognitive_load_settings.max_items_per_chunk
+        self.cognitive_profile.cognitive_load_settings.max_items_per_chunk as usize
     }
     
     /// Check if progressive disclosure is enabled

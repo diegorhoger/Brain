@@ -7,6 +7,7 @@
 //! - Meta-memory systems with confidence tracking
 //! - Curiosity-driven learning engines
 //! - Conversational models and training pipelines
+//! - Cognitive Preference Profiles (CPP) system
 
 // Core conversation components
 pub mod conversation;
@@ -20,6 +21,9 @@ pub mod meta_memory;
 // New agent infrastructure
 pub mod agents;
 pub mod context;
+
+// Cognitive Preference Profiles system
+pub mod profiles;
 
 // Re-export key conversation types
 pub use conversation::{
@@ -99,4 +103,20 @@ pub use meta_memory::{
     MetaMemoryQuery as SimpleMetaMemoryQuery,
     MetaMemoryStats as SimpleMetaMemoryStats,
     KnowledgeType as SimpleKnowledgeType
+};
+
+// Re-export profiles types
+pub use profiles::{
+    // Core traits
+    CognitiveProfileManager, BehaviorAdapter,
+    // Data structures
+    ProfileUpdates, ProfilePreset, ProfileAnalytics, BehaviorConfiguration,
+    AdaptationContext, AdaptationRecommendation, AutonomyBoundaries,
+    CommunicationAdaptations, CognitiveLoadManagement,
+    // Manager implementations
+    manager::{InMemoryProfileManager, FileBasedProfileManager},
+    // Adapter implementations
+    adapters::StandardBehaviorAdapter,
+    // Preset utilities
+    presets::{PresetManager, PresetUtils, ExperienceLevel, WorkContext, UserPreferences},
 };

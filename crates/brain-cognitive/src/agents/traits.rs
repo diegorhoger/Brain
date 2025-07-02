@@ -306,7 +306,7 @@ pub struct CognitivePreferences {
 }
 
 // Enums for cognitive preferences
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum InteractionMode {
     Focused,
     Collaborative,
@@ -314,7 +314,7 @@ pub enum InteractionMode {
     Autonomous,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DetailLevel {
     Minimal,
     Standard,
@@ -322,7 +322,7 @@ pub enum DetailLevel {
     Comprehensive,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EmotionalSensitivity {
     Low,
     Medium,
@@ -330,7 +330,7 @@ pub enum EmotionalSensitivity {
     Adaptive,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AutonomyLevel {
     Manual,        // User confirms every action
     ConfirmFirst,  // Ask before major actions
@@ -338,7 +338,7 @@ pub enum AutonomyLevel {
     FullAuto,      // Proceed autonomously within confidence thresholds
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CommunicationStyle {
     Formal,
     Casual,
@@ -357,7 +357,7 @@ pub enum VerbosityLevel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CognitiveLoadSettings {
     /// Maximum number of items to present at once
-    pub max_items_per_chunk: usize,
+    pub max_items_per_chunk: u8,
     
     /// Preferred pacing for information delivery
     pub pacing_preference: PacingPreference,
@@ -366,7 +366,7 @@ pub struct CognitiveLoadSettings {
     pub progressive_disclosure: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PacingPreference {
     Fast,
     Medium,
