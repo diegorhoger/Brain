@@ -2513,7 +2513,7 @@ impl ParameterTuner {
             avg_response_time,
             avg_accuracy,
             avg_memory_usage,
-            accuracy_variance,
+            _accuracy_variance: accuracy_variance,
         }
     }
     
@@ -2560,7 +2560,7 @@ struct PerformanceAnalysis {
     avg_response_time: f32,
     avg_accuracy: f32,
     avg_memory_usage: f32,
-    accuracy_variance: f32,
+    _accuracy_variance: f32,
 }
 
 impl Default for PerformanceAnalysis {
@@ -2574,7 +2574,7 @@ impl Default for PerformanceAnalysis {
             avg_response_time: 1.0,
             avg_accuracy: 0.8,
             avg_memory_usage: 512.0,
-            accuracy_variance: 0.05,
+            _accuracy_variance: 0.05,
         }
     }
 }

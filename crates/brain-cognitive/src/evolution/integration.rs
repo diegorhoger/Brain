@@ -1282,6 +1282,7 @@ impl OptimizationStrategyEnum {
     }
 }
 
+#[allow(async_fn_in_trait)]
 pub trait OptimizationStrategy: Send + Sync {
     /// Apply optimization to an opportunity
     async fn optimize(
@@ -1883,6 +1884,7 @@ impl BehaviorModificationStrategyEnum {
     }
 }
 
+#[allow(async_fn_in_trait)]
 pub trait BehaviorModificationStrategy: Send + Sync {
     /// Apply a behavior modification
     async fn apply_modification(
