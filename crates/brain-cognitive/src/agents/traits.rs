@@ -211,6 +211,7 @@ pub enum ExecutionStatus {
 }
 
 /// Shared context for agent execution
+#[derive(Clone)]
 pub struct CognitiveContext {
     /// Access to meta-memory system
     pub meta_memory: Arc<dyn MetaMemoryRepository>,

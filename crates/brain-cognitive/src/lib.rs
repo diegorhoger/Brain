@@ -22,6 +22,9 @@ pub mod meta_memory;
 pub mod agents;
 pub mod context;
 
+// Agent orchestration system
+pub mod orchestrator;
+
 // Cognitive Preference Profiles system
 pub mod profiles;
 
@@ -119,4 +122,30 @@ pub use profiles::{
     adapters::StandardBehaviorAdapter,
     // Preset utilities
     presets::{PresetManager, PresetUtils, ExperienceLevel, WorkContext, UserPreferences},
+};
+
+// Re-export orchestrator types
+pub use orchestrator::{
+    // Core orchestration
+    AgentOrchestrator, OrchestrationConfig, OrchestrationMetrics,
+    // DAG structures
+    AgentDAG, AgentNode, ExecutionPlan, DependencyGraph,
+    DAGBuilder, DAGValidationError, ExecutionOrder,
+    // Executor components
+    DAGExecutor, ExecutionEngine, ExecutionContext,
+    ExecutionResult, RetryPolicy,
+    // Scheduler components
+    TaskScheduler, SchedulingStrategy, TaskPriority,
+    ScheduleDecision, ResourceConstraints,
+    // Memory management
+    OrchestratorMemory, AgentMemoryNamespace, MemoryRegistry,
+    CrossAgentMemoryShare, MemoryAccessControl,
+    // Communication system
+    AgentCommunicationBus, MessageBus, AgentMessage,
+    CommunicationProtocol, EventTrigger,
+    // Workflow integration (Task 4.1.5)
+    WorkflowAdapter, ConvertedWorkflow, EnhancedWorkflowResult,
+    WorkflowExecutionStatus, WorkflowStepResult, StepExecutionStatus,
+    WorkflowRequirements, AgentRequirement, WorkflowConstraints,
+    WorkflowStepDefinition,
 };

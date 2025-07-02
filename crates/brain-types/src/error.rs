@@ -94,6 +94,10 @@ pub enum BrainError {
     /// Internal system error
     #[error("Internal error: {0}")]
     InternalError(String),
+    
+    /// Execution related error
+    #[error("Execution error: {0}")]
+    ExecutionError(String),
 }
 
 impl From<serde_json::Error> for BrainError {
