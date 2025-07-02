@@ -379,6 +379,9 @@ pub enum PatternType {
     
     /// Learning patterns in adaptation
     LearningPattern,
+    
+    /// Optimization patterns from parameter tuning
+    OptimizationPattern,
 }
 
 /// Predicted outcome from a pattern
@@ -1343,6 +1346,7 @@ impl LearningLoopEngine {
                     PatternType::TemporalPattern => InsightCategory::PerformanceOptimization,
                     PatternType::CollaborativePattern => InsightCategory::CollaborationOptimization,
                     PatternType::LearningPattern => InsightCategory::BehaviorAdaptation,
+                    PatternType::OptimizationPattern => InsightCategory::PerformanceOptimization,
                 },
                 description: format!(
                     "Detected {} pattern: {} (confidence: {:.2}, strength: {:.2})",
@@ -1355,6 +1359,7 @@ impl LearningLoopEngine {
                         PatternType::TemporalPattern => "temporal",
                         PatternType::CollaborativePattern => "collaborative",
                         PatternType::LearningPattern => "learning",
+                        PatternType::OptimizationPattern => "optimization",
                     },
                     pattern.description,
                     pattern.confidence,

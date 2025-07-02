@@ -175,4 +175,10 @@ pub use evolution::{
     LearningLoopEngine, PatternRecognizer, ConfidenceCalibrator,
     FeedbackIntegrator, ParameterTuner, LearningState,
     LearningStrategy,
+    // Phase 5.2: Learning Integration
+    LearningIntegrationEngine, LearningIntegrationConfig,
+    LearningCycleResult,
+    AdaptationState, SystemPerformanceMetrics, LearningPhase,
+    SophisticatedPatternAnalyzer, AutomatedParameterOptimizer,
+    AdaptiveBehaviorModifier, IntegratedPerformanceTracker,
 };

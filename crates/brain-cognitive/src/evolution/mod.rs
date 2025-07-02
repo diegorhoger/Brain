@@ -19,13 +19,48 @@ pub mod meta_agent;
 pub mod performance;
 pub mod learning_loop;
 pub mod optimization;
+pub mod integration;
 
 // Re-export key types
 pub use meta_agent::*;
 pub use performance::*;
 pub use learning_loop::*;
 pub use optimization::{OptimizationManager, OptimizationStrategy};
-pub use meta_agent::OptimizationResult;
+pub use meta_agent::OptimizationResult as MetaAgentOptimizationResult;
+pub use integration::{
+    LearningIntegrationEngine,
+    LearningIntegrationConfig,
+    AdaptationState,
+    ActiveAdaptation,
+    AdaptationCheckpoint,
+    RollbackPlan,
+    RollbackStep,
+    SystemPerformanceMetrics,
+    LearningPhase,
+    SophisticatedPatternAnalyzer,
+    AutomatedParameterOptimizer,
+    AdaptiveBehaviorModifier,
+    IntegratedPerformanceTracker,
+    OptimizationResults,
+    BehaviorModificationResults,
+    OptimizationOpportunity,
+    OpportunityType,
+    ResourceEstimate,
+    OptimizationResult as IntegrationOptimizationResult,
+    ParameterChange,
+    OptimizationExperiment,
+    ExperimentStatus,
+    SuccessRateTracker,
+    OptimizationOutcome,
+    BehaviorModificationOpportunity,
+    BehaviorModificationType,
+    BehaviorModificationResult,
+    BehaviorChangeRecord,
+    SystemPerformanceSnapshot,
+    PerformanceTrend,
+    TrendAnalysis,
+    TrendDirection,
+};
 
 /// Core trait for meta-agents that can analyze and improve other agents
 #[async_trait]
