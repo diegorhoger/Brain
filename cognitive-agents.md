@@ -453,6 +453,227 @@ pub trait BrainAgent: Send + Sync {
 - ⏳ Visual DAG editor
 - ⏳ Agent confidence visualization
 
+### 🔄 Task 6.4: AI Concierge - Intelligent Agent Orchestration - IN PROGRESS
+**Objective**: Natural language interface that automatically selects and orchestrates agents
+**Files**: `brain-cli/src/concierge.rs`, `brain-cli/src/main.rs`
+
+**Vision**: Transform CLI from manual agent selection to intelligent conversational interface where users express intent in natural language and the system automatically determines which agents to orchestrate.
+
+**User Experience Goals**:
+- **Natural Conversation**: "Help me build a todo app" → Auto-orchestrates PlannerAgent → ArchitectAgent → FrontendCoder
+- **Project Analysis**: "What can you tell me about our Brain project?" → Auto-triggers DocAgent + ArchitectAgent for comprehensive analysis
+- **Code Generation**: "Create a REST API for user management" → Auto-sequences APIAgent → SchemaAgent → BackendCoder → SecurityAgent
+- **Problem Solving**: "Our deployment is failing" → Auto-activates ObservabilityAgent → HotfixAgent → DeployerAgent
+
+**Core Components**:
+
+#### 6.4.1: Intent Classification Engine
+**Purpose**: Parse natural language input and classify user intent
+**Requirements**:
+- ✅ **Intent Categories**: 
+  - `ProjectAnalysis` - Understanding existing codebase/project
+  - `FeatureDevelopment` - Building new features/applications
+  - `ProblemSolving` - Debugging, fixing, optimizing
+  - `CodeGeneration` - Creating specific code artifacts
+  - `Documentation` - Generating docs, explanations
+  - `Security` - Security analysis, compliance checks
+  - `Testing` - Test creation, quality assurance
+  - `Deployment` - CI/CD, infrastructure, scaling
+  - `Maintenance` - Refactoring, updates, monitoring
+- ✅ **NLP Processing**: Keyword extraction, sentiment analysis, context understanding
+- ✅ **Context Awareness**: Consider current project state, previous conversations, user preferences (CPP)
+- ✅ **Ambiguity Resolution**: Handle unclear requests with clarifying questions
+
+#### 6.4.2: Agent Selection Intelligence
+**Purpose**: Determine optimal agent combination for classified intent
+**Requirements**:
+- ✅ **Agent Capability Mapping**: Map intents to agent capabilities and strengths
+- ✅ **Dependency Analysis**: Understand agent interdependencies and execution order
+- ✅ **Dynamic Selection**: Adapt agent selection based on:
+  - Project context and technology stack
+  - Previous execution results
+  - Agent performance history
+  - User preferences (CPP settings)
+- ✅ **Multi-Path Planning**: Generate multiple execution strategies for complex requests
+
+#### 6.4.3: Execution Strategy Engine
+**Purpose**: Orchestrate selected agents with optimal workflow
+**Requirements**:
+- ✅ **Strategy Types**:
+  - `Sequential` - Step-by-step execution with dependencies
+  - `Parallel` - Concurrent execution where possible
+  - `Iterative` - Loop-based refinement workflows
+  - `Conditional` - Branch-based execution paths
+- ✅ **Dynamic Adaptation**: Adjust strategy based on intermediate results
+- ✅ **Error Recovery**: Handle agent failures with fallback strategies
+- ✅ **Resource Optimization**: Balance speed vs resource usage
+
+#### 6.4.4: Conversational Interface
+**Purpose**: Natural, context-aware interaction with user
+**Requirements**:
+- ✅ **Natural Input Processing**: Handle conversational language, not just commands
+- ✅ **Context Preservation**: Remember conversation history and project state
+- ✅ **Progress Communication**: Real-time updates on agent execution
+- ✅ **Interactive Clarification**: Ask follow-up questions when needed
+- ✅ **Result Synthesis**: Combine multiple agent outputs into coherent responses
+- ✅ **Learning Integration**: Improve responses based on user feedback
+
+#### 6.4.5: Integration Layer
+**Purpose**: Seamless integration with existing CLI and agent infrastructure
+**Requirements**:
+- ✅ **AgentApiManager Integration**: Leverage existing agent communication
+- ✅ **CPP Compatibility**: Respect user cognitive preferences
+- ✅ **Session Management**: Integrate with existing session tracking
+- ✅ **Memory Integration**: Use MetaMemory for context and learning
+- ✅ **Error Handling**: Graceful degradation and comprehensive error reporting
+
+**Implementation Phases**:
+
+#### Phase 1: Core Intent Classification (Week 1)
+- ✅ Create `ConciergeEngine` with intent classification
+- ✅ Implement keyword-based intent detection
+- ✅ Basic agent mapping for common intents
+- ✅ Integration with existing CLI interactive mode
+
+#### Phase 2: Agent Selection Intelligence (Week 1-2)
+- ✅ Develop `AgentSelector` with capability mapping
+- ✅ Implement dependency analysis and execution ordering
+- ✅ Dynamic agent selection based on project context
+- ✅ Integration with existing workflow orchestration
+
+#### Phase 3: Conversational Interface (Week 2)
+- ✅ Enhanced natural language processing
+- ✅ Context-aware conversation management
+- ✅ Real-time execution feedback and progress reporting
+- ✅ Interactive clarification and refinement
+
+#### Phase 4: Advanced Features (Week 2-3)
+- ✅ Learning from user interactions
+- ✅ Predictive agent suggestions
+- ✅ Multi-turn conversation handling
+- ✅ Integration with CPP for personalized responses
+
+**Technical Specifications**:
+
+#### Data Structures:
+```rust
+// Intent classification
+pub enum UserIntent {
+    ProjectAnalysis(ProjectAnalysisIntent),
+    FeatureDevelopment(FeatureDevelopmentIntent),
+    ProblemSolving(ProblemSolvingIntent),
+    CodeGeneration(CodeGenerationIntent),
+    Documentation(DocumentationIntent),
+    Security(SecurityIntent),
+    Testing(TestingIntent),
+    Deployment(DeploymentIntent),
+    Maintenance(MaintenanceIntent),
+    General(GeneralIntent),
+}
+
+// Agent orchestration plan
+pub struct OrchestrationPlan {
+    pub agents: Vec<AgentTask>,
+    pub strategy: ExecutionStrategy,
+    pub estimated_duration: Duration,
+    pub confidence: f32,
+    pub context: ConversationContext,
+}
+
+// Conversational state
+pub struct ConversationContext {
+    pub session_id: String,
+    pub user_id: String,
+    pub project_context: Option<ProjectContext>,
+    pub conversation_history: Vec<ConversationTurn>,
+    pub user_preferences: CognitiveProfile,
+}
+```
+
+#### Core Modules:
+```rust
+// Main concierge engine
+pub struct ConciergeEngine {
+    intent_classifier: IntentClassifier,
+    agent_selector: AgentSelector,
+    execution_engine: ExecutionEngine,
+    conversation_manager: ConversationManager,
+    agent_manager: AgentApiManager,
+}
+
+// Natural language understanding
+pub struct IntentClassifier {
+    keyword_matcher: KeywordMatcher,
+    context_analyzer: ContextAnalyzer,
+    pattern_recognizer: PatternRecognizer,
+}
+
+// Smart agent selection
+pub struct AgentSelector {
+    capability_map: CapabilityMap,
+    dependency_graph: DependencyGraph,
+    performance_tracker: PerformanceTracker,
+}
+```
+
+**Success Metrics**:
+- ✅ Intent classification accuracy > 85%
+- ✅ User satisfaction with agent selection > 90%
+- ✅ Reduction in manual agent selection by 80%
+- ✅ Average response time < 5 seconds for simple intents
+- ✅ Successful multi-agent orchestration for complex tasks
+
+**Integration Points**:
+- ✅ **Existing CLI**: Enhance interactive mode with concierge capabilities
+- ✅ **AgentApiManager**: Use established agent communication protocols
+- ✅ **CPP System**: Respect user cognitive preferences in responses
+- ✅ **Workflow Engine**: Leverage existing orchestration infrastructure
+- ✅ **MetaMemory**: Store conversation context and learning data
+
+**Example Interactions**:
+
+```bash
+🧠 Brain AI> Help me build a todo app with React and Node.js
+
+🤖 Concierge: I'll help you build a todo app! I'm orchestrating a development workflow:
+   1. 📋 PlannerAgent - Creating project specification
+   2. 🏗️  ArchitectAgent - Designing system architecture  
+   3. 🗄️  SchemaAgent - Designing database schema
+   4. 🔗 APIAgent - Creating REST API specification
+   5. ⚛️  FrontendCoder - Building React frontend
+   6. 🖥️  BackendCoder - Building Node.js backend
+   
+🔄 Executing workflow... (estimated 3-5 minutes)
+
+✅ Todo app development plan complete!
+   📊 Generated comprehensive project structure
+   🎨 Created React component architecture
+   🗃️  Designed database schema with PostgreSQL
+   🔗 Built REST API with authentication
+   📱 Generated responsive UI with Material-UI
+   
+Would you like me to generate the actual code files or explain any part of the plan?
+
+🧠 Brain AI> What's the security status of our current project?
+
+🤖 Concierge: I'll analyze the security posture of your project:
+   🔍 CyberSecurityAgent - Scanning for vulnerabilities
+   🛡️  PromptSecurityAgent - Checking AI security measures  
+   🔒 DataPrivacyAgent - Reviewing data handling
+   ⚖️  EthicalAIAgent - Auditing AI bias and ethics
+   
+🔄 Security analysis in progress...
+
+✅ Security analysis complete!
+   🟢 No critical vulnerabilities found
+   🟡 3 medium-risk issues identified
+   🔵 5 recommendations for improvement
+   
+📊 Detailed security report generated. Would you like me to create a remediation plan?
+```
+
+**Status**: 🔄 **IN PROGRESS** - Priority implementation for enhanced user experience
+
 ---
 
 ## ⏳ Phase 7: Advanced Features (Week 7-8) - PENDING
@@ -635,8 +856,23 @@ pub trait BrainAgent: Send + Sync {
   - ✅ CPP configuration CLI (Complete profile management with presets)
   - ✅ Interactive agent sessions (Full interactive framework with 9 commands)
   - ✅ Workflow orchestration commands (Multi-agent workflows with DAG execution)
+- 🔄 **Task 6.4**: AI Concierge - Intelligent Agent Orchestration 🔄 **IN PROGRESS**
+  - 🔄 Intent Classification Engine (Natural language understanding and intent detection)
+  - 🔄 Agent Selection Intelligence (Smart agent mapping and dependency analysis)
+  - 🔄 Execution Strategy Engine (Optimal workflow orchestration)
+  - 🔄 Conversational Interface (Natural, context-aware user interaction)
+  - 🔄 Integration Layer (Seamless CLI and agent infrastructure integration)
 
-**🎯 Immediate Next Steps**: Begin Phase 6.3 - Desktop & VSCode Integration
+**🔄 CURRENT PRIORITY**: Task 6.4 - AI Concierge Implementation
+**Target**: Intelligent conversational interface with automatic agent orchestration
+**Focus Areas**:
+- 🔄 Intent Classification Engine (Natural language understanding and intent detection)
+- 🔄 Agent Selection Intelligence (Smart agent mapping and dependency analysis)
+- 🔄 Execution Strategy Engine (Optimal workflow orchestration)
+- 🔄 Conversational Interface (Natural, context-aware user interaction)
+- 🔄 Integration Layer (Seamless CLI and agent infrastructure integration)
+
+**🎯 Next Steps After AI Concierge**: Phase 6.3 - Desktop & VSCode Integration
 **Target**: Complete UI integration with visual agent interaction capabilities
 **Focus Areas**:
 - ⏳ Agent panel in desktop application (GUI for agent monitoring and control)
