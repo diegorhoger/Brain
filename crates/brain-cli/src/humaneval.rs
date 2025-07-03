@@ -125,15 +125,21 @@ impl HumanEvalAdapter {
 
     /// Load HumanEval problems from the dataset
     pub fn load_problems(&self) -> Result<Vec<HumanEvalProblem>> {
-        let problems_path = "benchmarks/humaneval/human-eval/data/HumanEval.jsonl.gz";
+        // Find project root by looking for benchmarks directory (workspace root indicator)
+        let mut current_dir = std::env::current_dir()?;
+        while !current_dir.join("benchmarks").exists() && current_dir.parent().is_some() {
+            current_dir = current_dir.parent().unwrap().to_path_buf();
+        }
         
-        if !Path::new(problems_path).exists() {
-            return Err(anyhow::anyhow!("HumanEval dataset not found at: {}", problems_path));
+        let problems_path = current_dir.join("benchmarks/humaneval/human-eval/data/HumanEval.jsonl.gz");
+        
+        if !problems_path.exists() {
+            return Err(anyhow::anyhow!("HumanEval dataset not found at: {}", problems_path.display()));
         }
 
         // For now, we'll use the example problem as a test
         // TODO: Add proper JSONL.gz reading for full dataset
-        let example_path = "benchmarks/humaneval/human-eval/data/example_problem.jsonl";
+        let example_path = current_dir.join("benchmarks/humaneval/human-eval/data/example_problem.jsonl");
         let content = fs::read_to_string(example_path)?;
         
         let mut problems = Vec::new();
