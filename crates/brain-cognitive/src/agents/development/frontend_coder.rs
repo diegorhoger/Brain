@@ -13,12 +13,17 @@ use crate::agents::traits::{
     CognitiveContext, VerbosityLevel, ExecutionMetadata, ExecutionStatus,
     BrainResult
 };
+use crate::agents::standards::{EliteCodeGenerator, EliteCodeValidator};
 
 /// Specialized agent for frontend implementation and code generation
 #[derive(Clone)]
 pub struct FrontendCoder {
     metadata: AgentMetadata,
     preferences: CognitivePreferences,
+    #[allow(dead_code)]
+    elite_generator: EliteCodeGenerator,
+    #[allow(dead_code)]
+    elite_validator: EliteCodeValidator,
 }
 
 impl FrontendCoder {
@@ -74,7 +79,14 @@ impl FrontendCoder {
             collaboration_style: "iterative".to_string(), // Iterative collaboration for frontend development
         };
 
-        Self { metadata, preferences }
+        // Load Elite Code Framework from code.json or use defaults
+        let framework = super::super::standards::framework::load_framework()
+            .unwrap_or_else(|_| super::super::standards::framework::default_framework());
+        
+        let elite_generator = EliteCodeGenerator::new();
+        let elite_validator = EliteCodeValidator::new(framework);
+
+        Self { metadata, preferences, elite_generator, elite_validator }
     }
 
     /// Generate comprehensive frontend codebase from designs and API specs

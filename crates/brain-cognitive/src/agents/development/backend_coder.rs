@@ -13,6 +13,7 @@ use crate::agents::traits::{
     CognitiveContext, VerbosityLevel, ExecutionMetadata, ExecutionStatus,
     BrainResult
 };
+use crate::agents::standards::{EliteCodeGenerator, EliteCodeValidator};
 use brain_types::BrainError;
 
 /// Specialized agent for backend implementation and architecture
@@ -20,6 +21,10 @@ use brain_types::BrainError;
 pub struct BackendCoder {
     metadata: AgentMetadata,
     preferences: CognitivePreferences,
+    #[allow(dead_code)]
+    elite_generator: EliteCodeGenerator,
+    #[allow(dead_code)]
+    elite_validator: EliteCodeValidator,
 }
 
 impl BackendCoder {
@@ -74,7 +79,15 @@ impl BackendCoder {
             detail_level: 0.8, // High detail level for backend implementation
             collaboration_style: "systematic".to_string(), // Systematic approach for backend development
         };
-        Self { metadata, preferences }
+
+        // Load Elite Code Framework from code.json or use defaults
+        let framework = super::super::standards::framework::load_framework()
+            .unwrap_or_else(|_| super::super::standards::framework::default_framework());
+        
+        let elite_generator = EliteCodeGenerator::new();
+        let elite_validator = EliteCodeValidator::new(framework);
+
+        Self { metadata, preferences, elite_generator, elite_validator }
     }
 
     /// Generate comprehensive backend codebase from API specs and requirements

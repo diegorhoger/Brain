@@ -6,6 +6,7 @@ pub mod intelligence;
 pub mod platform;
 pub mod registry;
 pub mod traits;
+pub mod standards;
 
 // Re-exports for convenience
 pub use traits::{BrainAgent, AgentMetadata, AgentInput, AgentOutput, CognitiveContext, AgentCapability};
@@ -19,4 +20,5 @@ pub use security::*;
 pub use testing::*;
 pub use ops::*;
 pub use intelligence::*;
-pub use platform::*; 
+pub use platform::*;
+pub use standards::*; 
