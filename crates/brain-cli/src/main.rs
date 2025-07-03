@@ -4,6 +4,9 @@ use clap::{Arg, Command, ArgMatches};
 use anyhow::Result;
 use uuid::Uuid;
 
+mod concierge;
+use concierge::{ConciergeEngine, ConversationContext, ConversationTurn};
+
 fn ensure_directories() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("data")?;
     std::fs::create_dir_all("logs")?;
@@ -1055,6 +1058,199 @@ async fn handle_profile_commands(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
+/// Handle AI Concierge chat command
+async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
+    let direct_message = matches.get_one::<String>("message");
+    let user_id = matches.get_one::<String>("user-id").unwrap().to_string();
+    let session_id = matches.get_one::<String>("session-id")
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
+    let project_context = matches.get_one::<String>("project").map(|s| s.to_string());
+
+    println!("🧠 Brain AI Concierge");
+    println!("=====================");
+    println!();
+    
+    // Initialize concierge engine
+    let mut concierge = match ConciergeEngine::new().await {
+        Ok(engine) => engine,
+        Err(e) => {
+            eprintln!("❌ Failed to initialize AI Concierge: {}", e);
+            println!("💡 Make sure the Brain AI system is running and accessible");
+            return Ok(());
+        }
+    };
+
+    // Create conversation context
+    let mut context = ConversationContext {
+        session_id: session_id.clone(),
+        user_id: user_id.clone(),
+        project_context,
+        conversation_history: Vec::new(),
+        user_preferences: None,
+    };
+
+    println!("✅ AI Concierge initialized successfully!");
+    println!("👤 User ID: {}", user_id);
+    println!("🔗 Session ID: {}", session_id);
+    if let Some(project) = &context.project_context {
+        println!("📁 Project Context: {}", project);
+    }
+    println!();
+
+    // Handle direct message or start interactive mode
+    if let Some(message) = direct_message {
+        // Single message mode
+        println!("💬 Processing your request: \"{}\"", message);
+        println!();
+        
+        match concierge.process_input(message, &context).await {
+            Ok(response) => {
+                println!("{}", response.message);
+                
+                // Show execution details if available
+                if !response.execution_result.agent_results.is_empty() {
+                    println!();
+                    println!("📋 Execution Details:");
+                    for result in &response.execution_result.agent_results {
+                        let status_icon = if result.success { "✅" } else { "❌" };
+                        println!("   {} {} - {:.1}ms", 
+                            status_icon, 
+                            result.agent_name, 
+                            result.execution_time_ms
+                        );
+                        if let Some(error) = &result.error {
+                            println!("     Error: {}", error);
+                        }
+                    }
+                }
+                
+                // Show suggestions
+                if !response.suggestions.is_empty() {
+                    println!();
+                    println!("💡 Suggestions:");
+                    for suggestion in &response.suggestions {
+                        println!("   • {}", suggestion);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to process request: {}", e);
+            }
+        }
+    } else {
+        // Interactive mode
+        println!("🤖 Welcome to AI Concierge! I can help you with:");
+        println!("   • 🏗️  Building applications and features");
+        println!("   • 📊 Analyzing your project");
+        println!("   • 🔒 Security analysis and compliance");
+        println!("   • 🐛 Problem solving and debugging");
+        println!("   • 📚 Code generation and documentation");
+        println!("   • 🚀 Deployment and maintenance");
+        println!();
+        println!("💡 Just tell me what you want to do in natural language!");
+        println!("   Examples:");
+        println!("   • \"Help me build a todo app with React\"");
+        println!("   • \"What's the security status of our project?\"");
+        println!("   • \"Our deployment is failing, can you help?\"");
+        println!();
+        println!("Type 'exit' or 'quit' to end the conversation.");
+        println!();
+
+        // Interactive loop
+        loop {
+            // Get user input
+            print!("🧠 You> ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
+            
+            let mut input = String::new();
+            match io::stdin().read_line(&mut input) {
+                Ok(_) => {
+                    let input = input.trim();
+                    
+                    // Check for exit commands
+                    if input.eq_ignore_ascii_case("exit") || 
+                       input.eq_ignore_ascii_case("quit") || 
+                       input.eq_ignore_ascii_case("bye") {
+                        println!("👋 Thank you for using Brain AI Concierge!");
+                        println!("🎯 Session ID: {} (you can continue later with --session-id)", session_id);
+                        break;
+                    }
+                    
+                    // Skip empty input
+                    if input.is_empty() {
+                        continue;
+                    }
+                    
+                    println!();
+                    
+                    // Process the input
+                    match concierge.process_input(input, &context).await {
+                        Ok(response) => {
+                            println!("🤖 Concierge> {}", response.message);
+                            
+                            // Add to conversation history
+                            context.conversation_history.push(ConversationTurn {
+                                timestamp: chrono::Utc::now(),
+                                user_input: input.to_string(),
+                                system_response: response.message.clone(),
+                                intent: None, // TODO: Store classified intent
+                            });
+                            
+                            // Show execution details if requested or if there were failures
+                            if !response.execution_result.agent_results.is_empty() {
+                                let failed_count = response.execution_result.agent_results
+                                    .iter()
+                                    .filter(|r| !r.success)
+                                    .count();
+                                
+                                if failed_count > 0 || input.contains("detail") || input.contains("show") {
+                                    println!();
+                                    println!("📋 Execution Details:");
+                                    for result in &response.execution_result.agent_results {
+                                        let status_icon = if result.success { "✅" } else { "❌" };
+                                        println!("   {} {} - {:.1}ms (confidence: {:.1}%)", 
+                                            status_icon, 
+                                            result.agent_name, 
+                                            result.execution_time_ms,
+                                            result.confidence * 100.0
+                                        );
+                                        if let Some(error) = &result.error {
+                                            println!("     Error: {}", error);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Show suggestions occasionally
+                            if !response.suggestions.is_empty() && context.conversation_history.len() % 3 == 0 {
+                                println!();
+                                println!("💡 You might also want to:");
+                                for suggestion in response.suggestions.iter().take(2) {
+                                    println!("   • {}", suggestion);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Sorry, I encountered an error: {}", e);
+                            println!("💡 Please try rephrasing your request or check if the Brain AI system is running.");
+                        }
+                    }
+                    
+                    println!();
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to read input: {}", e);
+                    break;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Ensure required directories exist
@@ -1233,6 +1429,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .about("List available profile presets")
                 )
         )
+        .subcommand(
+            Command::new("chat")
+                .about("🤖 AI Concierge - Chat with intelligent agent orchestration")
+                .arg(
+                    Arg::new("message")
+                        .help("Direct message to send (optional - will start interactive mode if not provided)")
+                )
+                .arg(
+                    Arg::new("user-id")
+                        .short('u')
+                        .long("user-id")
+                        .help("User ID for conversation context")
+                        .default_value("default_user")
+                )
+                .arg(
+                    Arg::new("session-id")
+                        .short('s')
+                        .long("session-id")
+                        .help("Session ID to continue previous conversation")
+                )
+                .arg(
+                    Arg::new("project")
+                        .short('p')
+                        .long("project")
+                        .help("Project context for agent orchestration")
+                )
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -1297,6 +1520,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(("profiles", sub_matches)) => {
             handle_profile_commands(sub_matches).await?
+        }
+        Some(("chat", sub_matches)) => {
+            handle_concierge_chat(sub_matches).await?
         }
         Some(("status", _)) => {
             println!("🧠 Brain AI System Status");
