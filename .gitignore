@@ -75,4 +75,7 @@ segments_backup_*.json
 
 # Testing artifacts
 test-results/
-coverage/ 
+coverage/
+
+# HumanEval benchmark repository (external dependency)
+benchmarks/humaneval/human-eval/ 
