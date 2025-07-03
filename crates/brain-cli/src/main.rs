@@ -5,7 +5,10 @@ use anyhow::Result;
 use uuid::Uuid;
 
 mod concierge;
+mod humaneval;
+
 use concierge::{ConciergeEngine, ConversationContext, ConversationTurn};
+use humaneval::{HumanEvalAdapter, BenchmarkConfig, ExecutionStrategy};
 
 fn ensure_directories() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("data")?;
@@ -1060,12 +1063,10 @@ async fn handle_profile_commands(matches: &ArgMatches) -> Result<()> {
 
 /// Handle AI Concierge chat command
 async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
-    let direct_message = matches.get_one::<String>("message");
-    let user_id = matches.get_one::<String>("user-id").unwrap().to_string();
-    let session_id = matches.get_one::<String>("session-id")
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
-    let project_context = matches.get_one::<String>("project").map(|s| s.to_string());
+    let message = matches.get_one::<String>("message");
+    let user_id = matches.get_one::<String>("user-id").unwrap();
+    let session_id = matches.get_one::<String>("session-id");
+    let project_context = matches.get_one::<String>("project");
 
     println!("🧠 Brain AI Concierge");
     println!("=====================");
@@ -1083,23 +1084,23 @@ async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
 
     // Create conversation context
     let mut context = ConversationContext {
-        session_id: session_id.clone(),
+        session_id: session_id.map(|s| s.to_string()).unwrap_or_else(|| Uuid::new_v4().to_string()),
         user_id: user_id.clone(),
-        project_context,
+        project_context: project_context.map(|s| s.to_string()),
         conversation_history: Vec::new(),
         user_preferences: None,
     };
 
     println!("✅ AI Concierge initialized successfully!");
     println!("👤 User ID: {}", user_id);
-    println!("🔗 Session ID: {}", session_id);
+    println!("🔗 Session ID: {}", context.session_id);
     if let Some(project) = &context.project_context {
         println!("📁 Project Context: {}", project);
     }
     println!();
 
     // Handle direct message or start interactive mode
-    if let Some(message) = direct_message {
+    if let Some(message) = message {
         // Single message mode
         println!("💬 Processing your request: \"{}\"", message);
         println!();
@@ -1174,7 +1175,7 @@ async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
                        input.eq_ignore_ascii_case("quit") || 
                        input.eq_ignore_ascii_case("bye") {
                         println!("👋 Thank you for using Brain AI Concierge!");
-                        println!("🎯 Session ID: {} (you can continue later with --session-id)", session_id);
+                        println!("🎯 Session ID: {} (you can continue later with --session-id)", context.session_id);
                         break;
                     }
                     
@@ -1248,6 +1249,75 @@ async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+/// Handle HumanEval benchmark command
+async fn handle_benchmark_humaneval(matches: &ArgMatches) -> Result<()> {
+    let subset_size = matches.get_one::<String>("subset")
+        .unwrap()
+        .parse::<usize>()
+        .unwrap_or(1);
+    
+    let agent_name = matches.get_one::<String>("agent").unwrap().to_string();
+    let strategy_str = matches.get_one::<String>("strategy").unwrap();
+    let output_file = matches.get_one::<String>("output").unwrap().to_string();
+    
+    let strategy = strategy_str.parse::<ExecutionStrategy>()
+        .unwrap_or(ExecutionStrategy::Direct);
+    
+    println!("🏆 HumanEval Benchmark - Brain AI Coding Evaluation");
+    println!("==================================================");
+    println!("📊 Configuration:");
+    println!("   • Problems: {} (subset)", subset_size);
+    println!("   • Agent: {}", agent_name);
+    println!("   • Strategy: {:?}", strategy);
+    println!("   • Output: {}", output_file);
+    println!();
+    
+    let config = BenchmarkConfig {
+        subset_size,
+        agent_name,
+        strategy,
+        output_file: output_file.clone(),
+        timeout_seconds: 30,
+    };
+    
+    println!("🔧 Initializing HumanEval adapter...");
+    let adapter = match HumanEvalAdapter::new(config).await {
+        Ok(adapter) => {
+            println!("✅ Adapter initialized successfully");
+            adapter
+        },
+        Err(e) => {
+            eprintln!("❌ Failed to initialize HumanEval adapter: {}", e);
+            return Ok(());
+        }
+    };
+    
+    println!("🚀 Starting benchmark execution...");
+    match adapter.run_benchmark().await {
+        Ok(results) => {
+            println!();
+            println!("🎯 Benchmark completed successfully!");
+            
+            // Run simple Brain AI evaluation
+            println!();
+            if let Err(e) = adapter.simple_evaluation(&results).await {
+                eprintln!("⚠️ Simple evaluation failed: {}", e);
+            }
+            
+            // Optionally run HumanEval official evaluation (note: may fail due to multiprocessing)
+            println!("🧪 Attempting official HumanEval evaluation (may fail with multiprocessing issues)...");
+            if let Err(e) = adapter.evaluate_with_humaneval(&output_file).await {
+                eprintln!("⚠️ Official evaluation failed: {}", e);
+            }
+        },
+        Err(e) => {
+            eprintln!("❌ Benchmark execution failed: {}", e);
+        }
+    }
+    
     Ok(())
 }
 
@@ -1456,6 +1526,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .help("Project context for agent orchestration")
                 )
         )
+        .subcommand(
+            Command::new("benchmark")
+                .about("Run a HumanEval benchmark")
+                .arg(
+                    Arg::new("subset")
+                        .short('s')
+                        .long("subset")
+                        .help("Number of problems to include in the subset")
+                        .default_value("1")
+                )
+                .arg(
+                    Arg::new("agent")
+                        .short('a')
+                        .long("agent")
+                        .help("Name of the agent to benchmark")
+                        .required(true)
+                )
+                .arg(
+                    Arg::new("strategy")
+                        .short('t')
+                        .long("strategy")
+                        .help("Execution strategy (direct, sequential, parallel)")
+                        .default_value("direct")
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .help("Output file for benchmark results")
+                        .required(true)
+                )
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -1523,6 +1625,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(("chat", sub_matches)) => {
             handle_concierge_chat(sub_matches).await?
+        }
+        Some(("benchmark", sub_matches)) => {
+            handle_benchmark_humaneval(sub_matches).await?
         }
         Some(("status", _)) => {
             println!("🧠 Brain AI System Status");
