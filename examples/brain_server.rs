@@ -1,3 +1,5 @@
+#![recursion_limit = "1024"]
+
 use brain_api::start_web_server;
 
 #[tokio::main]
