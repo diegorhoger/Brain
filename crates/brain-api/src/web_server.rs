@@ -8,6 +8,10 @@ use brain_types::*;
 use brain_core::{WorkingMemoryItem, WorkingMemoryQuery, Priority, WorkingMemoryRepository as WorkingMemoryRepositoryTrait};
 use brain_infra::{WorkingMemoryRepository, ConceptGraphManager, InMemoryInsightRepository, ConceptGraphConfig};
 // Removed unused brain_cognitive import
+use crate::agents::{
+    AgentApiManager, AgentExecutionRequest, WorkflowExecutionRequest,
+};
+use crate::websocket::WebSocketManager;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -415,7 +419,6 @@ pub struct SessionUpdateRequest {
     pub project_context: Option<ProjectContext>,
 }
 
-#[derive(Debug)]
 pub struct WebServer {
     port: u16,
     memory_repository: Arc<Mutex<WorkingMemoryRepository>>,
@@ -423,6 +426,8 @@ pub struct WebServer {
     insight_repository: Arc<Mutex<InMemoryInsightRepository>>,
     development_sessions: Arc<Mutex<HashMap<String, DevelopmentSession>>>,
     sessions_file_path: PathBuf,
+    agent_api_manager: Arc<AgentApiManager>,
+    websocket_manager: Arc<WebSocketManager>,
 }
 
 impl WebServer {
@@ -441,6 +446,12 @@ impl WebServer {
         let insight_repository = Arc::new(Mutex::new(InMemoryInsightRepository::new()));
         let development_sessions = Arc::new(Mutex::new(HashMap::new()));
         
+        // Initialize Agent API Manager
+        let agent_api_manager = Arc::new(AgentApiManager::new().await?);
+        
+        // Initialize WebSocket Manager
+        let websocket_manager = Arc::new(WebSocketManager::new());
+        
         // Create sessions directory if it doesn't exist
         let sessions_dir = Path::new("data/sessions");
         if !sessions_dir.exists() {
@@ -457,6 +468,8 @@ impl WebServer {
             insight_repository,
             development_sessions,
             sessions_file_path,
+            agent_api_manager,
+            websocket_manager,
         };
         
         server.load_sessions().await?;
@@ -487,8 +500,6 @@ impl WebServer {
         }
         Ok(())
     }
-
-
 
     /// Analyze file access patterns to recognize development intent
     fn recognize_intent(files_accessed: &[FileAccess], _project_context: &Option<ProjectContext>) -> Option<DevelopmentIntent> {
@@ -616,6 +627,8 @@ impl WebServer {
         let insight_repo = self.insight_repository.clone();
         let dev_sessions = self.development_sessions.clone();
         let sessions_file_path = self.sessions_file_path.clone();
+        let agent_api_mgr = self.agent_api_manager.clone();
+        let websocket_mgr = self.websocket_manager.clone();
 
         // Health and status endpoints
         let status = warp::path("status")
@@ -729,7 +742,7 @@ impl WebServer {
             .and_then(Self::handle_simple_chat_converse);
 
         // Static file serving
-        let static_files = warp::fs::dir("web");
+        let _static_files = warp::fs::dir("web");
 
         let index = warp::path::end()
             .and(warp::get())
@@ -871,6 +884,110 @@ impl WebServer {
             }))
             .and_then(Self::handle_development_context_get);
 
+        // Agent API endpoints
+        let agent_list = warp::path("api")
+            .and(warp::path("agents"))
+            .and(warp::get())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_agent_list);
+
+        let agent_execute = warp::path("api")
+            .and(warp::path("agents"))
+            .and(warp::path::param::<String>())
+            .and(warp::path("execute"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_agent_execute);
+
+        let agent_status = warp::path("api")
+            .and(warp::path("agents"))
+            .and(warp::path::param::<String>())
+            .and(warp::path("status"))
+            .and(warp::get())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_agent_status);
+
+        let workflow_execute = warp::path("api")
+            .and(warp::path("workflows"))
+            .and(warp::path("execute"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_workflow_execute);
+
+        // CPP (Cognitive Preference Profiles) endpoints
+        let profile_list = warp::path("api")
+            .and(warp::path("profiles"))
+            .and(warp::get())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_profile_list);
+
+        let profile_create = warp::path("api")
+            .and(warp::path("profiles"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_profile_create);
+
+        let profile_get = warp::path("api")
+            .and(warp::path("profiles"))
+            .and(warp::path::param::<String>())
+            .and(warp::get())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_profile_get);
+
+        let profile_update = warp::path("api")
+            .and(warp::path("profiles"))
+            .and(warp::path::param::<String>())
+            .and(warp::put())
+            .and(warp::body::json())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_profile_update);
+
+        let profile_presets = warp::path("api")
+            .and(warp::path("profiles"))
+            .and(warp::path("presets"))
+            .and(warp::get())
+            .and(warp::any().map({
+                let agent_api_mgr = agent_api_mgr.clone();
+                move || agent_api_mgr.clone()
+            }))
+            .and_then(Self::handle_profile_presets);
+
+        // WebSocket endpoint for real-time agent updates
+        let websocket = warp::path("ws")
+            .and(warp::ws())
+            .and(warp::any().map({
+                let websocket_mgr = websocket_mgr.clone();
+                move || websocket_mgr.clone()
+            }))
+            .and_then(Self::handle_websocket);
+
         // Combine all routes
         let routes = index
             .or(status)
@@ -892,7 +1009,16 @@ impl WebServer {
             .or(dev_context_analyze)
             .or(legacy_dev_context_create)
             .or(legacy_dev_context_get)
-            .or(static_files)
+            .or(agent_list)
+            .or(agent_execute)
+            .or(agent_status)
+            .or(workflow_execute)
+            .or(profile_list)
+            .or(profile_create)
+            .or(profile_get)
+            .or(profile_update)
+            .or(profile_presets)
+            .or(websocket)
             .with(cors);
 
         println!("🧠 Brain AI Web Server starting on port {}", self.port);
@@ -903,6 +1029,13 @@ impl WebServer {
         println!("  DELETE /api/dev/context/{{id}} - Delete development session");
         println!("  GET  /api/dev/sessions - List all sessions");
         println!("  POST /api/dev/context/analyze - Analyze development patterns");
+        println!("🤖 Agent API endpoints:");
+        println!("  GET  /api/agents - List all available agents");
+        println!("  POST /api/agents/{{agent_name}}/execute - Execute specific agent");
+        println!("  GET  /api/agents/{{agent_name}}/status - Get agent status");
+        println!("  POST /api/workflows/execute - Execute multi-agent workflow");
+        println!("🔄 WebSocket endpoints:");
+        println!("  WS   /ws - Real-time agent updates and monitoring");
         
         warp::serve(routes)
             .run(([127, 0, 0, 1], self.port))
@@ -1687,6 +1820,250 @@ impl WebServer {
         };
 
         Ok(warp::reply::json(&response))
+    }
+
+    // Agent API handlers
+    async fn handle_agent_list(
+        agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        match agent_api_mgr.list_agents().await {
+            Ok(response) => Ok(warp::reply::json(&response)),
+            Err(e) => {
+                eprintln!("Error listing agents: {}", e);
+                let error_response = serde_json::json!({
+                    "success": false,
+                    "error": e.to_string(),
+                    "agents": [],
+                    "total_count": 0,
+                    "categories": {}
+                });
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    async fn handle_agent_execute(
+        agent_name: String,
+        request: AgentExecutionRequest,
+        agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        match agent_api_mgr.execute_agent(&agent_name, request).await {
+            Ok(response) => Ok(warp::reply::json(&response)),
+            Err(e) => {
+                eprintln!("Error executing agent {}: {}", agent_name, e);
+                let error_response = serde_json::json!({
+                    "success": false,
+                    "error": e.to_string(),
+                    "execution_id": uuid::Uuid::new_v4().to_string(),
+                    "agent_name": agent_name,
+                    "execution_time_ms": 0
+                });
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    async fn handle_agent_status(
+        agent_name: String,
+        agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        match agent_api_mgr.get_agent_status(&agent_name).await {
+            Ok(response) => Ok(warp::reply::json(&response)),
+            Err(e) => {
+                eprintln!("Error getting agent status for {}: {}", agent_name, e);
+                let error_response = serde_json::json!({
+                    "success": false,
+                    "error": e.to_string(),
+                    "agent_name": agent_name,
+                    "status": "error"
+                });
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    async fn handle_workflow_execute(
+        request: WorkflowExecutionRequest,
+        agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        match agent_api_mgr.execute_workflow(request).await {
+            Ok(response) => Ok(warp::reply::json(&response)),
+            Err(e) => {
+                eprintln!("Error executing workflow: {}", e);
+                let error_response = serde_json::json!({
+                    "success": false,
+                    "error": e.to_string(),
+                    "workflow_id": uuid::Uuid::new_v4().to_string(),
+                    "total_execution_time_ms": 0
+                });
+                Ok(warp::reply::json(&error_response))
+            }
+        }
+    }
+
+    // CPP (Cognitive Preference Profile) handlers
+    async fn handle_profile_list(
+        _agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // For now, return a basic response indicating CPP functionality is available
+        // This would be extended with proper user ID handling and profile management
+        let response = serde_json::json!({
+            "success": true,
+            "profiles": [],
+            "total_count": 0,
+            "message": "CPP profile management available. Provide user_id parameter for specific profiles."
+        });
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_profile_create(
+        request: crate::agents::CreateProfileRequest,
+        _agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // For now, return a basic success response
+        // This would be extended with proper CPP integration once the AgentApiManager methods are working
+        let response = serde_json::json!({
+            "success": true,
+            "profile_id": request.user_id,
+            "profile_name": request.name,
+            "user_id": request.user_id,
+            "preferences": request.preferences,
+            "created_at": chrono::Utc::now(),
+            "updated_at": chrono::Utc::now(),
+            "active": true,
+            "message": "Profile creation acknowledged. Full CPP integration pending."
+        });
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_profile_get(
+        user_id: String,
+        _agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // For now, return a default profile response
+        let response = serde_json::json!({
+            "success": true,
+            "profile_id": user_id,
+            "profile_name": format!("{}_profile", user_id),
+            "user_id": user_id,
+            "preferences": {
+                "interaction_mode": "focused",
+                "verbosity_level": "detailed",
+                "communication_tone": "adaptive",
+                "autonomy_boundaries": {
+                    "decision_autonomy_level": "semi_auto",
+                    "confirmation_required": [],
+                    "auto_execute_threshold": 0.8
+                },
+                "cognitive_load_management": {
+                    "chunking_enabled": true,
+                    "progressive_disclosure": true,
+                    "complexity_threshold": 0.6
+                },
+                "emotional_sensitivity": "medium"
+            },
+            "created_at": chrono::Utc::now(),
+            "updated_at": chrono::Utc::now(),
+            "active": true,
+            "message": "Default profile returned. Full CPP integration pending."
+        });
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_profile_update(
+        user_id: String,
+        request: crate::agents::CreateProfileRequest,
+        _agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // For now, return a basic update response
+        let response = serde_json::json!({
+            "success": true,
+            "profile_id": user_id,
+            "profile_name": request.name,
+            "user_id": user_id,
+            "preferences": request.preferences,
+            "created_at": chrono::Utc::now(),
+            "updated_at": chrono::Utc::now(),
+            "active": true,
+            "message": "Profile update acknowledged. Full CPP integration pending."
+        });
+        Ok(warp::reply::json(&response))
+    }
+
+    async fn handle_profile_presets(
+        _agent_api_mgr: Arc<AgentApiManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        // Return some default presets for demonstration
+        let response = serde_json::json!({
+            "success": true,
+            "presets": [
+                {
+                    "id": "developer_focused",
+                    "name": "Developer - Focused",
+                    "description": "Optimized for focused development work with minimal distractions",
+                    "target_persona": "Experienced developers working on complex projects",
+                    "tags": ["developer", "focused", "technical"],
+                    "popularity_score": 0.88,
+                    "profile": {
+                        "interaction_mode": "focused",
+                        "verbosity_level": "detailed",
+                        "communication_tone": "technical",
+                        "autonomy_boundaries": {
+                            "decision_autonomy_level": "semi_auto",
+                            "confirmation_required": [],
+                            "auto_execute_threshold": 0.8
+                        },
+                        "cognitive_load_management": {
+                            "chunking_enabled": false,
+                            "progressive_disclosure": false,
+                            "complexity_threshold": 0.8
+                        },
+                        "emotional_sensitivity": "low"
+                    }
+                },
+                {
+                    "id": "beginner_guided",
+                    "name": "Beginner - Guided",
+                    "description": "Perfect for newcomers who need step-by-step guidance",
+                    "target_persona": "New users learning development concepts",
+                    "tags": ["beginner", "guided", "learning"],
+                    "popularity_score": 0.85,
+                    "profile": {
+                        "interaction_mode": "collaborative",
+                        "verbosity_level": "comprehensive",
+                        "communication_tone": "casual",
+                        "autonomy_boundaries": {
+                            "decision_autonomy_level": "manual",
+                            "confirmation_required": ["all"],
+                            "auto_execute_threshold": 0.3
+                        },
+                        "cognitive_load_management": {
+                            "chunking_enabled": true,
+                            "progressive_disclosure": true,
+                            "complexity_threshold": 0.3
+                        },
+                        "emotional_sensitivity": "high"
+                    }
+                }
+            ],
+            "total_count": 2,
+            "message": "Default presets returned. Full CPP integration pending."
+        });
+        Ok(warp::reply::json(&response))
+    }
+
+    /// Handle WebSocket connections for real-time agent updates
+    async fn handle_websocket(
+        ws: warp::ws::Ws,
+        websocket_mgr: Arc<WebSocketManager>,
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
+        Ok(ws.on_upgrade(move |socket| {
+            let websocket_mgr = websocket_mgr.clone();
+            async move {
+                let _client_id = websocket_mgr.add_client(socket).await;
+                // Client management is handled within add_client
+            }
+        }))
     }
 
     /// Helper method to save sessions to file

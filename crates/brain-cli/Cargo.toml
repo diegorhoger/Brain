@@ -21,6 +21,8 @@ serde.workspace = true
 anyhow = "1.0"
 tracing.workspace = true
 tracing-subscriber.workspace = true
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
 
 # CLI
 config = "0.14" 
