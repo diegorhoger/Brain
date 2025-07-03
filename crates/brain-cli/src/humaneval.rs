@@ -3,7 +3,6 @@ use brain_api::{AgentApiManager, AgentExecutionRequest, ExecutionContext, Projec
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 use uuid::Uuid;
 use std::collections::HashMap;
@@ -824,6 +823,7 @@ impl HumanEvalAdapter {
     }
     
     /// Extract code from backend codebase response
+    #[allow(dead_code)] // Helper method for future response format variations
     fn extract_code_from_backend_response(&self, backend_data: &serde_json::Value, entry_point: &str) -> Option<String> {
         // Look for Python-specific implementations in the backend response
         if let Some(api_impl) = backend_data.get("api_implementation") {
@@ -835,6 +835,7 @@ impl HumanEvalAdapter {
     }
     
     /// Extract code from API response
+    #[allow(dead_code)] // Helper method for future response format variations
     fn extract_code_from_api_response(&self, api_data: &serde_json::Value, entry_point: &str) -> Option<String> {
         if let Some(code_str) = api_data.as_str() {
             return self.extract_function_from_text(code_str, entry_point);
