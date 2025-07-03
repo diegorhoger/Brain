@@ -502,6 +502,7 @@ impl KeywordMatcher {
 
 /// Agent Selection Intelligence  
 pub struct AgentSelector {
+    #[allow(dead_code)] // Reserved for future enhanced agent selection logic
     capability_map: CapabilityMap,
 }
 
