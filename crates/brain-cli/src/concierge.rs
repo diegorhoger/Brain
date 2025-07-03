@@ -43,7 +43,7 @@ impl ConciergeEngine {
         let orchestration_plan = self.agent_selector.select_agents(&intent, context)?;
         
         // Step 3: Execute the orchestration plan
-        let execution_result = self.execute_plan(&orchestration_plan).await?;
+        let execution_result = self.execute_plan(&orchestration_plan, &intent).await?;
         
         // Step 4: Synthesize response for user
         let response = self.conversation_manager.synthesize_response(
@@ -60,6 +60,7 @@ impl ConciergeEngine {
     async fn execute_plan(
         &self,
         plan: &OrchestrationPlan,
+        intent: &UserIntent,
     ) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
         println!("🤖 Concierge: I'll help you with that! Orchestrating agents:");
         
@@ -77,10 +78,10 @@ impl ConciergeEngine {
         
         // Execute agents based on strategy
         match plan.strategy {
-            ExecutionStrategy::Sequential => self.execute_sequential(plan).await,
-            ExecutionStrategy::Parallel => self.execute_parallel(plan).await,
-            ExecutionStrategy::Iterative => self.execute_iterative(plan).await,
-            ExecutionStrategy::Conditional => self.execute_conditional(plan).await,
+            ExecutionStrategy::Sequential => self.execute_sequential(plan, intent).await,
+            ExecutionStrategy::Parallel => self.execute_parallel(plan, intent).await,
+            ExecutionStrategy::Iterative => self.execute_iterative(plan, intent).await,
+            ExecutionStrategy::Conditional => self.execute_conditional(plan, intent).await,
         }
     }
 
@@ -88,6 +89,7 @@ impl ConciergeEngine {
     async fn execute_sequential(
         &self,
         plan: &OrchestrationPlan,
+        intent: &UserIntent,
     ) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
         let mut results = Vec::new();
         let context_data = HashMap::new();
@@ -95,10 +97,11 @@ impl ConciergeEngine {
         for agent_task in &plan.agents {
             println!("⚙️ Executing {} - {}", agent_task.agent_name, agent_task.description);
             
-            // Create execution request
+            // Create execution request with appropriate input type
+            let input_type = Self::get_appropriate_input_type(&agent_task.agent_name, intent);
             let request = brain_api::agents::AgentExecutionRequest {
                 input: agent_task.input.clone(),
-                input_type: "concierge_orchestrated".to_string(),
+                input_type,
                 context: Some(brain_api::agents::ExecutionContext {
                     user_id: Some(plan.context.user_id.clone()),
                     session_id: plan.context.session_id.clone(),
@@ -184,30 +187,33 @@ impl ConciergeEngine {
     async fn execute_parallel(
         &self,
         plan: &OrchestrationPlan,
+        intent: &UserIntent,
     ) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
         // For now, fall back to sequential execution
         // TODO: Implement true parallel execution with proper dependency handling
-        self.execute_sequential(plan).await
+        self.execute_sequential(plan, intent).await
     }
 
     /// Execute agents iteratively (simplified implementation)
     async fn execute_iterative(
         &self,
         plan: &OrchestrationPlan,
+        intent: &UserIntent,
     ) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
         // For now, fall back to sequential execution
         // TODO: Implement iterative execution with feedback loops
-        self.execute_sequential(plan).await
+        self.execute_sequential(plan, intent).await
     }
 
     /// Execute agents conditionally (simplified implementation)
     async fn execute_conditional(
         &self,
         plan: &OrchestrationPlan,
+        intent: &UserIntent,
     ) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
         // For now, fall back to sequential execution
         // TODO: Implement conditional execution with branch logic
-        self.execute_sequential(plan).await
+        self.execute_sequential(plan, intent).await
     }
 
     /// Get emoji for agent based on name
@@ -237,6 +243,119 @@ impl ConciergeEngine {
             name if name.contains("hotfix") => "🚨 HotfixAgent".to_string(),
             name if name.contains("backup") => "💾 BackupRecoveryAgent".to_string(),
             _ => format!("🤖 {}", agent_name),
+        }
+    }
+
+    /// Get appropriate input type for an agent based on agent name and intent
+    fn get_appropriate_input_type(agent_name: &str, intent: &UserIntent) -> String {
+        match agent_name {
+            // Planner Agent - supports project planning and requirements
+            "planner-agent" => match intent {
+                UserIntent::FeatureDevelopment(_) => "feature_request".to_string(),
+                UserIntent::ProjectAnalysis(_) => "project_idea".to_string(),
+                _ => "project_idea".to_string(),
+            },
+            
+            // Architect Agent - supports technical architecture
+            "architect-agent" => match intent {
+                UserIntent::FeatureDevelopment(_) => "technical_requirements".to_string(),
+                UserIntent::ProjectAnalysis(_) => "project_plan".to_string(),
+                _ => "project_plan".to_string(),
+            },
+            
+            // Designer Agent - supports UI/UX design
+            "designer-agent" => match intent {
+                UserIntent::FeatureDevelopment(_) => "design_requirements".to_string(),
+                _ => "design_requirements".to_string(),
+            },
+            
+            // Schema Agent - supports database design
+            "schema-agent" => match intent {
+                UserIntent::FeatureDevelopment(_) => "data_requirements".to_string(),
+                _ => "data_requirements".to_string(),
+            },
+            
+            // API Agent - supports API design
+            "api-agent" => match intent {
+                UserIntent::FeatureDevelopment(_) => "api_requirements".to_string(),
+                UserIntent::CodeGeneration(_) => "api_spec".to_string(),
+                _ => "api_requirements".to_string(),
+            },
+            
+            // Frontend Coder - supports frontend development
+            "frontend-coder" => match intent {
+                UserIntent::CodeGeneration(_) => "component_spec".to_string(),
+                UserIntent::FeatureDevelopment(_) => "ui_requirements".to_string(),
+                _ => "component_spec".to_string(),
+            },
+            
+            // Backend Coder - supports backend development
+            "backend-coder" => match intent {
+                UserIntent::CodeGeneration(_) => "service_spec".to_string(),
+                UserIntent::FeatureDevelopment(_) => "backend_requirements".to_string(),
+                _ => "service_spec".to_string(),
+            },
+            
+            // Refactor Agent - supports code refactoring
+            "refactor-agent" => match intent {
+                UserIntent::ProblemSolving(_) => "refactor_task".to_string(),
+                UserIntent::Maintenance(_) => "code_analysis".to_string(),
+                _ => "code_analysis".to_string(),
+            },
+            
+            // Doc Agent - supports documentation
+            "doc-agent" => match intent {
+                UserIntent::Documentation(_) => "doc_requirements".to_string(),
+                _ => "doc_requirements".to_string(),
+            },
+            
+            // Security-related agents
+            "security-agent" | "cyber-security-agent" | "prompt-security-agent" | "privacy-agent" | "ethical-ai-agent" => 
+                match intent {
+                    UserIntent::Security(_) => "security_assessment".to_string(),
+                    _ => "security_requirements".to_string(),
+                },
+            
+            // Testing agents
+            "qa-agent" | "test-agent" => match intent {
+                UserIntent::Testing(_) => "test_requirements".to_string(),
+                UserIntent::ProblemSolving(_) => "bug_report".to_string(),
+                _ => "test_requirements".to_string(),
+            },
+            
+            // Deployment and operations agents
+            "deployer-agent" => match intent {
+                UserIntent::Deployment(_) => "deployment_spec".to_string(),
+                _ => "deployment_requirements".to_string(),
+            },
+            
+            "observability-agent" => match intent {
+                UserIntent::Maintenance(_) => "monitoring_requirements".to_string(),
+                _ => "observability_spec".to_string(),
+            },
+            
+            "build-optimizer-agent" => match intent {
+                UserIntent::Maintenance(_) => "build_config".to_string(),
+                _ => "optimization_requirements".to_string(),
+            },
+            
+            "drift-detection-agent" => match intent {
+                UserIntent::Maintenance(_) => "drift_analysis".to_string(),
+                _ => "monitoring_config".to_string(),
+            },
+            
+            "hotfix-agent" => match intent {
+                UserIntent::ProblemSolving(_) => "incident_report".to_string(),
+                _ => "hotfix_requirements".to_string(),
+            },
+            
+            "backup-recovery-agent" | "maintainer-agent" => match intent {
+                UserIntent::Maintenance(_) => "maintenance_task".to_string(),
+                _ => "backup_requirements".to_string(),
+            },
+            
+            // Default fallback for any unmatched agents
+            _ => "general_request".to_string(),
         }
     }
 }
@@ -548,16 +667,40 @@ impl AgentSelector {
     fn select_analysis_agents(&self, _intent: &UserIntent, _context: &ConversationContext) -> Result<Vec<AgentTask>, Box<dyn std::error::Error>> {
         Ok(vec![
             AgentTask {
-                agent_name: "DocAgent".to_string(),
+                agent_name: "doc-agent".to_string(),
                 description: "Analyzing project documentation and structure".to_string(),
-                input: "Provide comprehensive project analysis".to_string(),
+                input: serde_json::json!({
+                    "codebase_analysis": {
+                        "project_type": "rust_multi_crate",
+                        "files_count": 100,
+                        "api_endpoints": 25,
+                        "existing_docs": "minimal"
+                    },
+                    "documentation_requirements": {
+                        "priority": "comprehensive",
+                        "formats": ["markdown", "html"],
+                        "include_api_docs": true,
+                        "include_user_guides": true
+                    }
+                }).to_string(),
                 priority: 5,
                 parameters: None,
             },
             AgentTask {
-                agent_name: "ArchitectAgent".to_string(),
+                agent_name: "architect-agent".to_string(),
                 description: "Examining system architecture and design patterns".to_string(),
-                input: "Analyze current system architecture".to_string(),
+                input: serde_json::json!({
+                    "project_analysis": {
+                        "architecture_type": "multi_crate_rust",
+                        "complexity": "high",
+                        "focus_areas": ["component_interactions", "data_flow", "scalability"]
+                    },
+                    "analysis_requirements": {
+                        "depth": "comprehensive",
+                        "include_dependencies": true,
+                        "include_patterns": true
+                    }
+                }).to_string(),
                 priority: 5,
                 parameters: None,
             },
@@ -566,18 +709,29 @@ impl AgentSelector {
 
     fn select_development_agents(&self, intent: &UserIntent, _context: &ConversationContext) -> Result<Vec<AgentTask>, Box<dyn std::error::Error>> {
         if let UserIntent::FeatureDevelopment(dev_intent) = intent {
+            let feature_description = format!("Develop {} application using technologies: {}. Complexity level: {:?}", 
+                dev_intent.feature_type.to_string(), 
+                dev_intent.technology_stack.join(", "),
+                dev_intent.complexity
+            );
+
             let mut agents = vec![
                 AgentTask {
-                    agent_name: "PlannerAgent".to_string(),
+                    agent_name: "planner-agent".to_string(),
                     description: "Creating project specification and requirements".to_string(),
-                    input: format!("Plan development for: {}", dev_intent.feature_type.to_string()),
+                    input: feature_description.clone(),
                     priority: 5,
                     parameters: None,
                 },
                 AgentTask {
-                    agent_name: "ArchitectAgent".to_string(),
+                    agent_name: "architect-agent".to_string(),
                     description: "Designing system architecture".to_string(),
-                    input: "Design system architecture based on requirements".to_string(),
+                    input: serde_json::json!({
+                        "project_requirements": feature_description,
+                        "technology_stack": dev_intent.technology_stack,
+                        "complexity_level": format!("{:?}", dev_intent.complexity),
+                        "feature_type": dev_intent.feature_type.to_string()
+                    }).to_string(),
                     priority: 4,
                     parameters: None,
                 },
@@ -586,9 +740,20 @@ impl AgentSelector {
             // Add technology-specific agents based on detected stack
             if dev_intent.technology_stack.iter().any(|tech| tech.contains("React") || tech.contains("frontend")) {
                 agents.push(AgentTask {
-                    agent_name: "FrontendCoder".to_string(),
+                    agent_name: "frontend-coder".to_string(),
                     description: "Building frontend implementation".to_string(),
-                    input: "Implement frontend components".to_string(),
+                    input: serde_json::json!({
+                        "ui_design": {
+                            "framework": "React",
+                            "component_type": "modern_responsive",
+                            "features": [dev_intent.feature_type.to_string()]
+                        },
+                        "requirements": {
+                            "responsive": true,
+                            "accessibility": true,
+                            "performance": "optimized"
+                        }
+                    }).to_string(),
                     priority: 3,
                     parameters: None,
                 });
@@ -596,9 +761,20 @@ impl AgentSelector {
 
             if dev_intent.technology_stack.iter().any(|tech| tech.contains("Node") || tech.contains("backend")) {
                 agents.push(AgentTask {
-                    agent_name: "BackendCoder".to_string(),
+                    agent_name: "backend-coder".to_string(),
                     description: "Building backend implementation".to_string(),
-                    input: "Implement backend services".to_string(),
+                    input: serde_json::json!({
+                        "api_specifications": {
+                            "framework": "Node.js",
+                            "architecture": "RESTful",
+                            "features": [dev_intent.feature_type.to_string()]
+                        },
+                        "system_requirements": {
+                            "scalability": "high",
+                            "security": "enhanced",
+                            "performance": "optimized"
+                        }
+                    }).to_string(),
                     priority: 3,
                     parameters: None,
                 });
@@ -613,23 +789,61 @@ impl AgentSelector {
     fn select_security_agents(&self, _intent: &UserIntent, _context: &ConversationContext) -> Result<Vec<AgentTask>, Box<dyn std::error::Error>> {
         Ok(vec![
             AgentTask {
-                agent_name: "CyberSecurityAgent".to_string(),
+                agent_name: "cyber-security-agent".to_string(),
                 description: "Scanning for vulnerabilities and security issues".to_string(),
-                input: "Perform comprehensive security scan".to_string(),
+                input: serde_json::json!({
+                    "action": "comprehensive_scan",
+                    "target": {
+                        "type": "system_architecture",
+                        "scope": "full_system",
+                        "priority": "high"
+                    },
+                    "scan_options": {
+                        "include_dependencies": true,
+                        "check_configurations": true,
+                        "analyze_code_patterns": true
+                    }
+                }).to_string(),
                 priority: 5,
                 parameters: None,
             },
             AgentTask {
-                agent_name: "PromptSecurityAgent".to_string(),
+                agent_name: "prompt-security-agent".to_string(),
                 description: "Checking AI security measures and prompt injection prevention".to_string(),
-                input: "Validate AI security measures".to_string(),
+                input: serde_json::json!({
+                    "action": "validate_security",
+                    "security_context": {
+                        "system_type": "ai_cognitive_system",
+                        "risk_level": "high",
+                        "validation_scope": "comprehensive"
+                    },
+                    "checks": [
+                        "prompt_injection_prevention",
+                        "input_sanitization",
+                        "ai_safety_measures"
+                    ]
+                }).to_string(),
                 priority: 4,
                 parameters: None,
             },
             AgentTask {
-                agent_name: "DataPrivacyAgent".to_string(),
+                agent_name: "data-privacy-agent".to_string(),
                 description: "Reviewing data handling and privacy compliance".to_string(),
-                input: "Analyze data privacy and protection measures".to_string(),
+                input: serde_json::json!({
+                    "action": "privacy_audit",
+                    "audit_scope": {
+                        "data_handling": "comprehensive",
+                        "compliance_frameworks": ["GDPR", "CCPA", "SOC2"],
+                        "privacy_level": "strict"
+                    },
+                    "analysis_areas": [
+                        "data_collection",
+                        "data_storage",
+                        "data_transmission",
+                        "data_retention",
+                        "user_consent"
+                    ]
+                }).to_string(),
                 priority: 4,
                 parameters: None,
             },
@@ -712,9 +926,20 @@ impl AgentSelector {
     fn select_general_agents(&self, _intent: &UserIntent, _context: &ConversationContext) -> Result<Vec<AgentTask>, Box<dyn std::error::Error>> {
         Ok(vec![
             AgentTask {
-                agent_name: "DocAgent".to_string(),
+                agent_name: "doc-agent".to_string(),
                 description: "Providing general project information".to_string(),
-                input: "Provide general assistance".to_string(),
+                input: serde_json::json!({
+                    "codebase_analysis": {
+                        "project_type": "brain_ai_system",
+                        "analysis_type": "capabilities_overview",
+                        "scope": "comprehensive"
+                    },
+                    "documentation_requirements": {
+                        "type": "capabilities_guide",
+                        "audience": "users",
+                        "format": "conversational"
+                    }
+                }).to_string(),
                 priority: 5,
                 parameters: None,
             },

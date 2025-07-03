@@ -483,6 +483,9 @@ impl AgentApiManager {
     pub async fn new() -> Result<Self> {
         let agent_registry = Arc::new(Mutex::new(AgentRegistry::new()));
         
+        // Load all 37 cognitive agents into the registry
+        Self::load_all_agents(&agent_registry).await?;
+        
         // Create orchestrator (no arguments needed)
         let orchestrator = Arc::new(AgentOrchestrator::new());
         
@@ -506,6 +509,64 @@ impl AgentApiManager {
             active_executions,
             system_start_time: Utc::now(),
         })
+    }
+
+    /// Load all 37 cognitive agents into the registry
+    async fn load_all_agents(registry: &Arc<Mutex<AgentRegistry>>) -> Result<()> {
+        let registry_guard = registry.lock().await;
+        
+        // Load Development Agents (11 agents)
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::PlannerAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::ArchitectAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::DesignerAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::SchemaAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::APIAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::FrontendCoder::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::BackendCoder::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::RefactorAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::DocAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::DeployerAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::development::MaintainerAgent::new()))?;
+        
+        // Load Security Agents (5 agents)
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::security::CyberSecurityAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::security::PromptSecurityAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::security::PrivacyComplianceAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::security::DataPrivacyAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::security::EthicalAIAgent::new()))?;
+        
+        // Load Testing & Operations Agents (8 agents)
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::testing::QAAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::testing::SandboxEnvironmentAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::ObservabilityAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::BuildOptimizerAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::DriftDetectionAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::HotfixAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::BackupRecoveryAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::ops::ReplicationScalingAgent::new()))?;
+        
+        // Load Intelligence & Platform Agents (13 agents)
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::intelligence::UserBehaviorAnalystAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::intelligence::FeatureExperimentationAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::intelligence::MLOpsAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::intelligence::ModelTrainingAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::intelligence::DataIngestionAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::LocalizationAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::PlatformCompatibilityAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::DataVisualizationAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::ApiGatewayAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::ServiceMeshAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::ContainerOrchestrationAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::InfrastructureProvisioningAgent::new()))?;
+        registry_guard.register_agent(Arc::new(brain_cognitive::agents::platform::SystemOrchestrationAgent::new()))?;
+        
+        println!("✅ Successfully loaded all 37 agents into registry:");
+        println!("   • 11 Development Agents");
+        println!("   • 5 Security Agents");
+        println!("   • 8 Testing & Operations Agents");
+        println!("   • 13 Intelligence & Platform Agents");
+        
+        Ok(())
     }
 
     /// List all available agents with their metadata and performance metrics
