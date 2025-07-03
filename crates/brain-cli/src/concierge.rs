@@ -380,12 +380,12 @@ impl IntentClassifier {
     ) -> Result<UserIntent, Box<dyn std::error::Error>> {
         let input_lower = input.to_lowercase();
         
-        // Project Analysis Intent
-        if self.matches_project_analysis(&input_lower) {
-            return Ok(UserIntent::ProjectAnalysis(ProjectAnalysisIntent {
-                analysis_type: self.determine_analysis_type(&input_lower),
-                scope: AnalysisScope::Full, // Default to full analysis
-                focus_areas: self.extract_focus_areas(&input_lower),
+        // Security Intent (check before project analysis to avoid false matches)
+        if self.matches_security(&input_lower) {
+            return Ok(UserIntent::Security(SecurityIntent {
+                security_type: self.determine_security_type(&input_lower),
+                scope: SecurityScope::Full,
+                urgency: self.determine_urgency(&input_lower),
             }));
         }
         
@@ -398,12 +398,12 @@ impl IntentClassifier {
             }));
         }
         
-        // Security Intent
-        if self.matches_security(&input_lower) {
-            return Ok(UserIntent::Security(SecurityIntent {
-                security_type: self.determine_security_type(&input_lower),
-                scope: SecurityScope::Full,
-                urgency: self.determine_urgency(&input_lower),
+        // Project Analysis Intent
+        if self.matches_project_analysis(&input_lower) {
+            return Ok(UserIntent::ProjectAnalysis(ProjectAnalysisIntent {
+                analysis_type: self.determine_analysis_type(&input_lower),
+                scope: AnalysisScope::Full, // Default to full analysis
+                focus_areas: self.extract_focus_areas(&input_lower),
             }));
         }
         
@@ -811,17 +811,19 @@ impl AgentSelector {
                 agent_name: "prompt-security-agent".to_string(),
                 description: "Checking AI security measures and prompt injection prevention".to_string(),
                 input: serde_json::json!({
-                    "action": "validate_security",
-                    "security_context": {
+                    "action": "safety_alignment",
+                    "model_config": {
                         "system_type": "ai_cognitive_system",
                         "risk_level": "high",
                         "validation_scope": "comprehensive"
                     },
-                    "checks": [
-                        "prompt_injection_prevention",
-                        "input_sanitization",
-                        "ai_safety_measures"
-                    ]
+                    "deployment_context": {
+                        "checks": [
+                            "prompt_injection_prevention",
+                            "input_sanitization",
+                            "ai_safety_measures"
+                        ]
+                    }
                 }).to_string(),
                 priority: 4,
                 parameters: None,
@@ -830,19 +832,21 @@ impl AgentSelector {
                 agent_name: "data-privacy-agent".to_string(),
                 description: "Reviewing data handling and privacy compliance".to_string(),
                 input: serde_json::json!({
-                    "action": "privacy_audit",
-                    "audit_scope": {
+                    "action": "classify_data",
+                    "dataset": {
+                        "name": "system_data_audit",
+                        "description": "Comprehensive privacy and compliance audit",
                         "data_handling": "comprehensive",
                         "compliance_frameworks": ["GDPR", "CCPA", "SOC2"],
-                        "privacy_level": "strict"
-                    },
-                    "analysis_areas": [
-                        "data_collection",
-                        "data_storage",
-                        "data_transmission",
-                        "data_retention",
-                        "user_consent"
-                    ]
+                        "privacy_level": "strict",
+                        "analysis_areas": [
+                            "data_collection",
+                            "data_storage",
+                            "data_transmission",
+                            "data_retention",
+                            "user_consent"
+                        ]
+                    }
                 }).to_string(),
                 priority: 4,
                 parameters: None,
