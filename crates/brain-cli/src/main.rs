@@ -459,12 +459,14 @@ async fn handle_agent_interactive(matches: &ArgMatches) -> Result<()> {
                     execution_context.insert("session_id".to_string(), serde_json::Value::String(session_id.clone()));
                     execution_context.insert("interactive_mode".to_string(), serde_json::Value::Bool(true));
                     
+                    let input_text = context.as_deref().unwrap_or("Execute agent").to_string();
+                    
                     if let Some(ctx) = context {
                         execution_context.insert("user_context".to_string(), serde_json::Value::String(ctx));
                     }
                     
                     let request = brain_api::agents::AgentExecutionRequest {
-                        input: context.unwrap_or_else(|| "Execute agent".to_string()),
+                        input: input_text,
                         input_type: "interactive_command".to_string(),
                         context: Some(brain_api::agents::ExecutionContext {
                             user_id: Some("interactive_user".to_string()),
@@ -508,37 +510,35 @@ async fn handle_agent_interactive(matches: &ArgMatches) -> Result<()> {
                     // Get agent status through AgentApiManager
                     match agent_manager.get_agent_status(agent_name).await {
                         Ok(status) => {
-                            let status_icon = match status.status {
+                            let status_icon = match status.execution_status.status {
                                 AgentStatus::Available => "🟢 Available",
                                 AgentStatus::Busy => "🟡 Busy",
                                 AgentStatus::Error => "🔴 Error",
-                                AgentStatus::Initializing => "🔵 Initializing",
+                                AgentStatus::Unavailable => "🔴 Unavailable",
                             };
                             
                             println!("   Status: {}", status_icon);
-                            println!("   Last Activity: {}", status.last_activity.format("%Y-%m-%d %H:%M:%S UTC"));
-                            println!("   Total Calls: {}", status.total_calls);
-                            println!("   Success Rate: {:.1}%", status.success_rate * 100.0);
-                            println!("   Average Response Time: {:?}", status.average_response_time);
+                            println!("   Last Activity: {}", status.execution_status.last_activity.map_or("Never".to_string(), |dt| dt.format("%Y-%m-%d %H:%M:%S UTC").to_string()));
+                            println!("   Total Calls: {}", status.performance_metrics.total_executions);
+                            println!("   Success Rate: {:.1}%", status.performance_metrics.success_rate * 100.0);
+                            println!("   Average Response Time: {:.0}ms", status.performance_metrics.avg_execution_time_ms);
                             
-                            if let Some(health) = status.health {
-                                let health_icon = match health.status {
-                                    SystemHealth::Healthy => "💚 Healthy",
-                                    SystemHealth::Degraded => "🟡 Degraded",
-                                    SystemHealth::Unhealthy => "🔴 Unhealthy",
-                                };
-                                println!("   Health: {}", health_icon);
-                                
-                                if !health.checks.is_empty() {
-                                    println!("   Health Checks:");
-                                    for check in &health.checks {
-                                        let check_icon = match check.status {
-                                            SystemHealth::Healthy => "✅",
-                                            SystemHealth::Degraded => "⚠️",
-                                            SystemHealth::Unhealthy => "❌",
-                                        };
-                                        println!("     {} {}: {}", check_icon, check.name, check.message);
-                                    }
+                            let health_icon = match status.health_check.status {
+                                SystemHealth::Healthy => "💚 Healthy",
+                                SystemHealth::Degraded => "🟡 Degraded",
+                                SystemHealth::Unhealthy => "🔴 Unhealthy",
+                            };
+                            println!("   Health: {}", health_icon);
+                            
+                            if !status.health_check.checks.is_empty() {
+                                println!("   Health Checks:");
+                                for check in &status.health_check.checks {
+                                    let check_icon = match check.status {
+                                        SystemHealth::Healthy => "✅",
+                                        SystemHealth::Degraded => "⚠️",
+                                        SystemHealth::Unhealthy => "❌",
+                                    };
+                                    println!("     {} {}: {}", check_icon, check.name, check.message.as_deref().unwrap_or("No details"));
                                 }
                             }
                         }
@@ -557,18 +557,20 @@ async fn handle_agent_interactive(matches: &ArgMatches) -> Result<()> {
                     println!("ℹ️  Agent Information: {}", agent_name);
                     
                     // Get agent from list (could be enhanced with dedicated info endpoint)
-                    match agent_manager.list_agents(None).await {
+                    match agent_manager.list_agents().await {
                         Ok(response) => {
                             if let Some(agent) = response.agents.iter().find(|a| a.name == agent_name) {
                                 println!("   📋 Name: {}", agent.name);
                                 println!("   📝 Description: {}", agent.description);
-                                println!("   📁 Category: {}", agent.category);
-                                println!("   🏷️  Tags: {:?}", agent.tags);
-                                println!("   📊 Total Calls: {}", agent.total_calls);
-                                println!("   ⏱️  Average Response Time: {:?}", agent.average_response_time);
-                                println!("   💾 Memory Usage: {} MB", agent.memory_usage_mb);
+                                println!("   📁 Categories: {:?}", agent.categories);
                                 println!("   🔧 Version: {}", agent.version);
-                                println!("   📅 Last Updated: {}", agent.last_updated.format("%Y-%m-%d %H:%M UTC"));
+                                println!("   🎭 Persona: {}", agent.persona);
+                                println!("   📊 Base Confidence: {:.1}%", agent.base_confidence * 100.0);
+                                if let Some(perf) = &agent.performance_metrics {
+                                    println!("   📈 Total Executions: {}", perf.total_executions);
+                                    println!("   ⏱️  Avg Response Time: {:.0}ms", perf.avg_execution_time_ms);
+                                    println!("   ✅ Success Rate: {:.1}%", perf.success_rate * 100.0);
+                                }
                                 
                                 if !agent.capabilities.is_empty() {
                                     println!("   🎯 Capabilities:");
@@ -599,14 +601,38 @@ async fn handle_agent_interactive(matches: &ArgMatches) -> Result<()> {
                     println!("   Strategy: Sequential (interactive default)");
                     
                     // Execute workflow through AgentApiManager
-                    let workflow_context = std::collections::HashMap::new();
-                    let request = brain_api::agents::WorkflowExecutionRequest {
-                        agent_names: agent_names.iter().map(|s| s.to_string()).collect(),
-                        execution_strategy: "sequential".to_string(),
-                        context: workflow_context,
-                        priority: "medium".to_string(),
+                    let _workflow_context: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+                    // Create workflow agents with proper structure
+                    let workflow_agents: Vec<brain_api::agents::WorkflowAgent> = agent_names
+                        .iter()
+                        .enumerate()
+                        .map(|(index, agent_name)| {
+                            brain_api::agents::WorkflowAgent {
+                                agent_name: agent_name.to_string(),
+                                input: "Execute workflow step".to_string(),
+                                input_type: "workflow_step".to_string(),
+                                dependencies: if index == 0 { Vec::new() } else { vec![agent_names[index - 1].to_string()] },
+                                priority: Some(5),
+                                parameters: None,
+                            }
+                        })
+                        .collect();
+                    
+                    // Create execution context
+                    let execution_context = brain_api::agents::ExecutionContext {
                         user_id: Some("interactive_user".to_string()),
+                        session_id: uuid::Uuid::new_v4().to_string(),
+                        project_context: None,
+                        previous_outputs: Vec::new(),
+                        user_preferences: None,
+                    };
+                    
+                    let request = brain_api::agents::WorkflowExecutionRequest {
+                        agents: workflow_agents,
+                        context: Some(execution_context),
+                        execution_strategy: brain_api::agents::WorkflowExecutionStrategy::Sequential,
                         timeout_seconds: Some(300),
+                        continue_on_error: false,
                     };
                     
                     match agent_manager.execute_workflow(request).await {
@@ -614,20 +640,25 @@ async fn handle_agent_interactive(matches: &ArgMatches) -> Result<()> {
                             if response.success {
                                 println!("✅ Workflow completed successfully!");
                                 println!("   Workflow ID: {}", response.workflow_id);
-                                println!("   Total Duration: {:?}", response.total_execution_time);
-                                println!("   Agents Executed: {}/{}", response.completed_agents, response.total_agents);
+                                println!("   Total Duration: {} ms", response.total_execution_time_ms);
+                                println!("   Agents Executed: {}", response.agent_results.len());
                                 
-                                if !response.results.is_empty() {
+                                if !response.agent_results.is_empty() {
                                     println!("   Results:");
-                                    for (i, result) in response.results.iter().enumerate() {
+                                    for (i, result) in response.agent_results.iter().enumerate() {
                                         println!("     {}. {} - {}", i + 1, 
                                             agent_names.get(i).unwrap_or(&"Unknown"), 
-                                            if result.contains("success") { "✅" } else { "❌" });
+                                            if result.success { "✅" } else { "❌" });
                                     }
                                 }
                                 execution_count += 1;
                             } else {
-                                println!("❌ Workflow failed: {}", response.error.unwrap_or("Unknown error".to_string()));
+                                let error_msg = if !response.workflow_errors.is_empty() {
+                                    response.workflow_errors.join(", ")
+                                } else {
+                                    "Unknown error".to_string()
+                                };
+                                println!("❌ Workflow failed: {}", error_msg);
                             }
                         }
                         Err(e) => {
@@ -685,7 +716,7 @@ async fn handle_workflow_execute(matches: &ArgMatches) -> Result<()> {
         .map(|(index, agent_name)| {
             brain_api::agents::WorkflowAgent {
                 agent_name: agent_name.to_string(),
-                input: context_str.unwrap_or("Execute workflow step").to_string(),
+                input: context_str.map(|s| s.as_str()).unwrap_or("Execute workflow step").to_string(),
                 input_type: "workflow_step".to_string(),
                 dependencies: if index == 0 { Vec::new() } else { vec![agent_names[index - 1].to_string()] },
                 priority: Some(5),
@@ -704,7 +735,7 @@ async fn handle_workflow_execute(matches: &ArgMatches) -> Result<()> {
     };
     
     // Map strategy to API enum
-    let workflow_strategy = match strategy {
+    let workflow_strategy = match strategy.as_str() {
         "parallel" => brain_api::agents::WorkflowExecutionStrategy::Parallel,
         "dag" => brain_api::agents::WorkflowExecutionStrategy::DAG,
         _ => brain_api::agents::WorkflowExecutionStrategy::Sequential,
@@ -716,7 +747,7 @@ async fn handle_workflow_execute(matches: &ArgMatches) -> Result<()> {
         context: Some(execution_context),
         execution_strategy: workflow_strategy,
         timeout_seconds: Some(300), // 5 minutes max
-        continue_on_error: strategy != "sequential", // Continue on error unless sequential
+        continue_on_error: strategy.as_str() != "sequential", // Continue on error unless sequential
     };
     
     // Execute workflow through AgentApiManager
