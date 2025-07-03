@@ -1,13 +1,13 @@
 use anyhow::Result;
 use brain_api::AgentApiManager;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use tokio::process::Command;
 
 /// Core adapter between HumanEval benchmark and Brain AI agent system
 pub struct HumanEvalAdapter {
+    #[allow(dead_code)] // Will be used in Phase 2 for real agent integration
     agent_manager: AgentApiManager,
     config: BenchmarkConfig,
 }
@@ -19,6 +19,7 @@ pub struct BenchmarkConfig {
     pub agent_name: String,
     pub strategy: ExecutionStrategy,
     pub output_file: String,
+    #[allow(dead_code)] // Infrastructure for future timeout handling
     pub timeout_seconds: u64,
 }
 
@@ -50,19 +51,19 @@ pub struct HumanEvalCompletion {
     pub completion: String,
 }
 
-/// Results from Brain AI agent execution
-#[derive(Debug)]
+/// Brain AI execution result for a single problem
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BrainExecutionResult {
     pub task_id: String,
-    pub success: bool,
     pub completion: Option<String>,
     pub execution_time_ms: u64,
-    pub agent_confidence: f32,
+    pub confidence: f32,
+    pub success: bool,
+    #[allow(dead_code)] // Infrastructure for future Elite Framework integration
     pub quality_score: Option<f32>,
-    pub error_message: Option<String>,
 }
 
-/// Benchmark execution results and statistics
+/// Comprehensive benchmark results
 #[derive(Debug)]
 pub struct BenchmarkResults {
     pub total_problems: usize,
@@ -72,6 +73,7 @@ pub struct BenchmarkResults {
     pub errors: usize,
     pub avg_execution_time_ms: f64,
     pub avg_confidence: f32,
+    #[allow(dead_code)] // Infrastructure for future Elite Framework metrics
     pub avg_quality_score: Option<f32>,
     pub execution_results: Vec<BrainExecutionResult>,
 }
@@ -143,9 +145,8 @@ impl HumanEvalAdapter {
                     success: true,
                     completion: Some(completion),
                     execution_time_ms: execution_time,
-                    agent_confidence: 0.85, // TODO: Get real confidence from agent
+                    confidence: 0.85, // TODO: Get real confidence from agent
                     quality_score: None, // TODO: Implement quality scoring
-                    error_message: None,
                 })
             },
             Err(e) => {
@@ -155,9 +156,8 @@ impl HumanEvalAdapter {
                     success: false,
                     completion: None,
                     execution_time_ms: execution_time,
-                    agent_confidence: 0.0,
+                    confidence: 0.0,
                     quality_score: None,
-                    error_message: Some(e.to_string()),
                 })
             }
         }
@@ -224,7 +224,7 @@ impl HumanEvalAdapter {
             
             let result = self.execute_problem(problem).await?;
             total_execution_time += result.execution_time_ms;
-            total_confidence += result.agent_confidence;
+            total_confidence += result.confidence;
             
             results.push(result);
             println!();
@@ -232,7 +232,7 @@ impl HumanEvalAdapter {
 
         let completed = results.iter().filter(|r| r.success).count();
         let failed = results.iter().filter(|r| !r.success && r.completion.is_some()).count();
-        let errors = results.iter().filter(|r| r.error_message.is_some()).count();
+        let errors = results.iter().filter(|r| !r.success && r.completion.is_none()).count();
 
         let benchmark_results = BenchmarkResults {
             total_problems: problems.len(),
