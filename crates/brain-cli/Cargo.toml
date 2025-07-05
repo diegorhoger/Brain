@@ -24,6 +24,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+flate2 = "1.0"  # For HumanEval dataset gzip decompression
 
 # CLI
 config = "0.14" 

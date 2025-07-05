@@ -8,7 +8,7 @@ mod concierge;
 mod humaneval;
 
 use concierge::{ConciergeEngine, ConversationContext, ConversationTurn};
-use humaneval::{HumanEvalAdapter, BenchmarkConfig, ExecutionStrategy};
+use humaneval::{HumanEvalAdapter, BenchmarkConfig, ExecutionStrategy, EvaluationMode};
 
 fn ensure_directories() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("data")?;
@@ -1254,25 +1254,57 @@ async fn handle_concierge_chat(matches: &ArgMatches) -> Result<()> {
 
 /// Handle HumanEval benchmark command
 async fn handle_benchmark_humaneval(matches: &ArgMatches) -> Result<()> {
-    let subset_size = matches.get_one::<String>("subset")
-        .unwrap()
-        .parse::<usize>()
-        .unwrap_or(1);
+    let full_flag = matches.get_flag("full");
+    let subset_size = if full_flag {
+        0  // 0 means full 164-problem dataset
+    } else {
+        matches.get_one::<String>("subset")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap_or(1)
+    };
     
     let agent_name = matches.get_one::<String>("agent").unwrap().to_string();
     let strategy_str = matches.get_one::<String>("strategy").unwrap();
+    let evaluation_str = matches.get_one::<String>("evaluation").unwrap();
     let output_file = matches.get_one::<String>("output").unwrap().to_string();
     
     let strategy = strategy_str.parse::<ExecutionStrategy>()
         .unwrap_or(ExecutionStrategy::Direct);
     
+    let evaluation_mode = match evaluation_str.as_str() {
+        "pass-at-10" => EvaluationMode::PassAt10,
+        "pass-at-100" => EvaluationMode::PassAt100,
+        "full" => EvaluationMode::Full,
+        _ => EvaluationMode::Standard,
+    };
+    
+    // Override evaluation mode if --full flag is used
+    let final_evaluation_mode = if full_flag {
+        EvaluationMode::Full
+    } else {
+        evaluation_mode
+    };
+    
     println!("🏆 HumanEval Benchmark - Brain AI Coding Evaluation");
     println!("==================================================");
     println!("📊 Configuration:");
-    println!("   • Problems: {} (subset)", subset_size);
+    if subset_size == 0 {
+        println!("   • Problems: Full 164-problem dataset 🎯");
+    } else {
+        println!("   • Problems: {} (subset)", subset_size);
+    }
     println!("   • Agent: {}", agent_name);
     println!("   • Strategy: {:?}", strategy);
+    println!("   • Evaluation: {:?}", final_evaluation_mode);
     println!("   • Output: {}", output_file);
+    
+    if matches!(final_evaluation_mode, EvaluationMode::PassAt10 | EvaluationMode::PassAt100 | EvaluationMode::Full) {
+        println!("   • 🎯 Advanced Pass@k metrics enabled!");
+        if matches!(final_evaluation_mode, EvaluationMode::Full) {
+            println!("   • 📊 Full evaluation: Pass@1, Pass@10, Pass@100");
+        }
+    }
     println!();
     
     let config = BenchmarkConfig {
@@ -1280,6 +1312,7 @@ async fn handle_benchmark_humaneval(matches: &ArgMatches) -> Result<()> {
         agent_name,
         strategy,
         output_file: output_file.clone(),
+        evaluation_mode: final_evaluation_mode,
         timeout_seconds: 30,
     };
     
@@ -1528,12 +1561,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .subcommand(
             Command::new("benchmark")
-                .about("Run a HumanEval benchmark")
+                .about("🏆 HumanEval benchmark with advanced Pass@k metrics")
                 .arg(
                     Arg::new("subset")
                         .short('s')
                         .long("subset")
-                        .help("Number of problems to include in the subset")
+                        .help("Number of problems (0 = full 164-problem dataset)")
                         .default_value("1")
                 )
                 .arg(
@@ -1547,8 +1580,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Arg::new("strategy")
                         .short('t')
                         .long("strategy")
-                        .help("Execution strategy (direct, sequential, parallel)")
+                        .help("Execution strategy (direct, orchestrated, quality)")
                         .default_value("direct")
+                )
+                .arg(
+                    Arg::new("evaluation")
+                        .short('e')
+                        .long("evaluation")
+                        .help("Evaluation mode (standard, pass-at-10, pass-at-100, full)")
+                        .default_value("standard")
                 )
                 .arg(
                     Arg::new("output")
@@ -1556,6 +1596,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .long("output")
                         .help("Output file for benchmark results")
                         .required(true)
+                )
+                .arg(
+                    Arg::new("full")
+                        .long("full")
+                        .help("Run full 164-problem dataset with all Pass@k metrics")
+                        .action(clap::ArgAction::SetTrue)
                 )
         )
         .get_matches();

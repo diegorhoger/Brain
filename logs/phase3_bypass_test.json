@@ -1,0 +1,1 @@
+{"task_id":"HumanEval/0","completion":"# Learning template for has_close_elements - analyzing problem patterns\n    # Problem: from typing import List\n\n\ndef has_close_elements(numbers: List[float], threshold: float) -> bool:\n  \n    # This will fail initially and become a learning opportunity\n    pass"}
